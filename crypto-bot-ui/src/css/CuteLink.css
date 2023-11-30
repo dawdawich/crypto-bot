@@ -1,0 +1,17 @@
+.cute-link {
+    color: #ff69b4; /* Pink color */
+    text-decoration: none; /* Removes underline */
+    font-weight: bold;
+    font-size: 18px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: #fff0f5; /* Light pink background */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    transition: all 0.3s ease;
+}
+
+.cute-link:hover {
+    background-color: #ff69b4;
+    color: white;
+    text-decoration: underline;
+}

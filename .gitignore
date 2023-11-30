@@ -1,0 +1,50 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+/crypto-bot-ui/node_modules
+/crypto-bot-ui/.pnp
+/crypto-bot-ui/.pnp.js
+/crypto-bot-ui/coverage
+/crypto-bot-ui/.DS_Store
+/crypto-bot-ui/.env.local
+/crypto-bot-ui/.env.development.local
+/crypto-bot-ui/.env.test.local
+/crypto-bot-ui/.env.production.local
+/crypto-bot-ui/npm-debug.log*
+/crypto-bot-ui/yarn-debug.log*
+/crypto-bot-ui/yarn-error.log*
