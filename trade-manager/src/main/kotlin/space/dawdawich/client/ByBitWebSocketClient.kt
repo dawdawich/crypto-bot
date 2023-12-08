@@ -10,6 +10,9 @@ import org.java_websocket.handshake.ServerHandshake
 import org.json.JSONObject
 import space.dawdawich.client.responses.OrderResponse
 import space.dawdawich.client.responses.PositionResponse
+import space.dawdawich.service.TradeManager
+import space.dawdawich.service.model.Order
+import space.dawdawich.service.model.Position
 import java.lang.Exception
 import java.net.URI
 import javax.crypto.Mac
@@ -19,8 +22,7 @@ import kotlin.time.Duration.Companion.hours
 class ByBitWebSocketClient(
     private val apiKey: String,
     private val encryptor: Mac,
-    private val positionSubscriber: (PositionResponse) -> Unit,
-    private val orderSubscriber: (OrderResponse) -> Unit
+    private val tradeManager: TradeManager
 ) : WebSocketClient(URI("wss://stream.bybit.com/v5/private")) {
     companion object {
         private val jsonPath =
@@ -37,7 +39,7 @@ class ByBitWebSocketClient(
         val operationRequest = JSONObject(
             mapOf(
                 "op" to "auth",
-                "args" to listOf(apiKey, signatureWithExpiration.second, signatureWithExpiration.first)
+                "args" to listOf(apiKey, signatureWithExpiration.second.toString(), signatureWithExpiration.first)
             )
         ).toString()
         send(operationRequest)
@@ -63,18 +65,61 @@ class ByBitWebSocketClient(
                 }
             }
             response.read<String?>("\$.topic")?.let { topic ->
-                if (topic == "position") {
-                    val positionsToUpdate = response.read<List<PositionResponse>>("\$.data")
-                    positionsToUpdate.forEach { position -> positionSubscriber(position) }
-                } else if (topic == "order") {
-                    val ordersToUpdate = response.read<List<OrderResponse>>("\$.data")
-                    ordersToUpdate.forEach { orderResponse -> orderSubscriber(orderResponse) }
+                if (topic == "position.linear") {
+                    val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
+                    positionsToUpdate.forEach { position ->
+                        val toUpdate = if (position["side"].toString().equals("none", true)) {
+                            listOf(
+                                Position(
+                                    position["symbol"].toString(),
+                                    true,
+                                    position["size"].toString().toDouble(),
+                                    position["entryPrice"].toString().toDouble(),
+                                    position["positionIdx"].toString().toInt(),
+                                    position["updatedTime"].toString().toLong()
+                                ),
+                                Position(
+                                    position["symbol"].toString(),
+                                    false,
+                                    position["size"].toString().toDouble(),
+                                    position["entryPrice"].toString().toDouble(),
+                                    position["positionIdx"].toString().toInt(),
+                                    position["updatedTime"].toString().toLong()
+                                )
+                            )
+                        } else {
+                            listOf(Position(
+                                position["symbol"].toString(),
+                                position["side"].toString().equals("buy", true),
+                                position["size"].toString().toDouble(),
+                                position["entryPrice"].toString().toDouble(),
+                                position["positionIdx"].toString().toInt(),
+                                position["updatedTime"].toString().toLong()
+                            ))
+                        }
+                        tradeManager.updatePosition(toUpdate)
+                    }
+                } else if (topic == "order.linear") {
+                    val ordersToUpdate = response.read<List<Map<String, Any>>>("\$.data")
+                    ordersToUpdate.forEach { orderResponse ->
+                        tradeManager.updateOrder(
+                            Order(
+                                orderResponse["symbol"].toString(),
+                                orderResponse["side"].toString().equals("buy", true),
+                                orderResponse["price"].toString().toDouble(),
+                                orderResponse["qty"].toString().toDouble(),
+                                orderResponse["orderStatus"].toString(),
+                                orderResponse["orderLinkId"].toString()
+                            )
+                        )
+                    }
                 }
             }
         }
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
+        signatureWithExpiration = getAuthData()
         GlobalScope.launch { reconnect() }
     }
 
@@ -85,8 +130,12 @@ class ByBitWebSocketClient(
     private fun getAuthData(): Pair<String, Long> {
         val expireTime = System.currentTimeMillis() + 2.hours.inWholeMilliseconds
         val signature =
-            encryptor.doFinal("GET/realtime$expireTime".toByteArray()).joinToString { String.format("%02x", it) }
+            encryptor.doFinal("GET/realtime$expireTime".toByteArray())
+        var result = ""
+        for (byte in signature) {
+            result += String.format("%02x", byte)
+        }
 
-        return signature to expireTime
+        return result to expireTime
     }
 }

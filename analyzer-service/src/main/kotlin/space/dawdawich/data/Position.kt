@@ -3,26 +3,29 @@ package space.dawdawich.data
 import space.dawdawich.utils.plusPercent
 import java.util.*
 
-class Position(var entryPrice: Double, var size: Double, val trend: Trend, private val takeProfit: Double, private val stopLoss: Double, val id: String = UUID.randomUUID().toString()) {
-    private val orders = mutableListOf<Order>()
-    var closePrice: Double? = null
-
-    constructor(order: Order, takeProfit: Double, stopLoss: Double) :
-            this(order.inPrice, order.count, order.trend, takeProfit, stopLoss) {
-        orders += order
-    }
+class Position(
+    var entryPrice: Double,
+    var size: Double,
+    val trend: Trend,
+    val id: String = UUID.randomUUID().toString()
+) {
+    var realizedPnL = 0.0
 
     fun updateSizeAndEntryPrice(order: Order) {
-        if (!orders.contains(order)) {
+        if (order.trend == trend) {
             entryPrice = ((entryPrice * size) + (order.inPrice * order.count)) / (size + order.count)
             size += order.count
-            orders += order
+            realizedPnL -= order.inPrice * 0.00055 * size
+        } else {
+            size -= order.count
+            val profit = if (order.trend == Trend.SHORT) order.inPrice - entryPrice else entryPrice - order.inPrice
+            realizedPnL += (profit - order.inPrice * 0.00055) * size
         }
     }
 
-    fun isTpOrSlCrossed(currentPrice: Double): Boolean {
-        val tpPrice = entryPrice.plusPercent(takeProfit * trend.direction)
-        val slPrice = entryPrice.plusPercent(-stopLoss * trend.direction)
+    fun isTpOrSlCrossed(currentPrice: Double, sl: Double, tp: Double): Boolean {
+        val tpPrice = entryPrice.plusPercent(tp * trend.direction)
+        val slPrice = entryPrice.plusPercent(-sl * trend.direction)
 
 
         val isTpCrossed = when (trend) {
@@ -50,6 +53,6 @@ class Position(var entryPrice: Double, var size: Double, val trend: Trend, priva
 
     fun calculateProfit(currentPrice: Double): Double {
         val profitPerUnit = if (trend == Trend.SHORT) currentPrice - entryPrice else entryPrice - currentPrice
-        return (profitPerUnit - currentPrice * 0.00055) * size
+        return (profitPerUnit - (currentPrice - entryPrice) * 0.00055) * size + realizedPnL
     }
 }

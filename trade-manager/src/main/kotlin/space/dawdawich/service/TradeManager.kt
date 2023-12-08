@@ -1,11 +1,6 @@
 package space.dawdawich.service
 
-import com.jayway.jsonpath.Configuration
-import com.jayway.jsonpath.JsonPath
-import com.jayway.jsonpath.Option
 import kotlinx.coroutines.runBlocking
-import netscape.javascript.JSObject
-import org.json.JSONObject
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
@@ -14,170 +9,197 @@ import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.AnalyzerChooseStrategy
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.service.helper.PositionManager
 import space.dawdawich.service.model.Order
 import space.dawdawich.service.model.Position
-import space.dawdawich.utils.bytesToHex
 import space.dawdawich.utils.plusPercent
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.util.*
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
+import kotlin.collections.List
 import kotlin.math.absoluteValue
+import kotlin.time.Duration.Companion.minutes
 
 class TradeManager(
     private val tradeManagerData: TradeManagerDocument,
     private val priceTickerListenerFactoryService: PriceTickerListenerFactoryService,
     private val analyzerRepository: GridTableAnalyzerRepository,
-    private val orderService: ByBitOrderHttpService,
-    private val apiKey: String,
-    secretKey: String
+    private val bybitService: ByBitHttpService
 ) {
     private var priceListener: ConcurrentMessageListenerContainer<String, String>? = null
-    private var analyzer: GridTableAnalyzerDocument? = null
+    lateinit var webSocketClient: ByBitWebSocketClient
 
-    private val encryptor: Mac = Mac.getInstance("HmacSHA256")
-    private val webSocketClient: ByBitWebSocketClient
-    private val jsonPath =
-        JsonPath.using(Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS))
+    var analyzer: GridTableAnalyzerDocument? = null
 
     private var capital = 0.0
     private var priceInstruction: Pair<Double, Double> = 0.0 to 0.0
 
     private var price: Double = -1.0
-    private var middlePrice: Double = -1.0
     private var orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
-    private var longPosition: Position? = null
-    private var shortPosition: Position? = null
+    private var positionManager: PositionManager? = null
+
+    private var analyzerUpdateTimestamp: Long = 0
+
+    private val df = DecimalFormat("#").apply { maximumFractionDigits = 9 }
+
+    var middlePrice: Double = -1.0
 
     init {
-        encryptor.init(SecretKeySpec(secretKey.toByteArray(), "HmacSHA256"))
-        setupAnalyzer()
-        updateCapital()
-
-        webSocketClient = ByBitWebSocketClient(
-            apiKey,
-            encryptor,
-            { positionResponse ->
-                updatePosition(
-                    Position(
-                        positionResponse.symbol,
-                        positionResponse.side.equals("buy", true),
-                        positionResponse.size.toDouble(),
-                        positionResponse.entryPrice.toDouble(),
-                        positionResponse.updatedTime.toLong()
-                    )
-                )
-            },
-            { orderResponse ->
-                updateOrder(
-                    Order(
-                        orderResponse.symbol,
-                        orderResponse.side.equals("buy", true),
-                        orderResponse.price.toDouble(),
-                        orderResponse.qty.toDouble(),
-                        orderResponse.orderStatus,
-                        orderResponse.orderLinkId
-                    )
-                )
-            }
-        )
+        if (tradeManagerData.isActive) {
+            setupAnalyzer()
+            updateCapital()
+        }
     }
 
     private fun updateCapital() {
-        val timestamp = System.currentTimeMillis()
-        val balanceResponse = runBlocking {
-            orderService.getAccountBalance(apiKey, timestamp) { body ->
-                getSign(
-                    body,
-                    timestamp.toString()
-                )
-            }
-        }
-
-        capital =
-            jsonPath.parse(balanceResponse).read<String?>("\$.result.list[0].coin[0].walletBalance")?.toDouble() ?: 0.0
-        priceInstruction = runBlocking { orderService.getPairInstructions(analyzer!!.symbolInfo.symbol) }
+        capital = runBlocking { bybitService.getAccountBalance() }
+        println("Capital is: $capital")
     }
 
-    private fun updatePosition(position: Position) {
-        println("Position Update: $position")
-        if (longPosition != null && position.isLong && position.updateTime > longPosition!!.updateTime) {
-            longPosition = position
-        }
-        if (shortPosition != null && !position.isLong && position.updateTime > shortPosition!!.updateTime) {
-            shortPosition = position
-        }
+    fun updatePosition(position: List<Position>) {
+        positionManager?.updatePosition(position)
     }
 
-    private fun updateOrder(order: Order) {
+    fun updateOrder(order: Order) {
         println("Obtained order to update; id: ${order.orderLinkId}, status: ${order.orderStatus}")
-        val priceKey = orderPriceGrid.entries.first { it.value?.orderLinkId == order.orderLinkId }.key
-        orderPriceGrid.remove(priceKey)
-        orderPriceGrid[priceKey] = order
+        orderPriceGrid.entries.firstOrNull { it.value?.orderLinkId == order.orderLinkId }?.key?.apply {
+            orderPriceGrid[this] = order
+            println("Updated order in store with: $order")
+        }
     }
 
     private fun updatePrice(newPrice: Double) {
         if (tradeManagerData.isActive && analyzer != null) {
-            if (price < 0) {
-                middlePrice = newPrice
-
-                val minPrice = middlePrice.plusPercent(-analyzer!!.diapason)
-                val maxPrice = middlePrice.plusPercent(analyzer!!.diapason)
-                val step = (maxPrice - minPrice) / analyzer!!.gridSize
-
-                val gridPrices = mutableListOf<Double>()
-                repeat(analyzer!!.gridSize) {
-                    gridPrices += minPrice + step * it
-                }
-                orderPriceGrid = mutableMapOf(*gridPrices.map { it to null }.toTypedArray())
+            if (price <= 0) {
+                middlePrice = analyzer!!.middlePrice!!
+                setUpPrices()
             }
 
             price = newPrice
 
             checkOrders()
+
+            positionManager?.getPositions()?.filter { position ->
+                if (position.size > 0.0) {
+                    val result = capital + position.calculateProfit(price)
+                    return@filter result > capital.plusPercent(analyzer!!.positionTakeProfit) || result < capital.plusPercent(
+                        -analyzer!!.positionStopLoss
+                    )
+                }
+                return@filter false
+            }?.forEach {
+                closePosition(it)
+            }
+        }
+        findNewAnalyzer()
+    }
+
+    private fun setUpPrices() {
+        var minPrice = middlePrice
+        var maxPrice = middlePrice
+        val step =
+            (middlePrice.plusPercent(analyzer!!.diapason) - middlePrice.plusPercent(-analyzer!!.diapason)) / analyzer!!.gridSize
+
+        val gridPrices = mutableListOf<Double>()
+        minPrice -= step
+        repeat(analyzer!!.gridSize / 2) {
+            minPrice -= step
+            gridPrices += minPrice
+        }
+        maxPrice += step
+        repeat(analyzer!!.gridSize / 2) {
+            maxPrice += step
+            gridPrices += maxPrice
+        }
+        orderPriceGrid = mutableMapOf(*gridPrices.map { it to null }.toTypedArray())
+    }
+
+    private fun closePosition(position: Position) {
+        val calculateProfit = position.calculateProfit(price)
+
+        val direction = if (position.isLong) 1 else -1
+        val tpPrice = capital.plusPercent(analyzer!!.positionTakeProfit * direction)
+        val slPrice = capital.plusPercent(-analyzer!!.positionStopLoss * direction)
+        if (position.size > 0.0 && (calculateProfit + capital) !in slPrice..tpPrice
+        ) {
+            runBlocking {
+                bybitService.closePosition(
+                    position.symbol,
+                    position.isLong,
+                    position.size,
+                    position.positionIdx
+                )
+            }
+            println("Cancel position. SL/TP exited. $position")
+            updateCapital()
+            println("New capital: $capital")
         }
     }
 
     private fun checkOrders() {
-        val nearOrders = orderPriceGrid.entries.sortedBy { (it.key - price).absoluteValue }.take(2)
+        val nearOrders = orderPriceGrid.entries.filter { (it.key - price).absoluteValue > priceInstruction.second }
+            .sortedBy { (it.key - price).absoluteValue }.take(2)
 
-        nearOrders.forEach {
-            if (it.value == null) {
-                val moneyPerPosition = capital / analyzer!!.gridSize
+        nearOrders.filter { it.value == null }.forEach {
+            val moneyPerPosition = capital / analyzer!!.gridSize
 
-                val inPrice = BigDecimal(it.key).setScale(
-                    priceInstruction.second.toString().split(".")[1].length,
-                    RoundingMode.HALF_DOWN
-                ).toDouble()
+            val isLong = it.key < middlePrice
+            val floatNumberLength = if (priceInstruction.second != 1.0) df.format(priceInstruction.second).split(",")[1].length else 0
+            val inPrice = BigDecimal(it.key).setScale(
+                floatNumberLength,
+                RoundingMode.HALF_DOWN
+            ).toDouble()
 
-                val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
-                    priceInstruction.first.toString().split(".")[1].length, RoundingMode.DOWN
-                ).toDouble()
-                val timestamp = System.currentTimeMillis()
-                // create order
-                val isLong = it.key < middlePrice
-                val symbol = analyzer!!.symbolInfo.symbol
-                val orderId: String = UUID.randomUUID().toString()
-                val response = runBlocking {
-                    orderService.createOrder(
-                        symbol,
-                        it.key,
-                        qty,
-                        isLong,
-                        orderId,
-                        apiKey,
-                        timestamp
-                    ) { body -> getSign(body, timestamp.toString()) }
+            val s = df.format(priceInstruction.first).split(",")[1]
+            val length = if (s.endsWith("0")) 0 else s.length
+            val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
+                length, RoundingMode.HALF_DOWN
+            ).toDouble()
+
+            if (qty <= 0.0 || (positionManager!!.getPositionsValue() / analyzer!!.multiplayer) + 0.1 > capital) {
+                 return@forEach
+            }
+
+            if (positionManager!!.isOneWay()) {
+                positionManager!!.getPositions().firstOrNull { it.isLong != isLong && it.size > 0.0 }?.let { pos ->
+                    val prof = if (pos.isLong) it.key - pos.entryPrice else pos.entryPrice - it.key
+                    (prof - pos.entryPrice * 0.00055 - it.key * 0.00055) * qty > 0
                 }
+            } else {
+                null
+            }?.let { higherThanZero -> if (!higherThanZero) return@forEach }
 
-                response?.let { jsonResponse ->
-                    JSONObject(jsonResponse).apply {
-                        if (getInt("retCode") == 0) {
-                            orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Requested", orderId)
-                            println("Created HTTP order id: $orderId")
-                        }
-                    }
+            // create order
+            val symbol = analyzer!!.symbolInfo.symbol
+            val orderId: String = UUID.randomUUID().toString()
+            val response = runBlocking {
+                bybitService.createOrder(
+                    symbol,
+                    inPrice,
+                    qty,
+                    isLong,
+                    positionManager!!.getPositionIdx(isLong),
+                    orderId,
+                    if (price > inPrice) 2 else 1
+                )
+            }
+
+            response?.let { id ->
+                orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", id)
+                println("Added order to store id: $orderId")
+            } ?: run { println("FAILED TO CREATE ORDER") }
+        }
+
+        orderPriceGrid.entries.filter { it.value != null }.forEach {
+            val status = it.value!!.orderStatus
+            if (status.equals("Filled", true) || status.equals("Deactivated", true) || status.equals("Rejected", true)) {
+                val minPrice = middlePrice.plusPercent(-analyzer!!.diapason)
+                val maxPrice = middlePrice.plusPercent(analyzer!!.diapason)
+                val step = (maxPrice - minPrice) / analyzer!!.gridSize
+                if ((it.value!!.price - price).absoluteValue > step) {
+                    println("Removed Order from store: ${it.key}")
+                    orderPriceGrid[it.key] = null
                 }
             }
         }
@@ -193,6 +215,27 @@ class TradeManager(
             }
             if (tradeManagerData.customAnalyzerId != incomeData.customAnalyzerId) {
                 updateManagerCustomAnalyzerId(incomeData.customAnalyzerId)
+            }
+        }
+    }
+
+    fun updateMiddlePrice(middlePrice: Double) {
+        closeAllPositionsAndOrders()
+        this.middlePrice = middlePrice
+        println("Changed middle price")
+
+    }
+
+    private fun closeAllPositionsAndOrders() {
+        runBlocking { bybitService.cancelAllOrder(analyzer!!.symbolInfo.symbol) }
+        positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
+            runBlocking {
+                bybitService.closePosition(
+                    position.symbol,
+                    position.isLong,
+                    position.size,
+                    position.positionIdx
+                )
             }
         }
     }
@@ -225,22 +268,38 @@ class TradeManager(
             } else if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.BIGGEST_BY_MONEY) {
                 analyzer = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
             }
-            setPriceListener()
+            if (analyzer != null) {
+                runBlocking {
+                    bybitService.setMarginMultiplier(analyzer!!.symbolInfo.symbol, analyzer!!.multiplayer)
+                }
+                priceInstruction = runBlocking { bybitService.getPairInstructions(analyzer!!.symbolInfo.symbol) }
+                positionManager =
+                    PositionManager(runBlocking { bybitService.getPositionsInfo(analyzer!!.symbolInfo.symbol) })
+            }
+
+            priceListener?.stop()
+            priceListener = priceTickerListenerFactoryService.getPriceListener(analyzer!!.symbolInfo.symbol)
+            priceListener!!.setupMessageListener(MessageListener<String, String> {
+                updatePrice(it.value().toDouble())
+                println("Update price in manager '${tradeManagerData.id}'; price - $price")
+            })
+            priceListener!!.start()
         }
     }
 
-    private fun setPriceListener() {
-        priceListener?.stop()
-        priceListener = priceTickerListenerFactoryService.getPriceListener(analyzer!!.symbolInfo.symbol)
-        priceListener!!.setupMessageListener(MessageListener<String, String> {
-            updatePrice(it.value().toDouble())
-            println("Update price in manager '${tradeManagerData.id}'; price - $price")
-        })
-        priceListener!!.start()
-    }
+    private fun findNewAnalyzer() {
+        if (analyzerUpdateTimestamp < System.currentTimeMillis()) {
+            analyzerUpdateTimestamp = System.currentTimeMillis() + 30.minutes.inWholeMilliseconds
+            val biggestAnalyzers = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
+            val biggestValue = biggestAnalyzers.maxBy { it.money }
 
-    private fun getSign(body: String, timestamp: String): String {
-        return encryptor.doFinal("$timestamp${apiKey}5000$body".toByteArray()).bytesToHex()
+            if (biggestAnalyzers.filter { it.money == biggestValue.money }.none { it.id == analyzer?.id }) {
+                closeAllPositionsAndOrders()
+                setupAnalyzer()
+                middlePrice = analyzer!!.middlePrice!!
+                setUpPrices()
+            }
+        }
     }
 
     fun getId() = tradeManagerData.id

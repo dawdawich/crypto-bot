@@ -1,4 +1,4 @@
-version: "2"
+version: "3"
 
 services:
   zookeeper:
@@ -8,7 +8,11 @@ services:
     volumes:
       - "zookeeper_data:/bitnami"
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      ALLOW_ANONYMOUS_LOGIN: yes
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - "crypto-bot-network"
+
   kafka:
     image: docker.io/bitnami/kafka:3.4
     ports:
@@ -16,12 +20,89 @@ services:
     volumes:
       - "kafka_data:/bitnami"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
+    networks:
+      - "crypto-bot-network"
+
+  mongodb:
+    image: mongo:latest
+    hostname: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    command: "mongod --replSet rs0"
+    volumes:
+      - "mongodb_data:/data/db"
+      - "./init-files/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro"
+    networks:
+      - "crypto-bot-network"
+    healthcheck:
+      test: mongosh --eval 'try { rs.initiate(); } catch(e) {} rs.status().ok;' || exit 1
+      retries: 1
+
+  event-listener:
+    build:
+      context: .
+      dockerfile: dockerfiles/EventListenerDockerfile
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - "crypto-bot-network"
+
+  analyzer-service:
+    build:
+      context: .
+      dockerfile: dockerfiles/AnalyzerServiceDockerfile
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      event-listener:
+        condition: service_started
+    networks:
+      - "crypto-bot-network"
+
+  api-service:
+    build:
+      context: .
+      dockerfile: dockerfiles/ApiServiceDockerfile
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - "crypto-bot-network"
+
+  trade-manager-service:
+    build:
+      context: .
+      dockerfile: dockerfiles/ApiServiceDockerfile
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - "crypto-bot-network"
 
 volumes:
   zookeeper_data:
     driver: local
   kafka_data:
     driver: local
+  mongodb_data:
+    driver: local
+
+networks:
+  crypto-bot-network:

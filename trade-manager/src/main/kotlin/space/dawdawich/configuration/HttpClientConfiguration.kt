@@ -5,6 +5,7 @@ import com.jayway.jsonpath.Option
 import com.jayway.jsonpath.ParseContext
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import kotlinx.coroutines.withTimeout
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 

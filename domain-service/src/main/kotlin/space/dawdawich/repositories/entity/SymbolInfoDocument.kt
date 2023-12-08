@@ -7,5 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class SymbolInfoDocument(
     @Indexed(unique = true)
     val symbol: String,
-    val partition: Int
+    val partition: Int,
+    val isOneWayMode: Boolean,
+    val priceMinStep: Double
 )

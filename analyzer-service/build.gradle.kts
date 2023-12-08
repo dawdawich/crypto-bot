@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
     implementation("org.springframework.kafka:spring-kafka")
     implementation(project(":domain-service"))
     implementation(project(":commons"))

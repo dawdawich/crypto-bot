@@ -4,3 +4,5 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
+  kafka:
+    bootstrap-servers: kafka:9092

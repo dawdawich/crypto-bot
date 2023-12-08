@@ -14,5 +14,6 @@ data class GridTableAnalyzerDocument(
     val positionTakeProfit: Int,
     val symbolInfo: SymbolInfoDocument,
     var money: Double,
-    var isActive: Boolean
+    var isActive: Boolean,
+    var middlePrice: Double? = null
 )

@@ -8,5 +8,6 @@ data class PositionResponse(
     val side: String,
     val size: String,
     val entryPrice: String,
+    val positionIdx: String,
     val updatedTime: String
 )

@@ -11,9 +11,13 @@ import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 
 interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String> {
 
-    @Query("{'id' : ?0}")
+    @Query("{_id : ?0}")
     @Update("{'\$set': { 'money': ?1 }}")
     fun updateMoney(id: String, money: Double)
+
+    @Query("{_id : ?0}")
+    @Update("{'\$set': { 'middlePrice': ?1 }}")
+    fun updateMiddlePrice(id: String, money: Double)
 
     fun findAllByOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
 }
