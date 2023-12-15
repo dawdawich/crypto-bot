@@ -1,6 +1,6 @@
 import {Manager} from "../pages/manager/model/Manager";
 
-const API_URL = 'http://api-service:8080/trade-manager';
+const API_URL = 'http://dawdawich.space:8080/trade-manager';
 
 export const fetchManagersData = async () => {
     try {
