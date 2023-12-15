@@ -1,6 +1,6 @@
 import {SymbolModel} from "../model/SymbolModel";
 
-const API_URL = 'http://localhost:8080/symbol'
+const API_URL = 'http://api-service:8080/symbol'
 
 export const fetchSymbolsList = async (authToken: string) => {
     const response = await fetch(`${API_URL}`, {

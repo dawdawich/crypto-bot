@@ -1,6 +1,6 @@
 import {UserModel} from "../model/UserModel";
 
-const API_URL = 'http://localhost:8080/account';
+const API_URL = 'http://api-service:8080/account';
 
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
