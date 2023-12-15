@@ -106,4 +106,3 @@ volumes:
 
 networks:
   crypto-bot-network:
-    driver: host
