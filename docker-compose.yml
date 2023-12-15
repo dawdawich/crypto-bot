@@ -96,6 +96,17 @@ services:
     networks:
       - "crypto-bot-network"
 
+  ui:
+    build:
+      context: crypto-bot-ui
+      dockerfile: ../dockerfiles/UIDockerfile
+    depends_on:
+      - api-service
+    ports:
+      - "3000:3000"
+    networks:
+      - "crypto-bot-network"
+
 volumes:
   zookeeper_data:
     driver: local
