@@ -106,7 +106,6 @@ services:
       - "3000:80"
     networks:
       - "crypto-bot-network"
-    network_mode: host
 
 volumes:
   zookeeper_data:
