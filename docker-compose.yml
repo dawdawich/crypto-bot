@@ -103,7 +103,7 @@ services:
     depends_on:
       - api-service
     ports:
-      - "3000:3000"
+      - "3000:80"
     networks:
       - "crypto-bot-network"
 
