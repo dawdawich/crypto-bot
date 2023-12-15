@@ -1,36 +1,28 @@
 package space.dawdawich.services
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import org.apache.kafka.common.TopicPartition
+import kotlinx.serialization.json.Json
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCORE_ID
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
-import org.springframework.data.mongodb.core.query.where
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.GridTableAnalyzer
+import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
+import space.dawdawich.constants.ADD_ANALYZER_TOPIC
+import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.constants.TICKER_TOPIC
-import space.dawdawich.data.Trend
-import space.dawdawich.repositories.AnalyzerPositionRepository
-import space.dawdawich.repositories.GridTableAnalyzerReactiveRepository
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.AnalyzerPositionDocument
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
-import space.dawdawich.repositories.entity.SymbolInfoDocument
-import space.dawdawich.utils.plusPercent
-import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
-import kotlin.math.absoluteValue
-import kotlin.time.Duration.Companion.seconds
 
 @Service
 open class AnalyzerService(
@@ -48,6 +40,97 @@ open class AnalyzerService(
     private val middlePriceUpdateList: CopyOnWriteArrayList<Pair<String, Double>> = CopyOnWriteArrayList()
 
     init {
+        gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }
+            .toMutableList().forEach { addAnalyzer(it) }
+    }
+
+    @KafkaListener(topics = [ADD_ANALYZER_TOPIC])
+    fun addAnalyzer(analyzerPayload: String) {
+        val analyzer = Json.decodeFromString<GridTableAnalyzerDocument>(analyzerPayload).convert()
+        addAnalyzer(analyzer)
+    }
+
+    @KafkaListener(topics = [DEACTIVATE_ANALYZER_TOPIC])
+    fun deactivateAnalyzer(analyzerId: String) {
+        analyzers.find { it.id == analyzerId }?.let {
+            val partition = partitionMap[it.symbol]
+            priceListeners[partition]?.removeObserver(it::acceptPriceChange)
+        }
+
+        analyzers.removeIf { it.id == analyzerId }
+    }
+
+    @KafkaListener(topics = [ACTIVATE_ANALYZER_TOPIC])
+    fun activateAnalyzer(analyzerId: String) {
+        gridTableAnalyzerRepository.findByIdOrNull(analyzerId)?.let {
+            if (it.isActive) {
+                addAnalyzer(it.convert())
+            }
+        }
+    }
+
+    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
+    fun processMiddlePriceUpdateList() {
+        if (middlePriceUpdateList.isNotEmpty()) {
+            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+
+            middlePriceUpdateList.removeAll(middlePriceUpdateList.toList().map {
+                ops.updateOne(
+                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
+                    Update().set("middlePrice", it.second)
+                )
+                it
+            }.toSet())
+            ops.execute()
+        }
+        if (moneyUpdateList.isNotEmpty()) {
+            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+
+            moneyUpdateList.removeAll(moneyUpdateList.map {
+                ops.updateOne(
+                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
+                    Update().set("money", it.second)
+                )
+                it
+            }.toSet())
+            ops.execute()
+        }
+    }
+
+    private fun addAnalyzer(analyzer: GridTableAnalyzer) {
+        val partition = partitionMap.getOrPut(analyzer.symbol) {
+            symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
+                ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
+        }
+
+        priceListeners.getOrPut(partition) {
+            PriceTickerListener(
+                listenerContainerFactory.createContainer(
+                    TopicPartitionOffset(TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.END)
+                )
+            )
+        }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }
+
+        analyzers += analyzer
+    }
+
+    private fun GridTableAnalyzerDocument.convert(): GridTableAnalyzer = GridTableAnalyzer(
+        diapason,
+        gridSize,
+        money,
+        multiplayer,
+        positionStopLoss,
+        positionTakeProfit,
+        symbolInfo.symbol,
+        symbolInfo.isOneWayMode,
+        symbolInfo.priceMinStep,
+        id,
+        { _, _, newValue -> moneyUpdateList += id to newValue },
+        { middlePrice -> middlePriceUpdateList += id to middlePrice }
+    )
+}
+
+
 //        data class Info(val symbol: String, val partition: Int, val oneWay: Boolean, val minPrice: Double, val minQuantity: Double, val price: Double)
 //        val pairInstructions = listOf(
 //            Info("BTCUSDT", 0, false, 0.1, 0.001, 44040.2),
@@ -96,92 +179,3 @@ open class AnalyzerService(
 //            }
 //        }
 //        gridTableAnalyzerRepository.insert(toInsert)
-        gridTableAnalyzerRepository.findAll().filter { it.isActive }.map {
-            GridTableAnalyzer(
-                it.diapason,
-                it.gridSize,
-                it.money,
-                it.multiplayer,
-                it.positionStopLoss,
-                it.positionTakeProfit,
-                it.symbolInfo.symbol,
-                it.symbolInfo.isOneWayMode,
-                it.symbolInfo.priceMinStep,
-                it.id,
-                { _, _, newValue -> moneyUpdateList += it.id to newValue },
-                { middlePrice -> middlePriceUpdateList += it.id to middlePrice }
-            )
-        }.toMutableList().forEach { addAnalyzer(it, false) }
-    }
-
-    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
-    fun processMiddlePriceUpdateList() {
-        if (middlePriceUpdateList.isNotEmpty()) {
-            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
-
-            middlePriceUpdateList.removeAll(middlePriceUpdateList.toList().map {
-                ops.updateOne(
-                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
-                    Update().set("middlePrice", it.second)
-                )
-                it
-            }.toSet())
-            ops.execute()
-        }
-        if (moneyUpdateList.isNotEmpty()) {
-            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
-
-            moneyUpdateList.removeAll(moneyUpdateList.map {
-                ops.updateOne(
-                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
-                    Update().set("money", it.second)
-                )
-                it
-            }.toSet())
-            ops.execute()
-        }
-    }
-
-    fun insertListener(partition: Int) {
-        priceListeners[partition]?.stopContainer()
-        priceListeners.remove(partition)
-        priceListeners[partition] = PriceTickerListener(
-            listenerContainerFactory.createContainer(TopicPartitionOffset(TICKER_TOPIC, partition))
-        )
-    }
-
-    fun getListener(partition: Int): PriceTickerListener? {
-        return priceListeners[partition]
-    }
-
-    fun addAnalyzer(analyzer: GridTableAnalyzer, isNewAnalyzer: Boolean = true) {
-        partitionMap[analyzer.symbol]?.let { partition ->
-            priceListeners.getOrPut(partition) {
-                PriceTickerListener(
-                    listenerContainerFactory.createContainer(TopicPartitionOffset(TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.END))
-                )
-            }.addObserver { previousPrice, currentPrice ->
-                analyzer.acceptPriceChange(previousPrice, currentPrice)
-            }
-            analyzers += analyzer
-
-            if (isNewAnalyzer) {
-                analyzer.apply {
-                    gridTableAnalyzerRepository.insert(
-                        GridTableAnalyzerDocument(
-                            id,
-                            diapason,
-                            gridSize,
-                            multiplier,
-                            stopLoss,
-                            takeProfit,
-                            SymbolInfoDocument(symbol, partition, isOneWayMode, priceMinStep),
-                            money,
-                            true
-                        )
-                    )
-                }
-            }
-        } ?: run { throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'") }
-    }
-}

@@ -1,5 +1,7 @@
 package space.dawdawich.constants
 
 const val TICKER_TOPIC = "ticker"
-
-const val TICKER_GROUP_ID = "ticker_group"
+const val SYMBOL_REINITIALIZE_TOPIC = "symbol_reinitialize"
+const val ADD_ANALYZER_TOPIC = "add_analyzer"
+const val DEACTIVATE_ANALYZER_TOPIC = "deactivate_analyzer"
+const val ACTIVATE_ANALYZER_TOPIC = "activate_analyzer"

@@ -47,9 +47,9 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.java-websocket:Java-WebSocket:1.5.4")
     implementation(group = "com.jayway.jsonpath", name = "json-path", version = "2.8.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
     implementation("io.ktor:ktor-server-netty:2.3.5")
@@ -68,8 +68,8 @@ dependencies {
 
     // spring
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.springframework.boot:spring-boot-starter-security")
     // **--**--**--**--**--**--**--**--**--**--**--**--**--**--**--**--
 }
 

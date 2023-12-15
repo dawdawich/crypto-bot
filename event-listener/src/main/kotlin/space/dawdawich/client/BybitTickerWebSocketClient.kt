@@ -1,28 +1,21 @@
 package space.dawdawich.client
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.*
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.springframework.stereotype.Component
-import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.service.KafkaManager
 import space.dawdawich.util.jsonPath
 import java.lang.Exception
 import java.net.URI
 
 @Component
-class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, symbolRepository: SymbolRepository) :
+class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager) :
     WebSocketClient(URI("wss://stream.bybit.com/v5/public/linear")) {
-    private val mapSymbolsToPartition: Map<String, Int>
+    val mapSymbolsToPartition: MutableMap<String, Int> = mutableMapOf()
 
-    init {
-        mapSymbolsToPartition = mapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
-    }
-
-    @PostConstruct
-    fun startWebSocketHandler() {
-        connect()
+    fun addSubscription(symbol: String) {
+        send("{\"op\":\"subscribe\",\"args\":[\"tickers.$symbol\"]}")
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
@@ -44,9 +37,12 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, symbolR
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        runBlocking { launch { reconnect() } }
+        if (remote) {
+            runBlocking { launch { reconnect() } }
+        }
     }
 
     override fun onError(ex: Exception?) {
+        println(ex)
     }
 }

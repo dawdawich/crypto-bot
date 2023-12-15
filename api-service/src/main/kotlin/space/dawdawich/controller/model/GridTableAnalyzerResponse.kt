@@ -1,8 +1,8 @@
-package space.dawdawich.model
+package space.dawdawich.controller.model
 
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 
-data class GridTableAnalyzer(
+data class GridTableAnalyzerResponse(
     val id: String,
     val diapason: Int,
     val gridSize: Int,
@@ -10,6 +10,7 @@ data class GridTableAnalyzer(
     val positionStopLoss: Int,
     val positionTakeProfit: Int,
     val symbol: String,
+    var startCapital: Double,
     var money: Double,
     var isActive: Boolean
 ) {
@@ -21,6 +22,7 @@ data class GridTableAnalyzer(
         documentAnalyzer.positionStopLoss,
         documentAnalyzer.positionTakeProfit,
         documentAnalyzer.symbolInfo.symbol,
+        documentAnalyzer.startCapital,
         documentAnalyzer.money,
         documentAnalyzer.isActive,
     )

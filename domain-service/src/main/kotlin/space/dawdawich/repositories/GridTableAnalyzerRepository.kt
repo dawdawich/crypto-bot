@@ -11,13 +11,15 @@ import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 
 interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String> {
 
-    @Query("{_id : ?0}")
-    @Update("{'\$set': { 'money': ?1 }}")
-    fun updateMoney(id: String, money: Double)
+    @Query("{_id:  ?0}")
+    @Update("{\$set:  {isActive:  ?1, middlePrice:  null, updateTime:  ?2}}")
+    fun setAnalyzerActiveStatus(id: String, status: Boolean, updateTime: Long = System.currentTimeMillis())
 
-    @Query("{_id : ?0}")
-    @Update("{'\$set': { 'middlePrice': ?1 }}")
-    fun updateMiddlePrice(id: String, money: Double)
+    fun countByIdAndAccountId(id: String, accountId: String): Int
 
     fun findAllByOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
+
+    fun findAllByAccountId(accountId: String): List<GridTableAnalyzerDocument>
+
+    fun findAllByPublic(public: Boolean = true): List<GridTableAnalyzerDocument>
 }

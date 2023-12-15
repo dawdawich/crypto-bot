@@ -6,5 +6,7 @@ export type Analyzer = {
     positionStopLoss: number;
     positionTakeProfit: number;
     symbol: string;
+    startCapital: number;
     money: number;
+    active: boolean;
 }

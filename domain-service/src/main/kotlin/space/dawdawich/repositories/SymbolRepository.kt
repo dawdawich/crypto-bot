@@ -4,6 +4,6 @@ import org.bson.types.ObjectId
 import org.springframework.data.mongodb.repository.MongoRepository
 import space.dawdawich.repositories.entity.SymbolInfoDocument
 
-interface SymbolRepository : MongoRepository<SymbolInfoDocument, ObjectId> {
+interface SymbolRepository : MongoRepository<SymbolInfoDocument, String> {
     fun getBySymbolIs(symbol: String): SymbolInfoDocument
 }

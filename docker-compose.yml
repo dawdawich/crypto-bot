@@ -21,6 +21,7 @@ services:
       - "kafka_data:/bitnami"
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_DELETE_TOPIC_ENABLE: true
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
@@ -37,7 +38,6 @@ services:
     command: "mongod --replSet rs0"
     volumes:
       - "mongodb_data:/data/db"
-      - "./init-files/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro"
     networks:
       - "crypto-bot-network"
     healthcheck:
@@ -106,3 +106,4 @@ volumes:
 
 networks:
   crypto-bot-network:
+    driver: host
