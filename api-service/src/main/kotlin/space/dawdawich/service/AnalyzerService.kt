@@ -24,7 +24,7 @@ class AnalyzerService(
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
         gridTableAnalyzerRepository.findAllByPublic().sortedByDescending {
-            val difference = it.startCapital - it.money
+            val difference = it.money - it.startCapital
             val percentDifference = (difference / it.startCapital) * 100
             // The data is sorted by percent difference in descending order
             percentDifference
