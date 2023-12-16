@@ -28,7 +28,7 @@ class AnalyzerService(
             val percentDifference = (difference / it.startCapital) * 100
             // The data is sorted by percent difference in descending order
             percentDifference
-        }.map { GridTableAnalyzerResponse(it) }
+        }.map { GridTableAnalyzerResponse(it) }.take(20)
 
     fun getAnalyzers(accountId: String): List<GridTableAnalyzerResponse> =
         gridTableAnalyzerRepository.findAllByAccountId(accountId).map { GridTableAnalyzerResponse(it) }.toList()
