@@ -106,6 +106,8 @@ services:
       - "3000:80"
     networks:
       - "crypto-bot-network"
+    volumes:
+      - "./init-files/nginx.conf:/etc/nginx/conf.d/default.conf"
 
 volumes:
   zookeeper_data:

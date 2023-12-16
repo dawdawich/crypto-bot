@@ -26,9 +26,19 @@ class ActionListener(
 
     @KafkaListener(topics = [SYMBOL_REINITIALIZE_TOPIC])
     fun computeSymbolAction() {
-        val symbolsCount = symbolRepository.count()
+        val symbolsCount = symbolRepository.count().toInt()
         if (client.mapSymbolsToPartition.size < symbolsCount) {
-            admin.createPartitions(mapOf(TICKER_TOPIC to NewPartitions.increaseTo(symbolRepository.count().toInt())))
+            if (!admin.listTopics().names().get().contains(TICKER_TOPIC)) {
+                createTickerTopics(symbolsCount)
+            } else {
+                admin.createPartitions(
+                    mapOf(
+                        TICKER_TOPIC to NewPartitions.increaseTo(
+                            symbolsCount
+                        )
+                    )
+                )
+            }
             symbolRepository.findAll().forEach { symbolInfo ->
                 if (!client.mapSymbolsToPartition.containsKey(symbolInfo.symbol)) {
                     client.mapSymbolsToPartition += symbolInfo.symbol to symbolInfo.partition
@@ -39,14 +49,19 @@ class ActionListener(
     }
 
     private fun initializeTickerTopics() {
-        if (!admin.listTopics().names().get().contains(TICKER_TOPIC)) {
-            admin.createTopics(
-                listOf(
-                    TopicBuilder.name(TICKER_TOPIC).partitions(symbolRepository.count().toInt())
-                        .build()
-                )
-            ).all().get()
+        val symbolCount = symbolRepository.count().toInt()
+        if (symbolCount > 0 && !admin.listTopics().names().get().contains(TICKER_TOPIC)) {
+            createTickerTopics(symbolCount)
         }
         client.mapSymbolsToPartition.putAll(symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
+    }
+
+    private fun createTickerTopics(symbolCount: Int) {
+        admin.createTopics(
+            listOf(
+                TopicBuilder.name(TICKER_TOPIC).partitions(symbolCount)
+                    .build()
+            )
+        ).all().get()
     }
 }
