@@ -74,7 +74,7 @@ open class SecurityConfiguration(
             .cors { customizer ->
                 customizer.configurationSource {
                     CorsConfiguration().apply {
-                        allowedOrigins = listOf("*")
+                        allowedOrigins = listOf("http://dawdawich.space")
                         allowedHeaders = listOf("*")
                         allowedMethods = mutableListOf("*")
                         allowCredentials = true
