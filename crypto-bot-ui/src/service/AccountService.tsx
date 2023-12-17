@@ -7,10 +7,11 @@ export const fetchAuthToken = async (email: string, password: string) => {
     const encodedCredentials = btoa(`${email}:${password}`);
     try {
         const options = {
-          method: 'GET',
-          headers: {
-            'Authorization': `Basic ${encodedCredentials}`
-          }
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${encodedCredentials}`,
+                'Access-Control-Allow-Origin': '*'
+            }
         };
         const response = await fetch(`${API_URL}/token`, options)
         if (response.ok) {
@@ -28,7 +29,8 @@ export const fetchAccountInfo = async (authToken: string) => {
         const options = {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${authToken}`
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
             }
         };
         const response = await fetch(`${API_URL}`, options)
@@ -49,7 +51,8 @@ export const createAccount = async (username: string, name: string, surname: str
         const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify(body)
         });

@@ -4,7 +4,11 @@ const API_URL = 'http://dawdawich.space:8080/analyzer';
 
 export const fetchTopAnalyzersData = async () => {
     try {
-        const response = await fetch(`${API_URL}/top20`);
+        const response = await fetch(`${API_URL}/top20`, {
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -17,7 +21,11 @@ export const fetchTopAnalyzersData = async () => {
 
 export const fetchAnalyzerData = async (analyzerId: string) => {
     try {
-        const response = await fetch(`${API_URL}/${analyzerId}`);
+        const response = await fetch(`${API_URL}/${analyzerId}`, {
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -32,7 +40,8 @@ export const fetchAnalyzersList = async (authToken: string) => {
     try {
         const response = await fetch(`${API_URL}`, {
             headers: {
-                Authorization: `Bearer ${authToken}`
+                Authorization: `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
             }
         });
         if (response.ok) {
@@ -50,7 +59,8 @@ export const createAnalyzer = async (analyzer: AnalyzerModel, authToken: string)
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`
+            Authorization: `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify(analyzer)
     });
@@ -66,7 +76,8 @@ export const changeAnalyzerStatus = async (id: string, status: boolean, authToke
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`
+            Authorization: `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
         }
     });
     if (response.ok) {
@@ -79,7 +90,8 @@ export const deleteAnalyzer = async (id: string, authToken: string) => {
     const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
         headers: {
-            Authorization: `Bearer ${authToken}`
+            Authorization: `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
         }
     });
     if (response.ok) {
