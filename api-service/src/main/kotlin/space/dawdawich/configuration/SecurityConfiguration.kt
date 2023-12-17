@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFilter
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
 import space.dawdawich.configuration.provider.JwtAuthenticationProvider
 import space.dawdawich.configuration.provider.model.JWT
 import space.dawdawich.configuration.provider.model.JwtAuthenticationToken
@@ -70,7 +71,16 @@ open class SecurityConfiguration(
         authenticationFilter.successHandler = AuthenticationSuccessHandler { _, _, _ -> } // After success auth, AuthenticationSuccessHandler tries to redirect user to main page, with this approach we disabled redirect
         return http
             .x509 { customizer -> customizer.disable() }
-            .cors { customizer -> customizer.disable() }
+            .cors { customizer ->
+                customizer.configurationSource {
+                    CorsConfiguration().apply {
+                        allowedOrigins = listOf("*")
+                        allowedHeaders = listOf("*")
+                        allowedMethods = mutableListOf("*")
+                        allowCredentials = true
+                    }
+                }
+            }
             .csrf { customizer -> customizer.disable() }
             .authorizeHttpRequests {
                 it.apply {
