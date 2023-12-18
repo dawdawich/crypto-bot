@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
                 <label htmlFor="password">Password:</label>
                 <input type="password" id="password" value={password}
                        onChange={event => setPassword(event.target.value)}/>
-                <button type='button' disabled={!allFieldsValidated()} onClick={login}>Login</button>
+                <button type='submit' disabled={!allFieldsValidated()} onClick={login}>Login</button>
             </form>
         </div>
     );

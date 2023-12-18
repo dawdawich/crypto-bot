@@ -16,8 +16,8 @@ class AccountController(private val accountService: AccountService) {
 
     @PostMapping
     fun createAccount(@RequestBody accRequest: CreateAccountRequest): ResponseEntity<Unit> { // TODO: Add checks that account did not registered
-        if (accountService.isAccountEmailExist(accRequest.email)) {
-            accountService.fillAccountInfo(accRequest.email, accRequest.username, accRequest.name, accRequest.surname, accRequest.password)
+        if (accountService.isAccountEmailExist(accRequest.email.lowercase())) {
+            accountService.fillAccountInfo(accRequest.email.lowercase(), accRequest.username, accRequest.name, accRequest.surname, accRequest.password)
             return ResponseEntity.ok().build()
         }
         return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
@@ -28,7 +28,7 @@ class AccountController(private val accountService: AccountService) {
         val accountDetails = authentication.principal as AccountDetails
         val account = accountService.getAccountById(accountDetails.accountId)
         return ResponseEntity.ok(
-            AccountResponse(account.id, account.username, account.name, account.surname, account.email, authentication.authorities.toList()[0].authority)
+            AccountResponse(account.id, account.username, account.name, account.surname, account.email.lowercase(), authentication.authorities.toList()[0].authority)
         )
     }
 

@@ -42,7 +42,7 @@ const RegistrationPage: React.FC = () => {
                 <label htmlFor="confirmPassword">Confirm Password:</label>
                 <input type="password" id="confirmPassword" value={confirmPassword}
                        onChange={event => setConfirmPassword(event.target.value)}/>
-                <button type='button' disabled={!allFieldsValidated()} onClick={tryToCreateAccount}>Let's go</button>
+                <button type='submit' disabled={!allFieldsValidated()} onClick={tryToCreateAccount}>Let's go</button>
             </form>
             <ToastContainer/>
         </div>
