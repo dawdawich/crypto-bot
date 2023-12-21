@@ -8,12 +8,18 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import space.dawdawich.configuration.provider.model.JWT
 import space.dawdawich.repositories.AccountRepository
+import space.dawdawich.repositories.ApiAccessTokenRepository
 import space.dawdawich.utils.baseDecode
 import space.dawdawich.utils.baseEncode
 import javax.crypto.Mac
 
 @Service
-class AccountService(private val accountRepository: AccountRepository, private val passwordEncoder: PasswordEncoder, private val encryptor: Mac) {
+class AccountService(
+    private val accountRepository: AccountRepository,
+    private val apiAccessTokenRepository: ApiAccessTokenRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val encryptor: Mac
+) {
 
     companion object {
         val jwtHeader = "{ \"alg\": \"HS256\", \"typ\": \"JWT\"}".baseEncode()
@@ -25,6 +31,8 @@ class AccountService(private val accountRepository: AccountRepository, private v
         accountRepository.fillAccountInfo(email, username, name, surname, passwordEncoder.encode(password))
 
     fun getAccountById(id: String) = accountRepository.findByIdOrNull(id)!!
+
+    fun getTokens(accountId: String)  = apiAccessTokenRepository.findAllByAccountId(accountId)
 
     fun requestAccessToken(basicAuth: String): JWT {
         with(basicAuth.replace("Basic ", "").trim().baseDecode().split(":")) {
