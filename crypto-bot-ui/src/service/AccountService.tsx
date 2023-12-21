@@ -1,4 +1,4 @@
-import {UserModel} from "../model/UserModel";
+import {Account} from "../model/Account";
 
 const API_URL = 'http://dawdawich.space:8080/account';
 
@@ -35,8 +35,7 @@ export const fetchAccountInfo = async (authToken: string) => {
         };
         const response = await fetch(`${API_URL}`, options)
         if (response.ok) {
-            let userInfo: UserModel = JSON.parse(await response.json())
-            return userInfo;
+            return JSON.parse(await response.json()) as Account;
         }
     } catch (error) {
         console.error(error);
