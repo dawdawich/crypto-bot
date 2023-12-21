@@ -35,7 +35,7 @@ export const fetchAccountInfo = async (authToken: string) => {
         };
         const response = await fetch(`${API_URL}`, options)
         if (response.ok) {
-            return JSON.parse(await response.json()) as Account;
+            return await response.json();
         }
     } catch (error) {
         console.error(error);
