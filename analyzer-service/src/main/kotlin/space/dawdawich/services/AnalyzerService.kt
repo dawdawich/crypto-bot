@@ -14,10 +14,7 @@ import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.GridTableAnalyzer
-import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
-import space.dawdawich.constants.ADD_ANALYZER_TOPIC
-import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
-import space.dawdawich.constants.TICKER_TOPIC
+import space.dawdawich.constants.*
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -46,18 +43,16 @@ open class AnalyzerService(
 
     @KafkaListener(topics = [ADD_ANALYZER_TOPIC])
     fun addAnalyzer(analyzerPayload: String) {
-        val analyzer = Json.decodeFromString<GridTableAnalyzerDocument>(analyzerPayload).convert()
-        addAnalyzer(analyzer)
+        val analyzer = Json.decodeFromString<GridTableAnalyzerDocument>(analyzerPayload)
+        gridTableAnalyzerRepository.insert(analyzer)
+        if (analyzer.isActive) {
+            addAnalyzer(analyzer.convert())
+        }
     }
 
     @KafkaListener(topics = [DEACTIVATE_ANALYZER_TOPIC])
     fun deactivateAnalyzer(analyzerId: String) {
-        analyzers.find { it.id == analyzerId }?.let {
-            val partition = partitionMap[it.symbol]
-            priceListeners[partition]?.removeObserver(it::acceptPriceChange)
-        }
-
-        analyzers.removeIf { it.id == analyzerId }
+        removeAnalyzer(analyzerId)
     }
 
     @KafkaListener(topics = [ACTIVATE_ANALYZER_TOPIC])
@@ -69,32 +64,34 @@ open class AnalyzerService(
         }
     }
 
-    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
-    fun processMiddlePriceUpdateList() {
-        if (middlePriceUpdateList.isNotEmpty()) {
-            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+    @KafkaListener(topics = [DELETE_ANALYZER_TOPIC])
+    fun deleteAnalyzer(analyzerId: String) {
+        gridTableAnalyzerRepository.deleteById(analyzerId)
+        removeAnalyzer(analyzerId)
+    }
 
-            middlePriceUpdateList.removeAll(middlePriceUpdateList.toList().map {
-                ops.updateOne(
-                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
-                    Update().set("middlePrice", it.second)
-                )
-                it
-            }.toSet())
-            ops.execute()
+    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
+    private fun processMiddlePriceUpdateList() {
+        if (middlePriceUpdateList.isNotEmpty()) {
+            updateList(middlePriceUpdateList.toMutableList(), "middlePrice")
         }
         if (moneyUpdateList.isNotEmpty()) {
-            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
-
-            moneyUpdateList.removeAll(moneyUpdateList.map {
-                ops.updateOne(
-                    Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
-                    Update().set("money", it.second)
-                )
-                it
-            }.toSet())
-            ops.execute()
+            updateList(moneyUpdateList.toMutableList(), "money")
         }
+    }
+
+    @SuppressWarnings("kotlin:S6518")
+    private fun updateList(updateList: MutableList<Pair<String, *>>, fieldName: String) {
+        val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+
+        updateList.removeAll(updateList.toList().map {
+            ops.updateOne(
+                Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
+                Update().set(fieldName, it.second)
+            )
+            it
+        }.toSet())
+        ops.execute()
     }
 
     private fun addAnalyzer(analyzer: GridTableAnalyzer) {
@@ -112,6 +109,15 @@ open class AnalyzerService(
         }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }
 
         analyzers += analyzer
+    }
+
+    private fun removeAnalyzer(analyzerId: String) {
+        analyzers.find { it.id == analyzerId }?.let {
+            val partition = partitionMap[it.symbol]
+            priceListeners[partition]?.removeObserver(it::acceptPriceChange)
+        }
+
+        analyzers.removeIf { it.id == analyzerId }
     }
 
     private fun GridTableAnalyzerDocument.convert(): GridTableAnalyzer = GridTableAnalyzer(

@@ -35,7 +35,10 @@ class AnalyzerService(
 
     fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) {
         if (gridTableAnalyzerRepository.countByIdAndAccountId(id, accountId) > 0) {
-            gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status)
+            gridTableAnalyzerRepository.setAnalyzerActiveStatus(
+                id,
+                status
+            ) // TODO: move to analyzer service, change status in db after operation completion
             kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
         } else {
             throw Exception("Account '$accountId' does not an owner of analyzer '$id'") // TODO extract to exact exception
@@ -43,12 +46,12 @@ class AnalyzerService(
     }
 
     fun deleteAnalyzer(id: String) {
-        gridTableAnalyzerRepository.deleteById(id)
         kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id)
     }
 
     // TODO: Add check for null and throw not found exception
-    fun getAnalyzer(id: String): GridTableAnalyzerResponse = GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdOrNull(id)!!)
+    fun getAnalyzer(id: String): GridTableAnalyzerResponse =
+        GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdOrNull(id)!!)
 
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) {
         analyzerData.apply {
@@ -65,10 +68,7 @@ class AnalyzerService(
                 startCapital,
                 active
             )
-            gridTableAnalyzerRepository.insert(gridTableAnalyzerDocument)
-            if (active) {
-                kafkaTemplate.send(ADD_ANALYZER_TOPIC, Json.encodeToString(gridTableAnalyzerDocument))
-            }
+            kafkaTemplate.send(ADD_ANALYZER_TOPIC, Json.encodeToString(gridTableAnalyzerDocument))
         }
     }
 }
