@@ -18,7 +18,7 @@ const AccountPage: React.FC = () => {
         fetchAccountInfo(authToken as string)
             .then(res => setData(res))
             .catch(ex => setError(ex))
-    })
+    }, [])
 
     if (!!error) {
         return (
