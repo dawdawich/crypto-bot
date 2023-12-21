@@ -6,5 +6,6 @@ export type Account = {
     name: string;
     surname: string;
     email: string;
+    createTime: number;
     tokens: ApiToken[];
 }

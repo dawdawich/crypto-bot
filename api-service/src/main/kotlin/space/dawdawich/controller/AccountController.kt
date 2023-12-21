@@ -43,6 +43,7 @@ class AccountController(private val accountService: AccountService) {
                 account.name,
                 account.surname,
                 account.email.lowercase(),
+                account.createTime,
                 tokens
             )
         )

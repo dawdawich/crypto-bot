@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Account} from "../../model/Account";
 import {fetchAccountInfo} from "../../service/AccountService";
 import {useLocation} from "wouter";
+import "../../css/AccountInfo.css";
 
 const AccountPage: React.FC = () => {
     const [data, setData] = useState<Account | null>()
@@ -37,16 +38,16 @@ const AccountPage: React.FC = () => {
         );
     }
     return (
-        <div>
-            <label htmlFor="username">Username:</label>
-            <input disabled type="text" id="username" value={data.username}/>
-            <label htmlFor="name">Name:</label>
-            <input disabled type="text" id="name" value={data.name}/>
-            <label htmlFor="surname">Surname:</label>
-            <input disabled type="text" id="surname" value={data.surname}/>
-            <label htmlFor="email">Email:</label>
-            <input disabled type="email" id="email" value={data.email}/>
+    <div id="account-info">
+        <h2>Your Account Info</h2>
+        <div id="user-info">
+            <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
+            <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
+            <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
+            <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
+            <p><strong>Account Creation Date:</strong> <span id="creation-date">{new Date(data.createTime).toLocaleDateString()}</span></p>
         </div>
+    </div>
     );
 }
 
