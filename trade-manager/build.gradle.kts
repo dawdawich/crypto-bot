@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation(project(":domain-service"))
     implementation(project(":commons"))
+    implementation(project(":integration-service"))
 //    implementation("org.springframework.boot:spring-boot-starter-web")
 
     implementation("org.java-websocket:Java-WebSocket")

@@ -1,5 +1,6 @@
 package space.dawdawich.service
 
+import dawdawich.space.client.bybit.ByBitPrivateHttpClient
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
@@ -25,7 +26,7 @@ class TradeManager(
     private val tradeManagerData: TradeManagerDocument,
     private val priceTickerListenerFactoryService: PriceTickerListenerFactoryService,
     private val analyzerRepository: GridTableAnalyzerRepository,
-    private val bybitService: ByBitHttpService
+    private val bybitService: ByBitPrivateHttpClient
 ) {
     private var priceListener: ConcurrentMessageListenerContainer<String, String>? = null
     lateinit var webSocketClient: ByBitWebSocketClient
@@ -145,7 +146,8 @@ class TradeManager(
             val moneyPerPosition = capital / analyzer!!.gridSize
 
             val isLong = it.key < middlePrice
-            val floatNumberLength = if (priceInstruction.second != 1.0) df.format(priceInstruction.second).split(",")[1].length else 0
+            val floatNumberLength =
+                if (priceInstruction.second != 1.0) df.format(priceInstruction.second).split(",")[1].length else 0
             val inPrice = BigDecimal(it.key).setScale(
                 floatNumberLength,
                 RoundingMode.HALF_DOWN
@@ -158,7 +160,7 @@ class TradeManager(
             ).toDouble()
 
             if (qty <= 0.0 || (positionManager!!.getPositionsValue() / analyzer!!.multiplayer) + 0.1 > capital) {
-                 return@forEach
+                return@forEach
             }
 
             if (positionManager!!.isOneWay()) {
@@ -173,7 +175,7 @@ class TradeManager(
             // create order
             val symbol = analyzer!!.symbolInfo.symbol
             val orderId: String = UUID.randomUUID().toString()
-            val response = runBlocking {
+            val result = runBlocking {
                 bybitService.createOrder(
                     symbol,
                     inPrice,
@@ -185,15 +187,21 @@ class TradeManager(
                 )
             }
 
-            response?.let { id ->
-                orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", id)
+            if (result) {
+                orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", orderId)
                 println("Added order to store id: $orderId")
-            } ?: run { println("FAILED TO CREATE ORDER") }
+            } else {
+                println("FAILED TO CREATE ORDER")
+            }
         }
 
         orderPriceGrid.entries.filter { it.value != null }.forEach {
             val status = it.value!!.orderStatus
-            if (status.equals("Filled", true) || status.equals("Deactivated", true) || status.equals("Rejected", true)) {
+            if (status.equals("Filled", true) || status.equals("Deactivated", true) || status.equals(
+                    "Rejected",
+                    true
+                )
+            ) {
                 val minPrice = middlePrice.plusPercent(-analyzer!!.diapason)
                 val maxPrice = middlePrice.plusPercent(analyzer!!.diapason)
                 val step = (maxPrice - minPrice) / analyzer!!.gridSize
@@ -274,7 +282,18 @@ class TradeManager(
                 }
                 priceInstruction = runBlocking { bybitService.getPairInstructions(analyzer!!.symbolInfo.symbol) }
                 positionManager =
-                    PositionManager(runBlocking { bybitService.getPositionsInfo(analyzer!!.symbolInfo.symbol) })
+                    PositionManager(runBlocking {
+                        bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
+                            Position(
+                                it.symbol,
+                                it.isLong,
+                                it.size,
+                                it.entryPrice,
+                                it.positionIdx,
+                                it.updateTime
+                            )
+                        }
+                    })
             }
 
             priceListener?.stop()

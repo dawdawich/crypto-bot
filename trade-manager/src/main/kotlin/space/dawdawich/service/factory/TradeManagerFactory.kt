@@ -1,13 +1,12 @@
 package space.dawdawich.service.factory
 
 import com.jayway.jsonpath.ParseContext
-import io.ktor.client.*
+import dawdawich.space.factory.PrivateHttpClientFactory
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
-import space.dawdawich.repositories.ByBitApiTokensRepository
+import space.dawdawich.repositories.ApiAccessTokenRepository
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.service.ByBitHttpService
 import space.dawdawich.service.PriceTickerListenerFactoryService
 import space.dawdawich.service.TradeManager
 import javax.crypto.Mac
@@ -17,12 +16,13 @@ import javax.crypto.spec.SecretKeySpec
 class TradeManagerFactory(
     private val priceListener: PriceTickerListenerFactoryService,
     private val analyzerRepository: GridTableAnalyzerRepository,
-    private val byBitApiTokensRepository: ByBitApiTokensRepository,
-    private val httpClient: HttpClient, private val jsonPath: ParseContext
+    private val apiAccessTokenRepository: ApiAccessTokenRepository,
+    private val jsonPath: ParseContext,
+    private val serviceFactory: PrivateHttpClientFactory
 ) {
 
     fun createTradeManager(tradeManagerData: TradeManagerDocument): TradeManager {
-        val apiTokens = byBitApiTokensRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
+        val apiTokens = apiAccessTokenRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
 
@@ -31,12 +31,13 @@ class TradeManagerFactory(
                 SecretKeySpec(apiTokens.secretKey.toByteArray(), "HmacSHA256")
             )
         }
-        val byBitHttpService = ByBitHttpService(httpClient, jsonPath, apiTokens.apiKey, encryptor)
 
-        val tradeManager = TradeManager(tradeManagerData, priceListener, analyzerRepository, byBitHttpService)
+        val tradeManager = TradeManager(tradeManagerData, priceListener, analyzerRepository, serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor))
         tradeManager.webSocketClient = ByBitWebSocketClient(
+            apiTokens.test,
             apiTokens.apiKey,
             encryptor,
+            jsonPath,
             tradeManager
         ).apply { connect() }
         return tradeManager

@@ -3,6 +3,7 @@ package space.dawdawich.client
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import com.jayway.jsonpath.ParseContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.java_websocket.client.WebSocketClient
@@ -20,13 +21,15 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration.Companion.hours
 
 class ByBitWebSocketClient(
+    isTest: Boolean,
     private val apiKey: String,
     private val encryptor: Mac,
+    private val jsonPath: ParseContext,
     private val tradeManager: TradeManager
-) : WebSocketClient(URI("wss://stream.bybit.com/v5/private")) {
+) : WebSocketClient(URI(if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL)) {
     companion object {
-        private val jsonPath =
-            JsonPath.using(Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS))
+        const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
+        const val BYBIT_TEST_SERVER_URL = "wss://stream-testnet.bybit.com/v5/private"
     }
 
     private var signatureWithExpiration: Pair<String, Long>
