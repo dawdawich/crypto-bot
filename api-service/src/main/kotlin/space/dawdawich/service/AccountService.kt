@@ -69,6 +69,8 @@ class AccountService(
         return id
     }
 
+    fun deleteApiToken(tokenId: String, accountId: String) = apiAccessTokenRepository.deleteByIdAndAccountId(tokenId, accountId)
+
     private fun createJwt(payload: String): JWT {
         val encodedPayload = payload.baseEncode()
         val signature = encryptor.doFinal("$jwtHeader.$encodedPayload".toByteArray()).baseEncode()

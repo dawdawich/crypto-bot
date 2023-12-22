@@ -2,6 +2,7 @@ package space.dawdawich.controller
 
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
@@ -53,6 +54,14 @@ class AccountController(private val accountService: AccountService) {
     @PostMapping("/api-token")
     fun addApiToken(@RequestBody request: CreateApiTokenRequest, user: Authentication): ResponseEntity<String> =
         ResponseEntity.ok(accountService.addApiToken(user.name, request.apiKey, request.secretKey, request.market, request.test))
+
+    @DeleteMapping("/api-token/{id}")
+    fun deleteApiToken(@PathVariable("id") id: String, user: Authentication): ResponseEntity<Unit> {
+        if (accountService.deleteApiToken(id, user.name) > 0) {
+            return ResponseEntity(HttpStatus.OK)
+        }
+        return ResponseEntity(NOT_FOUND)
+    }
 
     @GetMapping("/token")
     fun getJwtToken(
