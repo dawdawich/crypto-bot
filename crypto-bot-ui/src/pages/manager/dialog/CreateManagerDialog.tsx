@@ -87,7 +87,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                         id="api-token-select"
                         value={data.apiTokenId}
                         onChange={(event) => handleChange(event as React.ChangeEvent<HTMLInputElement>)}
-                        name="api-token"
+                        name="apiTokenId"
                     >
                         {tokens.map((option) => (
                             <MenuItem key={option.id} value={option.id}>{option.id.toString() + ' | ' + option.apiKey.toString() + ' | ' + option.market.toString() + ' | ' + (option.test ? 'Test Account' : '')}</MenuItem>
@@ -104,7 +104,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                     onChange={handleChange}
                 />
                 <FormControlLabel
-                    control={<Switch checked={data.active} onChange={handleChange} name="test" />}
+                    control={<Switch checked={data.active} onChange={handleChange} name="active" />}
                     label="Active"
                 />
             </DialogContent>
