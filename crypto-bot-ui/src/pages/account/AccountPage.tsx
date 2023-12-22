@@ -48,21 +48,47 @@ const AccountPage: React.FC = () => {
         );
     }
     let date = new Date(data.createTime);
+    let apiTokensTable = data.tokens.length > 0 ?
+        <table className="material-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>API Key</th>
+                <th>Market</th>
+                <th>Test Account</th>
+            </tr>
+            </thead>
+            <tbody>
+            {data.tokens.map((token: ApiToken) => (
+                <tr key={token.id}>
+                    <td>{token.id}</td>
+                    <td>{token.apiKey}</td>
+                    <td>{token.market}</td>
+                    <td>{token.test.toString()}</td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+        : null;
 
 
     return (
-        <div id="account-info">
-            <h2>Your Account Info</h2>
-            <div id="user-info">
-                <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
-                <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
-                <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
-                <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
-                <p><strong>Account Creation Date:</strong> <span
-                    id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
+        <div>
+            <div id="account-info">
+                <h2>Your Account Info</h2>
+                <div id="user-info">
+                    <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
+                    <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
+                    <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
+                    <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
+                    <p><strong>Account Creation Date:</strong> <span
+                        id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
+                </div>
+                <button className="material-button" onClick={() => setIsApiTokenDialogOpen(true)}>+ API token</button>
+                <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
+                                   onCreate={handleNewApiToken}/>
             </div>
-            <button className="material-button" onClick={() => setIsApiTokenDialogOpen(true)}>+ API token</button>
-            <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)} onCreate={handleNewApiToken} />
+            {apiTokensTable}
         </div>
     );
 }

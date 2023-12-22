@@ -87,7 +87,7 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, on
                 </FormControl>
                 <FormControlLabel
                     control={<Switch checked={apiTokenData.test === true} onChange={handleChange} name="test" />}
-                    label="Merket's Test Account"
+                    label="Market's Test Account"
                 />
                 <TextField
                     margin="dense"
