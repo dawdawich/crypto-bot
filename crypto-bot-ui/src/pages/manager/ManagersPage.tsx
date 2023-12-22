@@ -36,13 +36,6 @@ const ManagersPage: React.FC = () => {
     }
 
     if (error) return <div>Error: {error.message}</div>;
-    if (data.length === 0) return (
-        <div>
-            <h1>Managers Page</h1>
-            Loading...
-        </div>
-    );
-
 
     const dataTable = <TableContainer component={Paper}>
         <Table aria-label="simple table">
