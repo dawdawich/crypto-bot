@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Account} from "../../model/Account";
-import {fetchAccountInfo} from "../../service/AccountService";
+import {deleteApiToken, fetchAccountInfo} from "../../service/AccountService";
 import {useLocation} from "wouter";
 import "../../css/AccountInfo.css";
 import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
@@ -8,7 +8,7 @@ import {ApiToken} from "../../model/ApiToken";
 
 const AccountPage: React.FC = () => {
     const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
-    const [data, setData] = useState<Account | null>()
+    const [data, setData] = useState<Account | null>(null)
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
@@ -29,6 +29,16 @@ const AccountPage: React.FC = () => {
             data.tokens.push(apiToken);
             setData(data);
         }
+    }
+
+    const handleDeleteApiToken = (id: string) => {
+        deleteApiToken(id, authToken as string)
+            .then(() => {
+                if (data) {
+                    data.tokens = data.tokens.filter((token: ApiToken) => token.id !== id)
+                    setData(data);
+                }
+            })
     }
 
     if (!!error) {
@@ -56,6 +66,7 @@ const AccountPage: React.FC = () => {
                 <th>API Key</th>
                 <th>Market</th>
                 <th>Test Account</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
@@ -65,6 +76,9 @@ const AccountPage: React.FC = () => {
                     <td>{token.apiKey}</td>
                     <td>{token.market}</td>
                     <td>{token.test.toString()}</td>
+                    <td>
+                        <button className="material-button" style={{backgroundColor: '#9d2929'}} onClick={() => handleDeleteApiToken(token.id)}>Delete</button>
+                    </td>
                 </tr>
             ))}
             </tbody>

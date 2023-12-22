@@ -80,3 +80,17 @@ export const addApiToken = async (body: any, authToken: string) => {
     }
     throw new Error(`Failed to create api token, response code: ${response.status}`);
 }
+
+export const deleteApiToken = async (id: string, authToken: string) => {
+    const response = await fetch(`${API_URL}/api-token/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+    });
+    if (response.ok) {
+        return;
+    }
+    throw new Error(`Failed to create api token, response code: ${response.status}`);
+}
