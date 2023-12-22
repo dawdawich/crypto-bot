@@ -4,6 +4,7 @@ import {Manager} from "../../model/Manager";
 import {fetchManagersData} from "../../service/ManagerService";
 import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import CreateManagerDialog from "./dialog/CreateManagerDialog";
+import "../../css/ManagerPage.css"
 
 const ManagersPage: React.FC = () => {
     const [isCreateManagerDialogOpen, setIsCreateManagerDialogOpen] = useState(false);

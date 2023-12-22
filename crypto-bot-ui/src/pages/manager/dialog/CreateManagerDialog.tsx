@@ -45,7 +45,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         getApiTokens(authToken as string)
             .then((res) => setTokens(res))
             .catch((ex) => {
-                console.error('Failed to fetch user\' tokens.')
+                console.error('Failed to fetch user\'s tokens.')
                 console.error(ex)
             })
     }, []);

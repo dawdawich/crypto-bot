@@ -66,6 +66,7 @@ export const createAccount = async (username: string, name: string, surname: str
 }
 
 export const getApiTokens = async (authToken: string) => {
+    console.log(authToken) // TODO: remove
     const response = await fetch(`${API_URL}/api-token`, {
         method: 'GET',
         headers: {

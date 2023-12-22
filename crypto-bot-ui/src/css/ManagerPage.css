@@ -1,0 +1,21 @@
+.material-button {
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #3f51b5;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+    cursor: pointer;
+    transition: all .3s;
+}
+.material-button:hover {
+    background-color: #303f9f;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .3);
+}
+.material-button:active {
+    background-color: #283593;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+}
