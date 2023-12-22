@@ -88,6 +88,7 @@ open class SecurityConfiguration(
 //                    requestMatchers(HttpMethod.OPTIONS, "/account").permitAll()
                     requestMatchers(HttpMethod.GET, "/account/token").permitAll()
                     requestMatchers(HttpMethod.GET, "/account").authenticated()
+                    requestMatchers(HttpMethod.GET, "/account/api-token").authenticated()
                     requestMatchers("/analyzer").authenticated()
                     requestMatchers("/trade-manager").authenticated()
                     requestMatchers("/symbol/all").permitAll()
