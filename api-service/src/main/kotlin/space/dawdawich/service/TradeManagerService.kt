@@ -8,8 +8,8 @@ import java.util.*
 @Service
 class TradeManagerService(private val tradeManagerRepository: TradeManagerRepository) {
 
-    fun createNewTraderManager(apiTokenId: String, accountId: String): String {
-        return tradeManagerRepository.insert(TradeManagerDocument(UUID.randomUUID().toString(), accountId, apiTokenId)).id
+    fun createNewTraderManager(apiTokenId: String, active: Boolean, customAnalyzerId: String, accountId: String): String {
+        return tradeManagerRepository.insert(TradeManagerDocument(UUID.randomUUID().toString(), accountId, apiTokenId, customAnalyzerId = customAnalyzerId, isActive = active)).id
     }
 
     fun findAll(): MutableList<TradeManagerDocument> {
