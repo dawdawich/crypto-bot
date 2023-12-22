@@ -1,7 +1,9 @@
 package space.dawdawich.controller.model
 
+import kotlinx.serialization.Serializable
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
+@Serializable
 data class TradeManagerResponse(
     val id: String,
     val chooseStrategy: String,
