@@ -90,7 +90,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                         name="api-token"
                     >
                         {tokens.map((option) => (
-                            <MenuItem key={option.id} value={option.id}>{option.id + ' ' + option.apiKey + ' ' + option.market + ' ' + option.test ? 'Test Account' : ''}</MenuItem>
+                            <MenuItem key={option.id} value={option.id}>{option.id.toString() + ' | ' + option.apiKey.toString() + ' | ' + option.market.toString() + ' | ' + option.test ? 'Test Account' : ''}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
