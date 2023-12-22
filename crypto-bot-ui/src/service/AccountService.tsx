@@ -64,3 +64,19 @@ export const createAccount = async (username: string, name: string, surname: str
     }
     throw new Error('Failed to create account');
 }
+
+export const addApiToken = async (body: any, authToken: string) => {
+    const response = await fetch(`${API_URL}/api-token`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(body)
+    });
+    if (response.ok) {
+        return await response.text();
+    }
+    throw new Error(`Failed to create api token, response code: ${response.status}`);
+}

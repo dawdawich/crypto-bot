@@ -9,8 +9,11 @@ import org.springframework.stereotype.Service
 import space.dawdawich.configuration.provider.model.JWT
 import space.dawdawich.repositories.AccountRepository
 import space.dawdawich.repositories.ApiAccessTokenRepository
+import space.dawdawich.repositories.entity.ApiAccessTokenDocument
+import space.dawdawich.repositories.entity.constants.Market
 import space.dawdawich.utils.baseDecode
 import space.dawdawich.utils.baseEncode
+import java.util.UUID
 import javax.crypto.Mac
 
 @Service
@@ -51,6 +54,19 @@ class AccountService(
             }
             throw BadCredentialsException("Authorization payload is not correct or has invalid format")
         }
+    }
+
+    fun addApiToken(accountId: String, apiKey: String, secretKey: String, market: String, test: Boolean): String {
+        val id = UUID.randomUUID().toString()
+        apiAccessTokenRepository.insert(ApiAccessTokenDocument(
+            id,
+            accountId,
+            apiKey,
+            secretKey,
+            Market.valueOf(market),
+            test
+        ))
+        return id
     }
 
     private fun createJwt(payload: String): JWT {

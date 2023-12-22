@@ -9,6 +9,7 @@ import space.dawdawich.configuration.provider.model.AccountDetails
 import space.dawdawich.controller.model.AccountResponse
 import space.dawdawich.controller.model.ApiTokenResponse
 import space.dawdawich.controller.model.CreateAccountRequest
+import space.dawdawich.controller.model.CreateApiTokenRequest
 import space.dawdawich.service.AccountService
 
 @RestController
@@ -48,6 +49,10 @@ class AccountController(private val accountService: AccountService) {
             )
         )
     }
+
+    @PostMapping("/api-token")
+    fun addApiToken(@RequestBody request: CreateApiTokenRequest, user: Authentication): ResponseEntity<String> =
+        ResponseEntity.ok(accountService.addApiToken(user.name, request.apiKey, request.secretKey, request.market, request.test))
 
     @GetMapping("/token")
     fun getJwtToken(

@@ -3,8 +3,11 @@ import {Account} from "../../model/Account";
 import {fetchAccountInfo} from "../../service/AccountService";
 import {useLocation} from "wouter";
 import "../../css/AccountInfo.css";
+import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
+import {ApiToken} from "../../model/ApiToken";
 
 const AccountPage: React.FC = () => {
+    const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
     const [data, setData] = useState<Account | null>()
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
@@ -20,6 +23,13 @@ const AccountPage: React.FC = () => {
             .then(res => setData(res))
             .catch(ex => setError(ex))
     }, [])
+
+    const handleNewApiToken = (apiToken: ApiToken) => {
+        if (data) {
+            data.tokens.push(apiToken);
+            setData(data);
+        }
+    }
 
     if (!!error) {
         return (
@@ -37,17 +47,23 @@ const AccountPage: React.FC = () => {
             </div>
         );
     }
+    let date = new Date(data.createTime);
+
+
     return (
-    <div id="account-info">
-        <h2>Your Account Info</h2>
-        <div id="user-info">
-            <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
-            <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
-            <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
-            <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
-            <p><strong>Account Creation Date:</strong> <span id="creation-date">{new Date(data.createTime).toLocaleDateString()}</span></p>
+        <div id="account-info">
+            <h2>Your Account Info</h2>
+            <div id="user-info">
+                <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
+                <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
+                <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
+                <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
+                <p><strong>Account Creation Date:</strong> <span
+                    id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
+            </div>
+            <button className="material-button" onClick={() => setIsApiTokenDialogOpen(true)}>+ API token</button>
+            <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)} onCreate={handleNewApiToken} />
         </div>
-    </div>
     );
 }
 
