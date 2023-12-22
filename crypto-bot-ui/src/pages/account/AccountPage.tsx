@@ -35,8 +35,8 @@ const AccountPage: React.FC = () => {
         deleteApiToken(id, authToken as string)
             .then(() => {
                 if (data) {
-                    data.tokens = data.tokens.filter((token: ApiToken) => token.id !== id)
-                    setData(data);
+                    setData({...data, tokens: data.tokens.filter((token: ApiToken) => token.id !== id)});
+                    console.log(JSON.stringify(data))
                 }
             })
     }
