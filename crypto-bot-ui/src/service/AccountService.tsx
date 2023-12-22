@@ -65,6 +65,20 @@ export const createAccount = async (username: string, name: string, surname: str
     throw new Error('Failed to create account');
 }
 
+export const getApiTokens = async (authToken: string) => {
+    const response = await fetch(`${API_URL}/api-token`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        }
+    });
+    if (response.ok) {
+        return await response.json();
+    }
+    throw new Error(`Failed to fetch tokens, response code: ${response.status}`);
+}
+
 export const addApiToken = async (body: any, authToken: string) => {
     const response = await fetch(`${API_URL}/api-token`, {
         method: 'POST',
@@ -92,5 +106,5 @@ export const deleteApiToken = async (id: string, authToken: string) => {
     if (response.ok) {
         return;
     }
-    throw new Error(`Failed to create api token, response code: ${response.status}`);
+    throw new Error(`Failed to delete api token, response code: ${response.status}`);
 }

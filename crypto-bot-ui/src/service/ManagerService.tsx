@@ -1,10 +1,16 @@
-import {Manager} from "../pages/manager/model/Manager";
+import {Manager} from "../model/Manager";
 
 const API_URL = 'http://dawdawich.space:8080/trade-manager';
 
-export const fetchManagersData = async () => {
+export const fetchManagersData = async (authToken: string) => {
     try {
-        const response = await fetch(`${API_URL}`);
+        const response = await fetch(`${API_URL}`, {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -12,12 +18,18 @@ export const fetchManagersData = async () => {
         console.error(error);
         throw error;
     }
-    throw new Error('Failed to fetch data');
+    throw new Error('Failed to fetch managers data');
 }
 
-export const fetchManagerData = async (managerId: string) => {
+export const fetchManagerData = async (authToken: string, managerId: string) => {
     try {
-        const response = await fetch(`${API_URL}/${managerId}`);
+        const response = await fetch(`${API_URL}/${managerId}`, {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -25,15 +37,33 @@ export const fetchManagerData = async (managerId: string) => {
         console.error(error);
         throw error;
     }
-    throw new Error('Failed to fetch data');
+    throw new Error('Failed to fetch manager data');
 }
 
-export const updateManagerData = async (manager: Manager) => {
+export const createManager = async(manager: any, authToken: string)=> {
+    const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(manager)
+    });
+    if (response.ok) {
+        return await response.text();
+    }
+    throw new Error('Failed to create manager data');
+}
+
+export const updateManagerData = async (manager: Manager, authToken: string) => {
     try {
         const response = await fetch(`${API_URL}`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify(manager)
         });
@@ -44,5 +74,5 @@ export const updateManagerData = async (manager: Manager) => {
         console.error(error);
         throw error;
     }
-    throw new Error('Failed to fetch data');
+    throw new Error('Failed to update manager data');
 }

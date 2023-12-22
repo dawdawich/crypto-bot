@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {RouteComponentProps} from "wouter";
-import {Manager} from "./model/Manager";
+import {Manager} from "../../model/Manager";
 import {fetchManagerData, updateManagerData} from "../../service/ManagerService";
 import "../../css/TextClasses.css";
 import {

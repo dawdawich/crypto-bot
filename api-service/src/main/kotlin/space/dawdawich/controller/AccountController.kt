@@ -51,9 +51,21 @@ class AccountController(private val accountService: AccountService) {
         )
     }
 
+    @GetMapping("/api-token")
+    fun getApiTokens(user: Authentication): ResponseEntity<List<ApiTokenResponse>> = ResponseEntity.ok(
+        accountService.getApiTokens(user.name).map { ApiTokenResponse(it.id, it.apiKey, it.market.name, it.test) })
+
     @PostMapping("/api-token")
     fun addApiToken(@RequestBody request: CreateApiTokenRequest, user: Authentication): ResponseEntity<String> =
-        ResponseEntity.ok(accountService.addApiToken(user.name, request.apiKey, request.secretKey, request.market, request.test))
+        ResponseEntity.ok(
+            accountService.addApiToken(
+                user.name,
+                request.apiKey,
+                request.secretKey,
+                request.market,
+                request.test
+            )
+        )
 
     @DeleteMapping("/api-token/{id}")
     fun deleteApiToken(@PathVariable("id") id: String, user: Authentication): ResponseEntity<Unit> {

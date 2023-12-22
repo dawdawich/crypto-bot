@@ -85,10 +85,11 @@ open class SecurityConfiguration(
             .authorizeHttpRequests {
                 it.apply {
                     requestMatchers(HttpMethod.POST, "/account").permitAll()
-                    requestMatchers(HttpMethod.OPTIONS, "/account").permitAll()
+//                    requestMatchers(HttpMethod.OPTIONS, "/account").permitAll()
                     requestMatchers(HttpMethod.GET, "/account/token").permitAll()
                     requestMatchers(HttpMethod.GET, "/account").authenticated()
                     requestMatchers("/analyzer").authenticated()
+                    requestMatchers("/trade-manager").authenticated()
                     requestMatchers("/symbol/all").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
                     anyRequest().permitAll()

@@ -56,6 +56,8 @@ class AccountService(
         }
     }
 
+    fun getApiTokens(accountId: String) = apiAccessTokenRepository.findAllByAccountId(accountId)
+
     fun addApiToken(accountId: String, apiKey: String, secretKey: String, market: String, test: Boolean): String {
         val id = UUID.randomUUID().toString()
         apiAccessTokenRepository.insert(ApiAccessTokenDocument(

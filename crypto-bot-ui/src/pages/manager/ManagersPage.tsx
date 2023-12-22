@@ -1,31 +1,52 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useCallback} from "react";
 import {useLocation} from "wouter";
-import {Manager} from "./model/Manager";
+import {Manager} from "../../model/Manager";
 import {fetchManagersData} from "../../service/ManagerService";
 import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
+import CreateManagerDialog from "./dialog/CreateManagerDialog";
 
 const ManagersPage: React.FC = () => {
+    const [isCreateManagerDialogOpen, setIsCreateManagerDialogOpen] = useState(false);
     const [, setLocation] = useLocation();
     const [data, setData] = useState<Manager[]>([]);
     const [error, setError] = useState<Error | null>(null);
+    const [, navigate] = useLocation();
+    const authToken = localStorage.getItem('auth.token');
+
+    const fetchData = useCallback(() => {
+        if (authToken) {
+            fetchManagersData(authToken as string)
+                .then(data => setData(data))
+                .catch(error => setError(error));
+        }
+    }, [authToken]);
+
+    if (!authToken) {
+        navigate('/');
+        window.location.reload();
+    }
 
     useEffect(() => {
-        fetchManagersData()
-            .then(data => setData(data))
-            .catch(error => setError(error))
-    }, []);
+        fetchData();
+    }, [fetchData]);
 
-    if (error) return <div>Error: {error.message}</div>
+    const createManagerAndUpdate = () => {
+        setIsCreateManagerDialogOpen(false);
+        fetchData();
+    }
+
+    if (error) return <div>Error: {error.message}</div>;
     if (data.length === 0) return (
         <div>
-            <h1>Analyzers Page</h1>
+            <h1>Managers Page</h1>
             Loading...
         </div>
     );
 
     return (
         <div>
-            <h1>Analyzers Page</h1>
+            <h1>Managers Page</h1>
+            <button className="material-button" onClick={() => setIsCreateManagerDialogOpen(true)}>Add Analyzer</button>
             <TableContainer component={Paper}>
                 <Table aria-label="simple table">
                     <TableHead>
@@ -52,6 +73,7 @@ const ManagersPage: React.FC = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+            <CreateManagerDialog open={isCreateManagerDialogOpen} onClose={() => setIsCreateManagerDialogOpen(false)} onCreate={createManagerAndUpdate} />
         </div>
     );
 }

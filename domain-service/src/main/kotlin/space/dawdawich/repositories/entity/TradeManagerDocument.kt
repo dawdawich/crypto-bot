@@ -7,12 +7,13 @@ import java.util.*
 @Document("trade_manager")
 data class TradeManagerDocument(
     @Id
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
+    val accountId: String,
+    var apiTokensId: String,
     var money: Double = 0.0,
     var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
     var customAnalyzerId: String = "",
     var isActive: Boolean = false,
-    var apiTokensId: String = "",
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = System.currentTimeMillis()
 )

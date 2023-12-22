@@ -3,7 +3,7 @@ export type Manager = {
     chooseStrategy: string;
     customAnalyzerId: string;
     active: boolean;
-    apiTokensId: string;
+    apiTokenId: string;
     createTime: number;
     updateTime: number;
 }
