@@ -41,16 +41,6 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         window.location.reload();
     }
 
-    let fetchTokens = async () => {
-        try {
-            const res = await getApiTokens(authToken as string)
-            setTokens(res);
-        } catch(ex) {
-            console.error('Failed to fetch user\'s tokens.')
-            console.error(ex);
-        }
-    }
-
     useEffect(() => {
         if (open) {
             setData({
@@ -58,9 +48,14 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                 active: false,
                 apiTokenId: null
             });
-            fetchTokens();
+            getApiTokens(authToken as string)
+                .then(res => setTokens(res))
+                .catch(ex => {
+                    console.error('Failed to fetch user\'s tokens.');
+                    console.error(ex);
+                })
         }
-    }, [open]);
+    }, [open, authToken]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
