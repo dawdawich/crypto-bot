@@ -24,6 +24,9 @@ open class JwtAuthenticationProvider(private val encryptor: Mac) : Authenticatio
 
     override fun supports(authentication: Class<*>?): Boolean = authentication?.let { JwtAuthenticationToken::class.java.isAssignableFrom(it) } ?: false
 
-    private fun checkJwtSignature(jwt: JWT) =
-        jwt.signature.baseDecode() == String(encryptor.doFinal("${jwt.headers}.${jwt.payload}".toByteArray()))
+    private fun checkJwtSignature(jwt: JWT): Boolean {
+        val result = jwt.signature.baseDecode() == String(encryptor.doFinal("${jwt.headers}.${jwt.payload}".toByteArray()))
+        encryptor.reset()
+        return result
+    }
 }
