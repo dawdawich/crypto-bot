@@ -13,6 +13,11 @@ const ManagersPage: React.FC = () => {
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
 
+    if (!authToken) {
+        navigate('/');
+        window.location.reload();
+    }
+
     const fetchData = useCallback(() => {
         if (authToken) {
             fetchManagersData(authToken as string)
@@ -20,11 +25,6 @@ const ManagersPage: React.FC = () => {
                 .catch(error => setError(error));
         }
     }, [authToken]);
-
-    if (!authToken) {
-        navigate('/');
-        window.location.reload();
-    }
 
     useEffect(() => {
         fetchData();

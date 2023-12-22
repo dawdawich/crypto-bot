@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {RouteComponentProps} from "wouter";
+import {RouteComponentProps, useLocation} from "wouter";
 import {Manager} from "../../model/Manager";
 import {fetchManagerData, updateManagerData} from "../../service/ManagerService";
 import "../../css/TextClasses.css";
@@ -21,21 +21,28 @@ interface ManagerEditorPageProps extends RouteComponentProps<{ readonly managerI
 }
 
 const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEditorPageProps) => {
-    const [manager, setManager] = useState<Manager | null>(null)
+    const [manager, setManager] = useState<Manager | null>(null);
     const [managerFetchError, setManagerFetchError] = useState<Error | null>(null);
+    const [, navigate] = useLocation();
+    const authToken = localStorage.getItem('auth.token');
+
+    if (!authToken) {
+        navigate('/');
+        window.location.reload();
+    }
 
     useEffect(() => {
-        fetchManagerData(props.params.managerId)
+        fetchManagerData(authToken as string, props.params.managerId)
             .then(data => setManager(data))
             .catch(error => setManagerFetchError(error));
     }, [props.params.managerId]);
 
     let handleStrategyChange = function (event: SelectChangeEvent) {
         manager!.chooseStrategy = event.target.value as string;
-        updateManagerData(manager!)
+        updateManagerData(manager!, authToken as string)
             .then(result => {
                 if (result) {
-                    fetchManagerData(props.params.managerId)
+                    fetchManagerData(authToken as string, props.params.managerId)
                         .then(data => setManager(data));
                 }
             })
@@ -44,10 +51,10 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
 
     let changeManagerStatus = () => {
         manager!.active = !manager!.active;
-        updateManagerData(manager!)
+        updateManagerData(manager!, authToken as string)
             .then(result => {
                 if (result) {
-                    fetchManagerData(props.params.managerId)
+                    fetchManagerData(authToken as string, props.params.managerId)
                         .then(data => setManager(data));
                 }
             })
