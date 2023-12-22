@@ -91,7 +91,7 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, on
                 />
                 <TextField
                     margin="dense"
-                    name="gridSize"
+                    name="apiKey"
                     label="API Key"
                     type="text"
                     fullWidth
@@ -100,7 +100,7 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, on
                 />
                 <TextField
                     margin="dense"
-                    name="gridSize"
+                    name="secretKey"
                     label="Secret Key"
                     type="password"
                     fullWidth
