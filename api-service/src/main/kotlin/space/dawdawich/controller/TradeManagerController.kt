@@ -28,6 +28,11 @@ class TradeManagerController(private val tradeMangerService: TradeManagerService
             ?.let { return@let ResponseEntity(it.convert(), HttpStatus.OK) }
             ?: run { return@run ResponseEntity(HttpStatus.NOT_FOUND) }
 
+    @DeleteMapping("/{managerId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteManager(user: Authentication, @PathVariable managerId: String): Unit =
+        tradeMangerService.deleteTradeManager(managerId, user.name)
+
     @PutMapping("/{managerId}/status")
     @ResponseStatus(HttpStatus.OK)
     fun changeManagerStatus(user: Authentication, @PathVariable managerId: String, @RequestBody request: ActivationRequest) = tradeMangerService.updateTradeManagerStatus(managerId, user.name, request.status)

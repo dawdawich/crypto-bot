@@ -68,7 +68,7 @@ const ManagersPage: React.FC = () => {
     return (
         <div>
             <h1>Managers Page</h1>
-            <button className="material-button" onClick={() => setIsCreateManagerDialogOpen(true)}>Add Analyzer</button>
+            <button className="material-button" onClick={() => setIsCreateManagerDialogOpen(true)}>Add Manager</button>
             <CreateManagerDialog open={isCreateManagerDialogOpen} onClose={() => setIsCreateManagerDialogOpen(false)} onCreate={createManagerAndUpdate} />
             {data.length === 0 ? null : dataTable}
         </div>

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {RouteComponentProps, useLocation} from "wouter";
 import {Manager} from "../../model/Manager";
-import {fetchManagerData, updateManagerStatus} from "../../service/ManagerService";
+import {deleteManager, fetchManagerData, updateManagerStatus} from "../../service/ManagerService";
 import "../../css/ManagerEditPage.css";
 import {
     Button,
@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import PowerOffIcon from "@mui/icons-material/PowerOff"
 import PowerOnIcon from "@mui/icons-material/Power"
+import {Delete} from "@mui/icons-material";
 
 interface ManagerEditorPageProps extends RouteComponentProps<{ readonly managerId: string }> {
 }
@@ -35,19 +36,30 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
         fetchManagerData(authToken as string, props.params.managerId)
             .then(data => setManager(data))
             .catch(error => setManagerFetchError(error));
-    }, [props.params.managerId]);
+    }, [props.params.managerId, authToken]);
 
     let handleStrategyChange = function (event: SelectChangeEvent) {
         manager!.chooseStrategy = event.target.value as string;
     }
 
-    let changeManagerStatus = () => {
+    const changeManagerStatus = () => {
         manager!.active = !manager!.active;
         updateManagerStatus(manager!.id, manager!.active, authToken as string)
             .then(result => {
                 if (result) {
                     fetchManagerData(authToken as string, props.params.managerId)
                         .then(data => setManager(data));
+                }
+            })
+            .catch(error => setManagerFetchError(error));
+    }
+
+    const handleDeleteManager = () => {
+        deleteManager(manager!.id, authToken as string)
+            .then(result => {
+                if (result) {
+                    navigate('/');
+                    window.location.reload();
                 }
             })
             .catch(error => setManagerFetchError(error));
@@ -87,6 +99,7 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
             <CardActions>
                 <Button size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
                     {manager?.active ? "Turn Off" : "Turn On"}</Button>
+                <Button size="medium" color={'error'} onClick={handleDeleteManager}><Delete /> Delete</Button>
             </CardActions>
         </Card>
     )

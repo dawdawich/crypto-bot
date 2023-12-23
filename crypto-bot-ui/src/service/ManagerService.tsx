@@ -77,6 +77,25 @@ export const updateManagerStatus = async (managerId: string, status: boolean, au
     throw new Error('Failed to update manager data');
 }
 
+export const deleteManager = async (managerId: string, authToken: string) => {
+    try {
+        const response = await fetch(`${API_URL}/${managerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
+        if (response.status === 204) {
+            return true;
+        }
+    }  catch (error) {
+        console.error(error);
+        throw error;
+    }
+    throw new Error('Failed to delete manager data');
+}
+
 export const updateManagerData = async (manager: Manager, authToken: string) => {
     try {
         const response = await fetch(`${API_URL}`, {

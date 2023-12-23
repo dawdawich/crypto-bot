@@ -26,4 +26,6 @@ class TradeManagerService(private val tradeManagerRepository: TradeManagerReposi
     fun updateTradeManger(manager: TradeManagerDocument) {
         tradeManagerRepository.save(manager.apply { updateTime = System.currentTimeMillis() })
     }
+
+    fun deleteTradeManager(managerId: String, accountId: String) = tradeManagerRepository.deleteByIdAndAccountId(managerId, accountId)
 }
