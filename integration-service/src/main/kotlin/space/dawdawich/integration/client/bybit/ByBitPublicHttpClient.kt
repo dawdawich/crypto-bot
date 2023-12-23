@@ -1,8 +1,8 @@
-package dawdawich.space.client.bybit
+package space.dawdawich.integration.client.bybit
 
 import com.jayway.jsonpath.ParseContext
-import dawdawich.space.client.DefaultHttpClient
-import dawdawich.space.model.PairInfo
+import space.dawdawich.integration.client.DefaultHttpClient
+import space.dawdawich.integration.model.PairInfo
 import io.ktor.client.*
 import io.ktor.client.statement.*
 import space.dawdawich.exception.UnknownRetCodeException

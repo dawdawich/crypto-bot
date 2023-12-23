@@ -1,7 +1,7 @@
 package space.dawdawich.service.factory
 
 import com.jayway.jsonpath.ParseContext
-import dawdawich.space.factory.PrivateHttpClientFactory
+import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.repositories.ApiAccessTokenRepository

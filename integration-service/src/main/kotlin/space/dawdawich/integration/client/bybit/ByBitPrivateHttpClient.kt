@@ -1,7 +1,7 @@
-package dawdawich.space.client.bybit
+package space.dawdawich.integration.client.bybit
 
 import com.jayway.jsonpath.ParseContext
-import dawdawich.space.model.PositionInfo
+import space.dawdawich.integration.model.PositionInfo
 import io.ktor.client.*
 import io.ktor.client.statement.*
 import kotlinx.serialization.json.buildJsonObject

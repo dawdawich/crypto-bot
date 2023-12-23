@@ -1,9 +1,10 @@
 plugins {
     kotlin("plugin.serialization") version "1.9.20"
     id("io.spring.dependency-management")
-    id("org.springframework.boot")}
+    id("org.springframework.boot")
+}
 
-group = "dawdawich.space"
+group = "space.dawdawich"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
@@ -19,9 +20,6 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-kotlin {
-    jvmToolchain(17)
+tasks.bootJar {
+    enabled = false
 }

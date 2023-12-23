@@ -1,4 +1,4 @@
-package dawdawich.space.client
+package space.dawdawich.integration.client
 
 import io.ktor.client.*
 import io.ktor.client.request.*

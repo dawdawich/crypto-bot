@@ -1,6 +1,6 @@
 package space.dawdawich.service
 
-import dawdawich.space.factory.PrivateHttpClientFactory
+import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import kotlinx.coroutines.runBlocking
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -11,7 +11,12 @@ import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.SymbolInfoDocument
 
 @Service
-class SymbolService(private val symbolRepository: SymbolRepository, private val apiAccessTokenRepository: ApiAccessTokenRepository, private val kafkaTemplate: KafkaTemplate<String, String>, private val clientFactory: PrivateHttpClientFactory) {
+class SymbolService(
+    private val symbolRepository: SymbolRepository,
+    private val apiAccessTokenRepository: ApiAccessTokenRepository,
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val clientFactory: PrivateHttpClientFactory
+) {
 
     fun getAllSymbols() = symbolRepository.findAll().map { it.toModel() }
 
@@ -27,10 +32,23 @@ class SymbolService(private val symbolRepository: SymbolRepository, private val 
             httpClient.getPositionInfo(symbol).size == 1
         }
 
-        symbolRepository.insert(SymbolInfoDocument(symbol, symbolRepository.count().toInt(), isOneWayMode, symbolInfo.tickSize, symbolInfo.minPrice, symbolInfo.maxPrice, symbolInfo.minOrderQty, symbolInfo.maxOrderQty, symbolInfo.qtyStep))
+        symbolRepository.insert(
+            SymbolInfoDocument(
+                symbol,
+                symbolRepository.count().toInt(),
+                isOneWayMode,
+                symbolInfo.tickSize,
+                symbolInfo.minPrice,
+                symbolInfo.maxPrice,
+                symbolInfo.minOrderQty,
+                symbolInfo.maxOrderQty,
+                symbolInfo.qtyStep
+            )
+        )
 
         kafkaTemplate.send(SYMBOL_REINITIALIZE_TOPIC, null)
     }
 
-    private fun SymbolInfoDocument.toModel() = SymbolResponse(symbol, partition, isOneWayMode, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
+    private fun SymbolInfoDocument.toModel() =
+        SymbolResponse(symbol, partition, isOneWayMode, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
 }

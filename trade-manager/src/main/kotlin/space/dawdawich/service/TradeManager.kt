@@ -1,7 +1,7 @@
 package space.dawdawich.service
 
-import dawdawich.space.client.bybit.ByBitPrivateHttpClient
-import dawdawich.space.model.PairInfo
+import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
+import space.dawdawich.integration.model.PairInfo
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer

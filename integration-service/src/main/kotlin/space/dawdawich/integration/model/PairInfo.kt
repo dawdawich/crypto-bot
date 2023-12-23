@@ -1,4 +1,4 @@
-package dawdawich.space.model
+package space.dawdawich.integration.model
 
 import kotlinx.serialization.Serializable
 
