@@ -81,8 +81,8 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                         <MenuItem value={"CUSTOM"}>Custom</MenuItem>
                     </Select>
                 </FormControl>
-                <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleDateString()}</span></p>
-                <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleDateString()}</span></p>
+                <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleTimeString()}</span></p>
+                <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleTimeString()}</span></p>
             </CardContent>
             <CardActions>
                 <Button size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
