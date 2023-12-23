@@ -7,7 +7,7 @@ import space.dawdawich.repositories.entity.TradeManagerDocument
 
 interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String> {
     @Query("{_id: ?0, accountId:  ?1}")
-    @Update("{isActive: ?2}")
+    @Update("{\$set: {isActive: ?2}}")
     fun updateTradeManagerStatus(id: String, accountId: String, isActive: Boolean)
 
     fun findAllByAccountId(accountId: String): List<TradeManagerDocument>
