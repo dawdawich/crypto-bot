@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {RouteComponentProps, useLocation} from "wouter";
 import {Manager} from "../../model/Manager";
 import {fetchManagerData, updateManagerStatus} from "../../service/ManagerService";
-import "../../css/TextClasses.css";
+import "../../css/ManagerEditPage.css";
 import {
     Button,
     Card,
