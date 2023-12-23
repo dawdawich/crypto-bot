@@ -20,15 +20,15 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                val result = parsedJson.read<Map<String, Any>>("\$.result.list[0]")
-                return PairInfo(
-                    result["minPrice"].toString().toDouble(),
-                    result["maxPrice"].toString().toDouble(),
-                    result["tickSize"].toString().toDouble(),
-                    result["minOrderQty"].toString().toDouble(),
-                    result["maxOrderQty"].toString().toDouble(),
-                    result["qtyStep"].toString().toDouble(),
-                )
+                val pairData = arrayOf(
+                    "priceFilter.minPrice",
+                    "priceFilter.maxPrice",
+                    "priceFilter.tickSize",
+                    "lotSizeFilter.minOrderQty",
+                    "lotSizeFilter.maxOrderQty",
+                    "lotSizeFilter.qtyStep"
+                ).map { parsedJson.read<String>("\$.result.list[0].$it").toDouble() }.toTypedArray()
+                return PairInfo(pairData)
             }
 
             else -> {
