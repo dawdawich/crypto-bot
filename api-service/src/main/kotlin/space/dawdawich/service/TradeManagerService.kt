@@ -16,11 +16,11 @@ class TradeManagerService(private val tradeManagerRepository: TradeManagerReposi
         return tradeManagerRepository.findAllByAccountId(accountId)
     }
 
-    fun updateTradeManagerStatus(id: String, accountId: String, status: Boolean) =
-        tradeManagerRepository.updateTradeManagerStatus(id, accountId, status)
+    fun updateTradeManagerStatus(managerId: String, accountId: String, status: Boolean) =
+        tradeManagerRepository.updateTradeManagerStatus(managerId, accountId, status)
 
     fun findManager(managerId: String, accountId: String): TradeManagerDocument? {
-        return tradeManagerRepository.findByIdAndAccountId(accountId, managerId)
+        return tradeManagerRepository.findByIdAndAccountId(managerId, accountId)
     }
 
     fun updateTradeManger(manager: TradeManagerDocument) {
