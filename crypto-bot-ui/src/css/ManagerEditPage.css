@@ -1,0 +1,7 @@
+#account-info {
+    width: 400px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+}

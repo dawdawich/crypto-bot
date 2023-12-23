@@ -5,14 +5,14 @@ import {fetchManagerData, updateManagerStatus} from "../../service/ManagerServic
 import "../../css/TextClasses.css";
 import {
     Button,
-    Card, CardActions,
+    Card,
+    CardActions,
     CardContent,
     FormControl,
     InputLabel,
     MenuItem,
     Select,
-    SelectChangeEvent,
-    Typography
+    SelectChangeEvent
 } from "@mui/material";
 import PowerOffIcon from "@mui/icons-material/PowerOff"
 import PowerOnIcon from "@mui/icons-material/Power"
@@ -60,13 +60,13 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
             Loading...
         </div>
     );
+    let createDate = new Date(manager.createTime);
+    let updateDate = new Date(manager.updateTime);
 
     return (
-        <Card>
+        <Card id="account-info">
             <CardContent>
-                <Typography gutterBottom variant="h5" component="div" className="center-text-align">
-                    ID: {manager?.id}
-                </Typography>
+                <p><strong>ID:</strong> <span id="username">{manager.id}</span></p>
 
                 <FormControl fullWidth>
                     <InputLabel id="choose-strategy-select-label">Analyzer Find Strategy</InputLabel>
@@ -81,9 +81,8 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                         <MenuItem value={"CUSTOM"}>Custom</MenuItem>
                     </Select>
                 </FormControl>
-                <Typography variant="body2" className="right-text-align">
-                    Create Time: {manager?.createTime} || Update Time: {manager?.updateTime}
-                </Typography>
+                <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleDateString()}</span></p>
+                <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleDateString()}</span></p>
             </CardContent>
             <CardActions>
                 <Button size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
