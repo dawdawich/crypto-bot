@@ -40,7 +40,7 @@ export const fetchManagerData = async (authToken: string, managerId: string) => 
     throw new Error('Failed to fetch manager data');
 }
 
-export const createManager = async(manager: any, authToken: string)=> {
+export const createManager = async (manager: any, authToken: string) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
@@ -54,6 +54,27 @@ export const createManager = async(manager: any, authToken: string)=> {
         return await response.text();
     }
     throw new Error('Failed to create manager data');
+}
+
+export const updateManagerStatus = async (managerId: string, status: boolean, authToken: string) => {
+    try {
+        const response = await fetch(`${API_URL}/${managerId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({status})
+        });
+        if (response.ok) {
+            return true;
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+    throw new Error('Failed to update manager data');
 }
 
 export const updateManagerData = async (manager: Manager, authToken: string) => {

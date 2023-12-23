@@ -12,16 +12,15 @@ class TradeManagerService(private val tradeManagerRepository: TradeManagerReposi
         return tradeManagerRepository.insert(TradeManagerDocument(UUID.randomUUID().toString(), accountId, apiTokenId, customAnalyzerId = customAnalyzerId, isActive = active)).id
     }
 
-    fun findAll(): MutableList<TradeManagerDocument> {
-        return tradeManagerRepository.findAll()
+    fun findAllByAccountId(accountId: String): List<TradeManagerDocument> {
+        return tradeManagerRepository.findAllByAccountId(accountId)
     }
 
-    fun activateTradeManager(id: String) {
-        tradeManagerRepository.updateTradeManagerStatus(id, true)
-    }
+    fun updateTradeManagerStatus(id: String, accountId: String, status: Boolean) =
+        tradeManagerRepository.updateTradeManagerStatus(id, accountId, status)
 
-    fun findById(managerId: String): TradeManagerDocument {
-        return tradeManagerRepository.findById(managerId).get()
+    fun findManager(managerId: String, accountId: String): TradeManagerDocument? {
+        return tradeManagerRepository.findByIdAndAccountId(accountId, managerId)
     }
 
     fun updateTradeManger(manager: TradeManagerDocument) {

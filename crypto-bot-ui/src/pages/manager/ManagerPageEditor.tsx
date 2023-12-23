@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {RouteComponentProps, useLocation} from "wouter";
 import {Manager} from "../../model/Manager";
-import {fetchManagerData, updateManagerData} from "../../service/ManagerService";
+import {fetchManagerData, updateManagerStatus} from "../../service/ManagerService";
 import "../../css/TextClasses.css";
 import {
     Button,
@@ -39,19 +39,11 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
 
     let handleStrategyChange = function (event: SelectChangeEvent) {
         manager!.chooseStrategy = event.target.value as string;
-        updateManagerData(manager!, authToken as string)
-            .then(result => {
-                if (result) {
-                    fetchManagerData(authToken as string, props.params.managerId)
-                        .then(data => setManager(data));
-                }
-            })
-            .catch(error => setManagerFetchError(error));
     }
 
     let changeManagerStatus = () => {
         manager!.active = !manager!.active;
-        updateManagerData(manager!, authToken as string)
+        updateManagerStatus(manager!.id, manager!.active, authToken as string)
             .then(result => {
                 if (result) {
                     fetchManagerData(authToken as string, props.params.managerId)

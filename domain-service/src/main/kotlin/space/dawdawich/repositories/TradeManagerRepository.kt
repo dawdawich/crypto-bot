@@ -6,7 +6,11 @@ import org.springframework.data.mongodb.repository.Update
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
 interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String> {
-    @Query("{_id: ?0}")
-    @Update("{isActive: ?1}")
-    fun updateTradeManagerStatus(id: String, isActive: Boolean)
+    @Query("{_id: ?0, accountId:  ?1}")
+    @Update("{isActive: ?2}")
+    fun updateTradeManagerStatus(id: String, accountId: String, isActive: Boolean)
+
+    fun findAllByAccountId(accountId: String): List<TradeManagerDocument>
+
+    fun findByIdAndAccountId(id: String, accountId: String): TradeManagerDocument?
 }
