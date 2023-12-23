@@ -5,6 +5,7 @@ import dawdawich.space.client.bybit.ByBitPrivateHttpClient
 import io.ktor.client.*
 import org.springframework.stereotype.Service
 import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 @Service
 class PrivateHttpClientFactory(private val httpClient: HttpClient, private val jsonPath: ParseContext) {
@@ -20,4 +21,12 @@ class PrivateHttpClientFactory(private val httpClient: HttpClient, private val j
         apiKey,
         encryptor
     )
+
+    fun createHttpClient(isTest: Boolean, apiKey: String, secretKey: String): ByBitPrivateHttpClient {
+        return createHttpClient(isTest, apiKey, Mac.getInstance("HmacSHA256").apply {
+            init(
+                SecretKeySpec(secretKey.toByteArray(), "HmacSHA256")
+            )
+        })
+    }
 }

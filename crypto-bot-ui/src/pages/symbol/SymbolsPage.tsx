@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {useLocation} from "wouter";
 import {createSymbol, fetchSymbolsList} from "../../service/SymbolService";
-import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
-import {Symbol} from "./model/Symbol";
+import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
+import {Symbol} from "../../model/Symbol";
 import {SymbolModel} from "../../model/SymbolModel";
 import CreateSymbolDialog from "./dialog/CreateSymbolDialog";
+import {PlusOne} from "@mui/icons-material";
 
 const SymbolsPage: React.FC = () => {
     const [data, setData] = useState<Symbol[]>([]);
@@ -34,7 +35,7 @@ const SymbolsPage: React.FC = () => {
         <div>
             <h1>Symbols Page</h1>
             <div>
-                <button onClick={() => setCreateDialogOpen(true)}>Add new Symbol</button>
+                <Button size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}><PlusOne />Add new Symbol</Button>
                 <CreateSymbolDialog
                     open={isCreateDialogOpen}
                     onClose={() => setCreateDialogOpen(false)}
@@ -48,7 +49,12 @@ const SymbolsPage: React.FC = () => {
                             <TableCell>Symbol</TableCell>
                             <TableCell>Partition</TableCell>
                             <TableCell>Is One Way Mode</TableCell>
-                            <TableCell>Price Min Step</TableCell>
+                            <TableCell>Min Price</TableCell>
+                            <TableCell>Max Price</TableCell>
+                            <TableCell>Tick Size</TableCell>
+                            <TableCell>Min Order QTY</TableCell>
+                            <TableCell>Max Order QTY</TableCell>
+                            <TableCell>QTY Step</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -60,7 +66,12 @@ const SymbolsPage: React.FC = () => {
                                 <TableCell component="th" scope="row">{symbol.symbol}</TableCell>
                                 <TableCell align="left">{symbol.partition}</TableCell>
                                 <TableCell align="left">{symbol.isOneWayMode ? 'True' : 'False'}</TableCell>
-                                <TableCell align="left">{symbol.priceMinStep}</TableCell>
+                                <TableCell align="left">{symbol.minPrice}</TableCell>
+                                <TableCell align="left">{symbol.maxPrice}</TableCell>
+                                <TableCell align="left">{symbol.tickSize}</TableCell>
+                                <TableCell align="left">{symbol.minOrderQty}</TableCell>
+                                <TableCell align="left">{symbol.maxOrderQty}</TableCell>
+                                <TableCell align="left">{symbol.qtyStep}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

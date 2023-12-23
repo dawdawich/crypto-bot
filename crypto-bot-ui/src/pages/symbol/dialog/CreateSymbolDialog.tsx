@@ -1,14 +1,5 @@
 import React, {useState} from "react";
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControlLabel,
-    Switch,
-    TextField
-} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} from "@mui/material";
 import {SymbolModel} from "../../../model/SymbolModel";
 
 interface CreateSymbolDialogProps {
@@ -19,9 +10,7 @@ interface CreateSymbolDialogProps {
 
 const CreateSymbolDialog: React.FC<CreateSymbolDialogProps> = ({ open, onClose, onCreate }) => {
     const [symbolData, setData] = useState<SymbolModel>({
-        symbol: '',
-        isOneWayMode: false,
-        priceMinStep: 0
+        symbol: ''
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,19 +37,6 @@ const CreateSymbolDialog: React.FC<CreateSymbolDialogProps> = ({ open, onClose, 
                     type="text"
                     fullWidth
                     value={symbolData.symbol}
-                    onChange={handleChange}
-                />
-                <FormControlLabel
-                    control={<Switch checked={symbolData.isOneWayMode} onChange={handleChange} name="isOneWayMode" />}
-                    label="Is One Way Mode"
-                />
-                <TextField
-                    margin="dense"
-                    name="priceMinStep"
-                    label="Price Min Step"
-                    type="number"
-                    fullWidth
-                    value={symbolData.priceMinStep}
                     onChange={handleChange}
                 />
             </DialogContent>

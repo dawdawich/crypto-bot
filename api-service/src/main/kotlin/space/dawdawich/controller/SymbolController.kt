@@ -1,6 +1,7 @@
 package space.dawdawich.controller
 
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,7 +24,7 @@ class SymbolController(private val symbolService: SymbolService) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
-    fun addNewSymbolToList(@RequestBody request: CreateSymbolRequest) {
-        symbolService.addNewSymbol(request.symbol, request.isOneWayMode, request.priceMinStep)
+    fun addNewSymbolToList(user: Authentication, @RequestBody request: CreateSymbolRequest) {
+        symbolService.addNewSymbol(user.name, request.symbol)
     }
 }

@@ -58,7 +58,7 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
         deleteManager(manager!.id, authToken as string)
             .then(result => {
                 if (result) {
-                    navigate('/');
+                    navigate('/manager');
                     window.location.reload();
                 }
             })

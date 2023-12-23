@@ -129,7 +129,7 @@ open class AnalyzerService(
         positionTakeProfit,
         symbolInfo.symbol,
         symbolInfo.isOneWayMode,
-        symbolInfo.priceMinStep,
+        symbolInfo.tickSize,
         id,
         { _, _, newValue -> moneyUpdateList += id to newValue },
         { middlePrice -> middlePriceUpdateList += id to middlePrice }

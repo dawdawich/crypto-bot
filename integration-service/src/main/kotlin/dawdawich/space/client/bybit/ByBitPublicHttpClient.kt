@@ -2,6 +2,7 @@ package dawdawich.space.client.bybit
 
 import com.jayway.jsonpath.ParseContext
 import dawdawich.space.client.DefaultHttpClient
+import dawdawich.space.model.PairInfo
 import io.ktor.client.*
 import io.ktor.client.statement.*
 import space.dawdawich.exception.UnknownRetCodeException
@@ -13,14 +14,21 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         const val GET_INSTRUMENTS_INFO = "/market/instruments-info"
     }
 
-    suspend fun getPairInstructions(symbol: String): Pair<Double, Double> {
+    suspend fun getPairInstructions(symbol: String): PairInfo {
         val response = get(GET_INSTRUMENTS_INFO, "category=linear&symbol=$symbol")
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read<String>("\$.result.list[0].lotSizeFilter.qtyStep")
-                    .toDouble() to parsedJson.read<String>("\$.result.list[0].priceFilter.minPrice").toDouble()
+                val result = parsedJson.read<Map<String, Any>>("\$.result.list[0]")
+                return PairInfo(
+                    result["minPrice"].toString().toDouble(),
+                    result["maxPrice"].toString().toDouble(),
+                    result["tickSize"].toString().toDouble(),
+                    result["minOrderQty"].toString().toDouble(),
+                    result["maxOrderQty"].toString().toDouble(),
+                    result["qtyStep"].toString().toDouble(),
+                )
             }
 
             else -> {

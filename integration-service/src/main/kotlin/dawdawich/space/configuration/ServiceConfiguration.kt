@@ -5,6 +5,7 @@ import com.jayway.jsonpath.Option
 import com.jayway.jsonpath.ParseContext
 import dawdawich.space.client.bybit.ByBitPublicHttpClient
 import dawdawich.space.factory.PrivateHttpClientFactory.Companion.BYBIT_SERVER_URL
+import dawdawich.space.factory.PrivateHttpClientFactory.Companion.BYBIT_TEST_SERVER_URL
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import org.springframework.context.annotation.Bean
@@ -23,4 +24,7 @@ open class ServiceConfiguration {
 
     @Bean
     open fun publicBybitClient() = ByBitPublicHttpClient(BYBIT_SERVER_URL, httpClient(), jsonPath())
+
+//    @Bean
+//    open fun publicBybitTestClient() = ByBitPublicHttpClient(BYBIT_TEST_SERVER_URL, httpClient(), jsonPath())
 }

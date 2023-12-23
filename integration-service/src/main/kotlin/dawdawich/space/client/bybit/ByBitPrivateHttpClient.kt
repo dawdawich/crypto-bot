@@ -20,12 +20,10 @@ class ByBitPrivateHttpClient(
     companion object {
         const val CREATE_ORDER_URL = "/order/create"
         const val GET_ACCOUNT_BALANCE = "/account/wallet-balance"
-        const val GET_INSTRUMENTS_INFO = "/market/instruments-info"
         const val SET_MARGIN = "/position/set-leverage"
         const val CANCEL_ALL_ORDERS = "/order/cancel-all"
         const val CANCEL_ORDER = "/order/cancel"
         const val GET_POSITIONS = "/position/list"
-        const val SWITCH_MODE_POSITION = "/position/switch-mode"
     }
 
     suspend fun createOrder(

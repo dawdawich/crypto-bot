@@ -1,6 +1,7 @@
 package space.dawdawich.service
 
 import dawdawich.space.client.bybit.ByBitPrivateHttpClient
+import dawdawich.space.model.PairInfo
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
@@ -34,7 +35,7 @@ class TradeManager(
     var analyzer: GridTableAnalyzerDocument? = null
 
     private var capital = 0.0
-    private var priceInstruction: Pair<Double, Double> = 0.0 to 0.0
+    private lateinit var priceInstruction: PairInfo
 
     private var price: Double = -1.0
     private var orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
@@ -139,7 +140,7 @@ class TradeManager(
     }
 
     private fun checkOrders() {
-        val nearOrders = orderPriceGrid.entries.filter { (it.key - price).absoluteValue > priceInstruction.second }
+        val nearOrders = orderPriceGrid.entries.filter { (it.key - price).absoluteValue > priceInstruction.tickSize }
             .sortedBy { (it.key - price).absoluteValue }.take(2)
 
         nearOrders.filter { it.value == null }.forEach {
@@ -147,13 +148,13 @@ class TradeManager(
 
             val isLong = it.key < middlePrice
             val floatNumberLength =
-                if (priceInstruction.second != 1.0) df.format(priceInstruction.second).split(",")[1].length else 0
+                if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(",")[1].length else 0
             val inPrice = BigDecimal(it.key).setScale(
                 floatNumberLength,
                 RoundingMode.HALF_DOWN
             ).toDouble()
 
-            val s = df.format(priceInstruction.first).split(",")[1]
+            val s = df.format(priceInstruction.minOrderQty).split(",")[1]
             val length = if (s.endsWith("0")) 0 else s.length
             val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
                 length, RoundingMode.HALF_DOWN

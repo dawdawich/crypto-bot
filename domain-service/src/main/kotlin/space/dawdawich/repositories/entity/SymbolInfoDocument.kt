@@ -15,5 +15,10 @@ data class SymbolInfoDocument(
     @Indexed(unique = true)
     val partition: Int,
     val isOneWayMode: Boolean,
-    val priceMinStep: Double
+    val tickSize: Double,
+    val minPrice: Double,
+    val maxPrice: Double,
+    val minOrderQty: Double,
+    val maxOrderQty: Double,
+    val qtyStep: Double
 )
