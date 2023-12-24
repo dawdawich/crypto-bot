@@ -11,8 +11,8 @@ import space.dawdawich.service.KafkaManager
 open class ClientsConfiguration {
 
     @Bean
-    open fun byBitClient(kafkaManager: KafkaManager): BybitTickerWebSocketClient = BybitTickerWebSocketClient(kafkaManager, BYBIT_WEB_SOCKET_URL, false)
+    open fun byBitClient(kafkaManager: KafkaManager): BybitTickerWebSocketClient = BybitTickerWebSocketClient(kafkaManager, BYBIT_WEB_SOCKET_URL, false).apply { connectBlocking() }
 
     @Bean
-    open fun byBitTestClient(kafkaManager: KafkaManager): BybitTickerWebSocketClient = BybitTickerWebSocketClient(kafkaManager, BYBIT_TEST_WEB_SOCKET_URL, true)
+    open fun byBitTestClient(kafkaManager: KafkaManager): BybitTickerWebSocketClient = BybitTickerWebSocketClient(kafkaManager, BYBIT_TEST_WEB_SOCKET_URL, true).apply { connectBlocking() }
 }
