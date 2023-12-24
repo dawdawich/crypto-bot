@@ -119,7 +119,9 @@ class ByBitPrivateHttpClient(
         println("Query")
         println(query)
         println("Headers")
-        println(headers.map { "${it.first}=${it.second}" }.joinToString { "\n" })
+        headers.forEach {
+            println("key: ${it.first}; value: ${it.second[0]}")
+        }
         println("===========TEST TEST TEST TEST=================")
         val response = get(GET_POSITIONS, query, headers)
 
