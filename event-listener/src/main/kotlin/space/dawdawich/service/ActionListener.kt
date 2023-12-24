@@ -43,7 +43,6 @@ class ActionListener(
                 val topicDescription = admin.describeTopics(listOf(topic)).topicNameValues()[topic]?.get()
                 val currentPartitionsCount = topicDescription?.partitions()?.size ?: 0
                 if (currentPartitionsCount < symbols.size) {
-                    createTickerTopics(symbols.size, topic)
                     admin.createPartitions(mapOf(topic to NewPartitions.increaseTo(symbols.size)))
                 }
             }
