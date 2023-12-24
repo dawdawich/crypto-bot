@@ -4,14 +4,16 @@ import kotlinx.coroutines.*
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.springframework.stereotype.Component
+import space.dawdawich.constants.BYBIT_TEST_TICKER_TOPIC
+import space.dawdawich.constants.BYBIT_TICKER_TOPIC
 import space.dawdawich.service.KafkaManager
 import space.dawdawich.util.jsonPath
 import java.lang.Exception
 import java.net.URI
 
-@Component
-class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager) :
-    WebSocketClient(URI("wss://stream.bybit.com/v5/public/linear")) {
+class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connectionUrl: String, isTest: Boolean) : WebSocketClient(URI(connectionUrl)) {
+    private val topicName: String = if (isTest) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC
+
     val mapSymbolsToPartition: MutableMap<String, Int> = mutableMapOf()
 
     fun addSubscription(symbol: String) {
@@ -30,7 +32,7 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager) :
             val parsedMessage = jsonPath.parse(it)
             parsedMessage.read<String?>("\$.data.markPrice")?.let { checkedPrice ->
                 parsedMessage.read<String?>("\$.data.symbol")?.let { symbol ->
-                    kafkaManager.sendTickerEvent(symbol, mapSymbolsToPartition[symbol]!!, checkedPrice)
+                    kafkaManager.sendTickerEvent(topicName, symbol, mapSymbolsToPartition[symbol]!!, checkedPrice)
                 }
             }
         }

@@ -1,6 +1,7 @@
 export type Symbol = {
     symbol: string;
     partition: number;
+    testServer: boolean;
     isOneWayMode: boolean;
     minPrice: number;
     maxPrice: number;

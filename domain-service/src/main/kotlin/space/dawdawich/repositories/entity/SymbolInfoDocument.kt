@@ -14,6 +14,7 @@ data class SymbolInfoDocument(
     val symbol: String,
     @Indexed(unique = true)
     val partition: Int,
+    val testServer: Boolean,
     val isOneWayMode: Boolean,
     val tickSize: Double,
     val minPrice: Double,

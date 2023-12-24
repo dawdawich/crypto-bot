@@ -48,6 +48,7 @@ const SymbolsPage: React.FC = () => {
                         <TableRow>
                             <TableCell>Symbol</TableCell>
                             <TableCell>Partition</TableCell>
+                            <TableCell>Is Test Server</TableCell>
                             <TableCell>Is One Way Mode</TableCell>
                             <TableCell>Min Price</TableCell>
                             <TableCell>Max Price</TableCell>
@@ -65,6 +66,7 @@ const SymbolsPage: React.FC = () => {
                             >
                                 <TableCell component="th" scope="row">{symbol.symbol}</TableCell>
                                 <TableCell align="left">{symbol.partition}</TableCell>
+                                <TableCell align="left">{symbol.testServer ? 'True' : 'False'}</TableCell>
                                 <TableCell align="left">{symbol.isOneWayMode ? 'True' : 'False'}</TableCell>
                                 <TableCell align="left">{symbol.minPrice}</TableCell>
                                 <TableCell align="left">{symbol.maxPrice}</TableCell>

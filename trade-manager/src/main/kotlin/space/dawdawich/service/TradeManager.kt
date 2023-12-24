@@ -298,7 +298,7 @@ class TradeManager(
             }
 
             priceListener?.stop()
-            priceListener = priceTickerListenerFactoryService.getPriceListener(analyzer!!.symbolInfo.symbol)
+            priceListener = priceTickerListenerFactoryService.getPriceListener(analyzer!!.symbolInfo.symbol, analyzer!!.symbolInfo.testServer)
             priceListener!!.setupMessageListener(MessageListener<String, String> {
                 updatePrice(it.value().toDouble())
                 println("Update price in manager '${tradeManagerData.id}'; price - $price")
