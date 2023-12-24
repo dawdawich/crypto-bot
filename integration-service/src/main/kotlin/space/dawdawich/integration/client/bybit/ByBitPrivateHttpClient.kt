@@ -125,7 +125,7 @@ class ByBitPrivateHttpClient(
                         position["symbol"].toString(),
                         position["side"].toString().equals("buy", true),
                         position["size"].toString().toDouble(),
-                        position["positionValue"].toString().toDouble(),
+                        position["positionValue"].toString().let { if (it.isBlank()) 0.0 else it.toDouble() },
                         position["positionIdx"].toString().toInt(),
                         position["updatedTime"].toString().toLong()
                     )
