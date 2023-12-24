@@ -8,6 +8,7 @@ import space.dawdawich.exception.UnsuccessfulOperationException
 
 abstract class DefaultHttpClient(private val serverUrl: String, private val client: HttpClient) {
     suspend fun get(url: String, queryString: String = "", headers: Array<Pair<String, List<String>>> = arrayOf()): HttpResponse {
+        println("Server url: $serverUrl")
         val response = client.get("$serverUrl$url?$queryString") {
             headersOf(*headers)
         }
