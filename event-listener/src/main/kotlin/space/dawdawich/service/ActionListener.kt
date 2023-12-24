@@ -37,7 +37,9 @@ class ActionListener(
 
     private fun initializeTickerTopics(topic: String, symbols: List<SymbolInfoDocument>, client: BybitTickerWebSocketClient) {
         if (symbols.isNotEmpty()) {
-            client.closeBlocking()
+            if (client.isOpen) {
+                client.closeBlocking()
+            }
             if (!admin.listTopics().names().get().contains(topic)) {
                 createTickerTopics(symbols.size, topic)
             } else {
@@ -49,7 +51,9 @@ class ActionListener(
             }
             client.mapSymbolsToPartition.clear()
             client.mapSymbolsToPartition.putAll(symbols.map { it.symbol to it.partition }.toTypedArray())
-            client.connectBlocking()
+            if (client.isClosed) {
+                client.connectBlocking()
+            }
         }
     }
 
