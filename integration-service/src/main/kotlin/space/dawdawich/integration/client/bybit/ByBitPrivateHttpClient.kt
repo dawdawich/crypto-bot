@@ -114,7 +114,14 @@ class ByBitPrivateHttpClient(
 
     suspend fun getPositionInfo(symbol: String): List<PositionInfo> {
         val query = "category=linear&symbol=$symbol"
-        val response = get(GET_POSITIONS, query, getByBitHeadersWithSign(query))
+        val headers = getByBitHeadersWithSign(query)
+        println("===========TEST TEST TEST TEST=================")
+        println("Query")
+        println(query)
+        println("Headers")
+        println(headers)
+        println("===========TEST TEST TEST TEST=================")
+        val response = get(GET_POSITIONS, query, headers)
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
