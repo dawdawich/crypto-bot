@@ -115,16 +115,7 @@ class ByBitPrivateHttpClient(
     suspend fun getPositionInfo(symbol: String): List<PositionInfo> {
         val query = "category=linear&symbol=$symbol"
         val headers = getByBitHeadersWithSign(query)
-        println("===========TEST TEST TEST TEST=================")
-        println("Query")
-        println(query)
-        println("Headers")
-        headers.forEach {
-            println("key: ${it.first}; value: ${it.second[0]}")
-        }
-        println("===========TEST TEST TEST TEST=================")
         val response = get(GET_POSITIONS, query, headers)
-
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
@@ -199,15 +190,15 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    private fun getByBitHeadersWithSign(body: String): Array<Pair<String, List<String>>> {
+    private fun getByBitHeadersWithSign(body: String): Array<Pair<String, String>> {
         val timestamp = System.currentTimeMillis().toString()
         return arrayOf(
-            "X-BAPI-API-KEY" to listOf(apiKey),
-            "X-BAPI-SIGN" to listOf(encryptor.doFinal("$timestamp${apiKey}5000$body".toByteArray()).bytesToHex()),
-            "X-BAPI-SIGN-TYPE" to listOf("2"),
-            "X-BAPI-TIMESTAMP" to listOf(timestamp),
-            "X-BAPI-RECV-WINDOW" to listOf("5000"),
-            "Content-Type" to listOf("application/json")
+            "X-BAPI-API-KEY" to apiKey,
+            "X-BAPI-SIGN" to encryptor.doFinal("$timestamp${apiKey}5000$body".toByteArray()).bytesToHex(),
+            "X-BAPI-SIGN-TYPE" to "2",
+            "X-BAPI-TIMESTAMP" to timestamp,
+            "X-BAPI-RECV-WINDOW" to "5000",
+            "Content-Type" to "application/json"
         )
     }
 }
