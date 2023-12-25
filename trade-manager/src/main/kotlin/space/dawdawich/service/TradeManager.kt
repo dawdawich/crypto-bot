@@ -149,15 +149,16 @@ class TradeManager(
             println("=====================================================")
             println(priceInstruction.toString())
             println("=====================================================")
+            val regexToSplit = "[.,]".toRegex()
             val isLong = it.key < middlePrice
             val floatNumberLength =
-                if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(",")[1].length else 0
+                if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(regexToSplit)[1].length else 0
             val inPrice = BigDecimal(it.key).setScale(
                 floatNumberLength,
                 RoundingMode.HALF_DOWN
             ).toDouble()
 
-            val s = df.format(priceInstruction.minOrderQty).split(",")[1]
+            val s = df.format(priceInstruction.minOrderQty).split(regexToSplit)[1]
             val length = if (s.endsWith("0")) 0 else s.length
             val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
                 length, RoundingMode.HALF_DOWN
