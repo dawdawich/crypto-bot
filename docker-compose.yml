@@ -87,7 +87,7 @@ services:
   trade-manager-service:
     build:
       context: .
-      dockerfile: dockerfiles/ApiServiceDockerfile
+      dockerfile: dockerfiles/TradeManagerDockerfile
     depends_on:
       mongodb:
         condition: service_healthy
