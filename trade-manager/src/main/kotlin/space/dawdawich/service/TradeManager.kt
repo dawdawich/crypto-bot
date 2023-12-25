@@ -146,6 +146,9 @@ class TradeManager(
         nearOrders.filter { it.value == null }.forEach {
             val moneyPerPosition = capital / analyzer!!.gridSize
 
+            println("=====================================================")
+            println(priceInstruction.toString())
+            println("=====================================================")
             val isLong = it.key < middlePrice
             val floatNumberLength =
                 if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(",")[1].length else 0
