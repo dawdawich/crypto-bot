@@ -18,7 +18,7 @@ import space.dawdawich.constants.*
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -33,8 +33,8 @@ open class AnalyzerService(
     private val partitionMap: MutableMap<String, Int> =
         mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<GridTableAnalyzer> = mutableListOf()
-    private val moneyUpdateList: CopyOnWriteArrayList<Pair<String, Double>> = CopyOnWriteArrayList()
-    private val middlePriceUpdateList: CopyOnWriteArrayList<Pair<String, Double>> = CopyOnWriteArrayList()
+    private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
+    private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
 
     init {
         gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }
@@ -72,25 +72,27 @@ open class AnalyzerService(
 
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
-        if (middlePriceUpdateList.isNotEmpty()) {
-            updateList(middlePriceUpdateList.toMutableList(), "middlePrice")
+        if (middlePriceUpdateQueue.isNotEmpty()) {
+            updateList(middlePriceUpdateQueue, "middlePrice")
         }
-        if (moneyUpdateList.isNotEmpty()) {
-            updateList(moneyUpdateList.toMutableList(), "money")
+        if (moneyUpdateQueue.isNotEmpty()) {
+            updateList(moneyUpdateQueue, "money")
         }
     }
 
     @SuppressWarnings("kotlin:S6518")
-    private fun updateList(updateList: MutableList<Pair<String, *>>, fieldName: String) {
+    private fun updateList(updateList: ArrayBlockingQueue<Pair<String, Double>>, fieldName: String) {
         val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
 
-        updateList.removeAll(updateList.toList().map {
+        var pair = updateList.poll()
+
+        while (pair != null) {
             ops.updateOne(
-                Query.query(Criteria.where(UNDERSCORE_ID).`is`(it.first)),
-                Update().set(fieldName, it.second)
+                Query.query(Criteria.where("_id").`is`(pair.first)),
+                Update().set(fieldName, pair.second)
             )
-            it
-        }.toSet())
+            pair = updateList.poll()
+        }
         ops.execute()
     }
 
@@ -131,7 +133,7 @@ open class AnalyzerService(
         symbolInfo.isOneWayMode,
         symbolInfo.tickSize,
         id,
-        { _, _, newValue -> moneyUpdateList += id to newValue },
-        { middlePrice -> middlePriceUpdateList += id to middlePrice }
+        { _, _, newValue -> moneyUpdateQueue += id to newValue },
+        { middlePrice -> middlePriceUpdateQueue += id to middlePrice }
     )
 }
