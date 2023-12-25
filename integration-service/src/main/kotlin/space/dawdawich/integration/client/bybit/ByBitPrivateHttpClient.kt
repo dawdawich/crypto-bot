@@ -102,7 +102,7 @@ class ByBitPrivateHttpClient(
 
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read("$.result.list[0].totalEquity")
+                return parsedJson.read<String>("$.result.list[0].totalEquity").toDouble()
             }
 
             else -> {
