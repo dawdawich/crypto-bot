@@ -103,7 +103,7 @@ open class AnalyzerService(
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
                 listenerContainerFactory.createContainer(
-                    TopicPartitionOffset(BYBIT_TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.END)
+                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.END)
                 )
             )
         }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }
