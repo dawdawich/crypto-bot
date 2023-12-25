@@ -21,9 +21,12 @@ open class TradeManagerService(
     private val tradeManagers: MutableList<TradeManager> = mutableListOf()
 
     init {
-        tradeManagers.addAll(tradeManagerRepository.findAll().map { data ->
+        tradeManagers.addAll(tradeManagerRepository.findAllByActive().map { data ->
             tradeManagerFactory.createTradeManager(data)
         })
+        println("=====================")
+        println("Active trade managers: ${tradeManagers.size}")
+        println("=====================")
 
         mongoTemplate.changeStream<TradeManagerDocument>()
             .watchCollection("trade_manager")

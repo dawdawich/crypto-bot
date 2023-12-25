@@ -12,6 +12,8 @@ interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String>
 
     fun findAllByAccountId(accountId: String): List<TradeManagerDocument>
 
+    fun findAllByActive(active: Boolean = true): List<TradeManagerDocument>
+
     fun findByIdAndAccountId(id: String, accountId: String): TradeManagerDocument?
 
     fun deleteByIdAndAccountId(id: String, accountId: String)
