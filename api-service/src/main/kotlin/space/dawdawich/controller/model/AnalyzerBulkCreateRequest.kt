@@ -1,5 +1,8 @@
 package space.dawdawich.controller.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class AnalyzerBulkCreateRequest(
     val symbols: List<String>,
     val minStopLoss: Int,
