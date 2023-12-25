@@ -12,8 +12,14 @@ import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String> {
 
     @Query("{_id:  ?0}")
-    @Update("{\$set:  {isActive:  ?1, middlePrice:  null, updateTime:  ?2}}")
+    @Update("{\$set:  {isActive:  ?1, middlePrice: null, updateTime:  ?2}}")
     fun setAnalyzerActiveStatus(id: String, status: Boolean, updateTime: Long = System.currentTimeMillis())
+
+    @Query("{accountId:  ?0}")
+    @Update("{\$set:  {isActive:  ?1, middlePrice: null, updateTime:  ?2}}")
+    fun setAllAnalyzersActiveStatus(accountId: String, status: Boolean, updateTime: Long = System.currentTimeMillis())
+
+    fun deleteByAccountId(accountId: String)
 
     fun countByIdAndAccountId(id: String, accountId: String): Int
 
