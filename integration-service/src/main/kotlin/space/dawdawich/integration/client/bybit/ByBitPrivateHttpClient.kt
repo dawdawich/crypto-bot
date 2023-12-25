@@ -96,7 +96,7 @@ class ByBitPrivateHttpClient(
     }
 
     suspend fun getAccountBalance(): Double {
-        val query = "accountType=CONTRACT&coin=USDT"
+        val query = "accountType=UNIFIED&coin=USDT"
         val response: HttpResponse = get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query))
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
