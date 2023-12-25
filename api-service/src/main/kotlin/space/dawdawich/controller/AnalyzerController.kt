@@ -34,7 +34,6 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     }
 
     @PostMapping("/bulk")
-    @RolesAllowed("ADMIN")
     @ResponseStatus(HttpStatus.OK)
     fun bulkCreateAnalyzers(user: Authentication, @RequestBody request: AnalyzerBulkCreateRequest) =
         analyzerService.bulkCreate(user.name, request)

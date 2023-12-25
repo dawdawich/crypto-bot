@@ -90,6 +90,7 @@ open class SecurityConfiguration(
                     requestMatchers(HttpMethod.GET, "/account").authenticated()
                     requestMatchers(HttpMethod.GET, "/account/api-token").authenticated()
                     requestMatchers("/analyzer").authenticated()
+                    requestMatchers("/analyzer/bulk").hasAuthority("ADMIN")
                     requestMatchers("/trade-manager").authenticated()
                     requestMatchers("/symbol/all").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
