@@ -21,7 +21,7 @@ open class TradeManagerService(
     private val tradeManagers: MutableList<TradeManager> = mutableListOf()
 
     init {
-        tradeManagers.addAll(tradeManagerRepository.findAllByActive().map { data ->
+        tradeManagers.addAll(tradeManagerRepository.findAllByIsActive().map { data ->
             tradeManagerFactory.createTradeManager(data)
         })
 
