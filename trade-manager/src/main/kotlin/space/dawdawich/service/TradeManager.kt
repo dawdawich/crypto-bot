@@ -175,8 +175,7 @@ class TradeManager(
                 RoundingMode.HALF_DOWN
             ).toDouble()
 
-            val s = df.format(priceInstruction.minOrderQty).split(regexToSplit)[1]
-            val length = if (s.endsWith("0")) 0 else s.length
+            val length = if (priceInstruction.minOrderQty != 1.0) df.format(priceInstruction.minOrderQty).split(regexToSplit)[1].length else 0
             val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
                 length, RoundingMode.HALF_DOWN
             ).toDouble()
