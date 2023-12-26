@@ -163,6 +163,9 @@ class TradeManager(
         nearOrders.filter { it.value == null }.forEach {
             val moneyPerPosition = capital / analyzer!!.gridSize
 
+            println("=====================================================")
+            println(priceInstruction.toString())
+            println("=====================================================")
             val regexToSplit = "[.,]".toRegex()
             val isLong = it.key < middlePrice
             val floatNumberLength =
