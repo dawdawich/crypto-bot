@@ -343,7 +343,7 @@ class TradeManager(
 
     private fun findNewAnalyzer() {
         if (analyzerUpdateTimestamp < System.currentTimeMillis()) {
-            analyzerUpdateTimestamp = System.currentTimeMillis() + 30.minutes.inWholeMilliseconds
+            analyzerUpdateTimestamp = System.currentTimeMillis() + 10.minutes.inWholeMilliseconds
             val biggestAnalyzers = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
             val biggestValue = biggestAnalyzers.maxBy { it.money }
 
