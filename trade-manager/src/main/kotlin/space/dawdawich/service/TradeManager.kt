@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
 import space.dawdawich.client.ByBitWebSocketClient
+import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.AnalyzerChooseStrategy
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -125,13 +126,29 @@ class TradeManager(
         val slPrice = capital.plusPercent(-analyzer!!.positionStopLoss * direction)
         if (position.size > 0.0 && (calculateProfit + capital) !in slPrice..tpPrice
         ) {
-            runBlocking {
-                bybitService.closePosition(
-                    position.symbol,
-                    position.isLong,
-                    position.size,
-                    position.positionIdx
-                )
+            try {
+                runBlocking {
+                    bybitService.closePosition(
+                        position.symbol,
+                        position.isLong,
+                        position.size,
+                        position.positionIdx
+                    )
+                }
+            } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
+                positionManager =
+                    PositionManager(runBlocking {
+                        bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
+                            Position(
+                                it.symbol,
+                                it.isLong,
+                                it.size,
+                                it.entryPrice,
+                                it.positionIdx,
+                                it.updateTime
+                            )
+                        }
+                    })
             }
             println("Cancel position. SL/TP exited. $position")
             updateCapital()
@@ -146,9 +163,6 @@ class TradeManager(
         nearOrders.filter { it.value == null }.forEach {
             val moneyPerPosition = capital / analyzer!!.gridSize
 
-            println("=====================================================")
-            println(priceInstruction.toString())
-            println("=====================================================")
             val regexToSplit = "[.,]".toRegex()
             val isLong = it.key < middlePrice
             val floatNumberLength =
@@ -241,15 +255,31 @@ class TradeManager(
 
     private fun closeAllPositionsAndOrders() {
         runBlocking { bybitService.cancelAllOrder(analyzer!!.symbolInfo.symbol) }
-        positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
-            runBlocking {
-                bybitService.closePosition(
-                    position.symbol,
-                    position.isLong,
-                    position.size,
-                    position.positionIdx
-                )
+        try {
+            positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
+                runBlocking {
+                    bybitService.closePosition(
+                        position.symbol,
+                        position.isLong,
+                        position.size,
+                        position.positionIdx
+                    )
+                }
             }
+        } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
+            positionManager =
+                PositionManager(runBlocking {
+                    bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
+                        Position(
+                            it.symbol,
+                            it.isLong,
+                            it.size,
+                            it.entryPrice,
+                            it.positionIdx,
+                            it.updateTime
+                        )
+                    }
+                })
         }
     }
 

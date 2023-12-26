@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.statement.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
 import javax.crypto.Mac
@@ -172,18 +173,21 @@ class ByBitPrivateHttpClient(
             put("qty", size.toString())
             put("positionIdx", positionIdx.toString())
             put("isLeverage", 1)
-            put("closeOnTrigger", true)
             put("reduceOnly", true)
             put("orderType", "Market")
+            put("timeInForce", "IOC")
         }.toString()
 
         try {
             val response: HttpResponse = post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request))
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
-            val returnCode = parsedJson.read<Int>("$.retCode")
-            if (returnCode != 0) {
-                throw UnknownRetCodeException(returnCode)
+            when (val returnCode = parsedJson.read<Int>("$.retCode")) {
+                0 -> return
+                10017 -> throw ReduceOnlyRuleNotSatisfiedException()
+                else -> {
+                    throw UnknownRetCodeException(returnCode)
+                }
             }
         } catch (e: Exception) {
             throw e
