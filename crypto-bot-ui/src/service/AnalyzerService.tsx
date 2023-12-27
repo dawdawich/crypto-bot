@@ -1,6 +1,7 @@
 import {AnalyzerModel} from "../model/AnalyzerModel";
+import {SERVER_HOST} from "./Constants";
 
-const API_URL = 'http://dawdawich.space:8080/analyzer';
+const API_URL = `${SERVER_HOST}/analyzer`;
 
 export const fetchTopAnalyzersData = async () => {
     try {

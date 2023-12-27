@@ -2,7 +2,6 @@ import React, {useState} from "react";
 import '../../css/LoginPage.css';
 import {createAccount} from "../../service/AccountService";
 import {useLocation} from "wouter";
-import {toast, ToastContainer} from "react-toastify";
 
 const RegistrationPage: React.FC = () => {
     const [username, setUsername] = useState("")
@@ -12,6 +11,7 @@ const RegistrationPage: React.FC = () => {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [, navigate] = useLocation();
+    const [error, setError] = useState()
 
     const allFieldsValidated = () => {
         return username && name && surname && email && password && confirmPassword && arePasswordsIdentical();
@@ -22,8 +22,20 @@ const RegistrationPage: React.FC = () => {
     };
 
     const tryToCreateAccount = () => {
-        createAccount(username, name, surname, email, password).then(() => navigate('/login')).catch(() => toast('Failed to create account'));
+        createAccount(username, name, surname, email, password).then(() => {
+            navigate('/login');
+        })
+            .catch((error) => setError(error));
     };
+
+    if (!!error) {
+        return (
+            <div>
+                <h1>Error occurred</h1>
+                <p>{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className='login-container'>
@@ -42,9 +54,9 @@ const RegistrationPage: React.FC = () => {
                 <label htmlFor="confirmPassword">Confirm Password:</label>
                 <input type="password" id="confirmPassword" value={confirmPassword}
                        onChange={event => setConfirmPassword(event.target.value)}/>
-                <button type='submit' disabled={!allFieldsValidated()} onClick={tryToCreateAccount}>Let's go</button>
+                <button type='button' disabled={!allFieldsValidated()} onClick={() => tryToCreateAccount()}>Let's go
+                </button>
             </form>
-            <ToastContainer/>
         </div>
     );
 }

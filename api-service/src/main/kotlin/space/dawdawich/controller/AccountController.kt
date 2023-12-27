@@ -27,7 +27,7 @@ class AccountController(private val accountService: AccountService) {
                 accRequest.surname,
                 accRequest.password
             )
-            return ResponseEntity.ok().build()
+            return ResponseEntity(HttpStatus.OK)
         }
         return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
     }

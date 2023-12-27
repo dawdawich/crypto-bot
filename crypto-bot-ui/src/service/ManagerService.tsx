@@ -1,6 +1,7 @@
 import {Manager} from "../model/Manager";
+import {SERVER_HOST} from "./Constants";
 
-const API_URL = 'http://dawdawich.space:8080/trade-manager';
+const API_URL = `${SERVER_HOST}/trade-manager`;
 
 export const fetchManagersData = async (authToken: string) => {
     try {

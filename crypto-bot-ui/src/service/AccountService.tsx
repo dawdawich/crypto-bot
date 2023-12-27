@@ -1,6 +1,6 @@
-import {Account} from "../model/Account";
+import {SERVER_HOST} from "./Constants";
 
-const API_URL = 'http://dawdawich.space:8080/account';
+const API_URL = `${SERVER_HOST}/account`;
 
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
@@ -11,7 +11,8 @@ export const fetchAuthToken = async (email: string, password: string) => {
             headers: {
                 'Authorization': `Basic ${encodedCredentials}`,
                 'Access-Control-Allow-Origin': '*'
-            }
+            },
+            mode: 'cors' as RequestMode
         };
         const response = await fetch(`${API_URL}/token`, options)
         if (response.ok) {
@@ -47,6 +48,7 @@ export const fetchAccountInfo = async (authToken: string) => {
 export const createAccount = async (username: string, name: string, surname: string, email: string, password: string) => {
     const body = {username: username, name: name, surname: surname, email: email, password: password};
     try {
+        console.log('Start request');
         const response = await fetch(`${API_URL}`, {
             method: 'POST',
             headers: {
@@ -55,8 +57,9 @@ export const createAccount = async (username: string, name: string, surname: str
             },
             body: JSON.stringify(body)
         });
+        console.log('Request finish');
         if (response.ok) {
-            return;
+            return true;
         }
     } catch (error) {
         console.error(error);

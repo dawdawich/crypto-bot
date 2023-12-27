@@ -1,6 +1,7 @@
 import {SymbolModel} from "../model/SymbolModel";
+import {SERVER_HOST} from "./Constants";
 
-const API_URL = 'http://dawdawich.space:8080/symbol'
+const API_URL = `${SERVER_HOST}/symbol`
 
 export const fetchSymbolsList = async (authToken: string) => {
     const response = await fetch(`${API_URL}`, {

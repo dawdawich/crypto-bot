@@ -41,10 +41,6 @@ out/
 /crypto-bot-ui/.pnp.js
 /crypto-bot-ui/coverage
 /crypto-bot-ui/.DS_Store
-/crypto-bot-ui/.env.local
-/crypto-bot-ui/.env.development.local
-/crypto-bot-ui/.env.test.local
-/crypto-bot-ui/.env.production.local
 /crypto-bot-ui/npm-debug.log*
 /crypto-bot-ui/yarn-debug.log*
 /crypto-bot-ui/yarn-error.log*
