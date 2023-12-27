@@ -162,12 +162,9 @@ class TradeManager(
 
         nearOrders.filter { it.value == null }.forEach {
             val moneyPerPosition = capital / analyzer!!.gridSize
-
-            println("=====================================================")
-            println(priceInstruction.toString())
-            println("=====================================================")
-            val regexToSplit = "[.,]".toRegex()
+            
             val isLong = it.key < middlePrice
+            val regexToSplit = "[.,]".toRegex()
             val floatNumberLength =
                 if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(regexToSplit)[1].length else 0
             val inPrice = BigDecimal(it.key).setScale(
