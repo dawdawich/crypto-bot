@@ -81,9 +81,8 @@ class AccountController(private val accountService: AccountService) {
             HttpHeaders.AUTHORIZATION,
             required = true
         ) authorization: String
-    ): ResponseEntity<Unit> {
+    ): ResponseEntity<String> {
         val jwt = accountService.requestAccessToken(authorization)
-        val headers = HttpHeaders().apply { this[HttpHeaders.AUTHORIZATION] = listOf(jwt.toString()) }
-        return ResponseEntity.ok().headers(headers).build()
+        return ResponseEntity.ok(jwt.toString())
     }
 }

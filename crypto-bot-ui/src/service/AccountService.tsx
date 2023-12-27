@@ -16,7 +16,7 @@ export const fetchAuthToken = async (email: string, password: string) => {
         };
         const response = await fetch(`${API_URL}/token`, options)
         if (response.ok) {
-            return response.headers.get('Authorization') as string
+            return await response.text() as string
         }
     } catch (error) {
         console.error(error);

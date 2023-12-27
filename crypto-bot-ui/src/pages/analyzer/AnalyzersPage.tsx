@@ -29,7 +29,7 @@ const AnalyzersPage: React.FC = () => {
     };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.active, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
     }
 
     const deleteItem = (id: string) => {
@@ -82,7 +82,7 @@ const AnalyzersPage: React.FC = () => {
                                 <TableCell align="left">{analyzer.startCapital}</TableCell>
                                 <TableCell align="left">{analyzer.money}</TableCell>
                                 <TableCell align="left">
-                                    <Button onClick={() => changeAnalyzerActiveStatus(analyzer)} color="primary">{analyzer.active ? 'Deactivate' : 'Activate'}</Button>
+                                    <Button onClick={() => changeAnalyzerActiveStatus(analyzer)} color="primary">{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
                                 </TableCell>
                                 <TableCell align="left">
                                     <Button onClick={() => deleteItem(analyzer.id)} color="primary">{'Delete'}</Button>

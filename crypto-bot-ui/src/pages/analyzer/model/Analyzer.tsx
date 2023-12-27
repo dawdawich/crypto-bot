@@ -8,5 +8,5 @@ export type Analyzer = {
     symbol: string;
     startCapital: number;
     money: number;
-    active: boolean;
+    isActive: boolean;
 }
