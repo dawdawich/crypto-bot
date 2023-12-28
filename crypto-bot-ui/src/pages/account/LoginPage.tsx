@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import '../../css/LoginPage.css';
 import {fetchAuthToken} from "../../service/AccountService";
 import {useLocation} from "wouter";
+import {Button, TextField} from "@mui/material";
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState("");
@@ -23,14 +24,32 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className='login-container'>
-            <form className='form-container'>
-                <label htmlFor="email">Email:</label>
-                <input type="email" id="email" value={email} onChange={event => setEmail(event.target.value)}/>
-                <label htmlFor="password">Password:</label>
-                <input type="password" id="password" value={password}
-                       onChange={event => setPassword(event.target.value)}/>
-                <button type='button' disabled={!allFieldsValidated()} onClick={login}>Login</button>
+        <div className="login-container">
+            <form className="form-container">
+                <TextField
+                    id="email"
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                />
+
+                <TextField
+                    id="password"
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                />
+
+                <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={!allFieldsValidated()}
+                    onClick={login}
+                >
+                    Login
+                </Button>
             </form>
         </div>
     );
