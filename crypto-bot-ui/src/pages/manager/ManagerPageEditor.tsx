@@ -97,9 +97,9 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                 <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleTimeString()}</span></p>
             </CardContent>
             <CardActions>
-                <Button size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
+                <Button variant='contained' size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
                     {manager?.active ? "Turn Off" : "Turn On"}</Button>
-                <Button size="medium" color={'error'} onClick={handleDeleteManager}><Delete /> Delete</Button>
+                <Button variant='contained' size="medium" color={'error'} onClick={handleDeleteManager}><Delete />Delete</Button>
             </CardActions>
         </Card>
     )

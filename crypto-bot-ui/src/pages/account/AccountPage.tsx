@@ -5,6 +5,7 @@ import {useLocation} from "wouter";
 import "../../css/AccountInfo.css";
 import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
 import {ApiToken} from "../../model/ApiToken";
+import {Button} from "@mui/material";
 
 const AccountPage: React.FC = () => {
     const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
@@ -77,7 +78,7 @@ const AccountPage: React.FC = () => {
                     <td>{token.market}</td>
                     <td>{token.test.toString()}</td>
                     <td>
-                        <button className="material-button" style={{backgroundColor: '#9d2929'}} onClick={() => handleDeleteApiToken(token.id)}>Delete</button>
+                        <Button variant='contained' size={'medium'} color={'error'} onClick={() => handleDeleteApiToken(token.id)}>Delete</Button>
                     </td>
                 </tr>
             ))}
@@ -98,7 +99,7 @@ const AccountPage: React.FC = () => {
                     <p><strong>Account Creation Date:</strong> <span
                         id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
                 </div>
-                <button className="material-button" onClick={() => setIsApiTokenDialogOpen(true)}>+ API token</button>
+                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
                 <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
                                    onCreate={handleNewApiToken}/>
             </div>
