@@ -137,10 +137,10 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({ open, onClo
                 />
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} color="primary">
+                <Button variant='contained' onClick={onClose} color="error">
                     Cancel
                 </Button>
-                <Button onClick={handleSubmit} color="primary">
+                <Button variant='contained' onClick={handleSubmit} color="primary">
                     Create
                 </Button>
             </DialogActions>

@@ -2,9 +2,8 @@ import React, {useEffect, useState, useCallback} from "react";
 import {useLocation} from "wouter";
 import {Manager} from "../../model/Manager";
 import {fetchManagersData} from "../../service/ManagerService";
-import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
+import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import CreateManagerDialog from "./dialog/CreateManagerDialog";
-import "../../css/ManagerPage.css"
 
 const ManagersPage: React.FC = () => {
     const [isCreateManagerDialogOpen, setIsCreateManagerDialogOpen] = useState(false);
@@ -68,7 +67,7 @@ const ManagersPage: React.FC = () => {
     return (
         <div>
             <h1>Managers Page</h1>
-            <button className="material-button" onClick={() => setIsCreateManagerDialogOpen(true)}>Add Manager</button>
+            <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setIsCreateManagerDialogOpen(true)}>Add Manager</Button>
             <CreateManagerDialog open={isCreateManagerDialogOpen} onClose={() => setIsCreateManagerDialogOpen(false)} onCreate={createManagerAndUpdate} />
             {data.length === 0 ? null : dataTable}
         </div>

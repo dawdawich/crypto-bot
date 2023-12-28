@@ -2,6 +2,7 @@ import React, {useState} from "react";
 import '../../css/LoginPage.css';
 import {createAccount} from "../../service/AccountService";
 import {useLocation} from "wouter";
+import {Button, TextField} from "@mui/material";
 
 const RegistrationPage: React.FC = () => {
     const [username, setUsername] = useState("")
@@ -39,23 +40,63 @@ const RegistrationPage: React.FC = () => {
 
     return (
         <div className='login-container'>
-            <form className='form-container'>
-                <label htmlFor="username">Username:</label>
-                <input type="text" id="username" value={username} onChange={event => setUsername(event.target.value)}/>
-                <label htmlFor="name">Name:</label>
-                <input type="text" id="name" value={name} onChange={event => setName(event.target.value)}/>
-                <label htmlFor="surname">Surname:</label>
-                <input type="text" id="surname" value={surname} onChange={event => setSurname(event.target.value)}/>
-                <label htmlFor="email">Email:</label>
-                <input type="email" id="email" value={email} onChange={event => setEmail(event.target.value)}/>
-                <label htmlFor="password">Password:</label>
-                <input type="password" id="password" value={password}
-                       onChange={event => setPassword(event.target.value)}/>
-                <label htmlFor="confirmPassword">Confirm Password:</label>
-                <input type="password" id="confirmPassword" value={confirmPassword}
-                       onChange={event => setConfirmPassword(event.target.value)}/>
-                <button type='button' disabled={!allFieldsValidated()} onClick={() => tryToCreateAccount()}>Let's go
-                </button>
+            <form className="form-container">
+                <TextField
+                    id="username"
+                    label="Username"
+                    type="text"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                />
+
+                <TextField
+                    id="name"
+                    label="Name"
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                />
+
+                <TextField
+                    id="surname"
+                    label="Surname"
+                    type="text"
+                    value={surname}
+                    onChange={(event) => setSurname(event.target.value)}
+                />
+
+                <TextField
+                    id="email"
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                />
+
+                <TextField
+                    id="password"
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                />
+
+                <TextField
+                    id="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+
+                <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={!allFieldsValidated()}
+                    onClick={() => tryToCreateAccount()}
+                >
+                    Let's go
+                </Button>
             </form>
         </div>
     );

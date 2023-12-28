@@ -5,7 +5,6 @@ import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, T
 import {Symbol} from "../../model/Symbol";
 import {SymbolModel} from "../../model/SymbolModel";
 import CreateSymbolDialog from "./dialog/CreateSymbolDialog";
-import {PlusOne} from "@mui/icons-material";
 
 const SymbolsPage: React.FC = () => {
     const [data, setData] = useState<Symbol[]>([]);
@@ -35,7 +34,7 @@ const SymbolsPage: React.FC = () => {
         <div>
             <h1>Symbols Page</h1>
             <div>
-                <Button size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}><PlusOne />Add new Symbol</Button>
+                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Add new Symbol</Button>
                 <CreateSymbolDialog
                     open={isCreateDialogOpen}
                     onClose={() => setCreateDialogOpen(false)}

@@ -42,7 +42,7 @@ const AnalyzersPage: React.FC = () => {
         <div>
             <h1>Analyzers Page</h1>
             <div>
-                <button onClick={() => setCreateDialogOpen(true)}>Create New Analyzer</button>
+                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create New Analyzer</Button>
                 <CreateAnalyzerDialog
                     open={isCreateDialogOpen}
                     onClose={() => setCreateDialogOpen(false)}
@@ -82,10 +82,10 @@ const AnalyzersPage: React.FC = () => {
                                 <TableCell align="left">{analyzer.startCapital}</TableCell>
                                 <TableCell align="left">{analyzer.money}</TableCell>
                                 <TableCell align="left">
-                                    <Button onClick={() => changeAnalyzerActiveStatus(analyzer)} color="primary">{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
+                                    <Button variant='contained' size={'medium'} color={analyzer.isActive ? 'warning' : 'success'} onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
                                 </TableCell>
                                 <TableCell align="left">
-                                    <Button onClick={() => deleteItem(analyzer.id)} color="primary">{'Delete'}</Button>
+                                    <Button variant='contained' size={'medium'} color={'error'} onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
