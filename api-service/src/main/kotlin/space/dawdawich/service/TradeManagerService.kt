@@ -59,6 +59,10 @@ class TradeManagerService(
         tradeManagerRepository.save(manager.apply { updateTime = System.currentTimeMillis() })
     }
 
-    fun deleteTradeManager(managerId: String, accountId: String) =
-        tradeManagerRepository.deleteByIdAndAccountId(managerId, accountId)
+    fun deleteTradeManager(managerId: String, accountId: String) {
+        if (tradeManagerRepository.deleteByIdAndAccountId(managerId, accountId) > 0) {
+            stringKafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, managerId)
+        }
+    }
+
 }

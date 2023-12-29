@@ -18,5 +18,5 @@ interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String>
 
     fun findByIdAndAccountId(id: String, accountId: String): TradeManagerDocument?
 
-    fun deleteByIdAndAccountId(id: String, accountId: String)
+    fun deleteByIdAndAccountId(id: String, accountId: String): Int
 }
