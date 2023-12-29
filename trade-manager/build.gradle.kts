@@ -24,6 +24,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
     implementation(group = "com.jayway.jsonpath", name = "json-path", version = "2.8.0")
     implementation("org.json:json:20231013")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
 
     implementation("io.ktor:ktor-client-core:2.3.5")
     implementation("io.ktor:ktor-client-cio:2.3.5")

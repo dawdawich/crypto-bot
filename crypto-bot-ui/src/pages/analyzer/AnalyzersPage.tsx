@@ -1,10 +1,9 @@
 import React, {useEffect, useState} from "react";
-import {changeAnalyzerStatus, createAnalyzer, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
+import {changeAnalyzerStatus, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import {Analyzer} from "./model/Analyzer";
 import {useLocation} from "wouter";
 import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
-import {AnalyzerModel} from "../../model/AnalyzerModel";
 
 const AnalyzersPage: React.FC = () => {
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
@@ -18,15 +17,17 @@ const AnalyzersPage: React.FC = () => {
         window.location.reload();
     }
 
-    useEffect(() => {
+    const updateAnalyzersList = () => {
+
         fetchAnalyzersList(authToken as string)
             .then(data => setData(data))
             .catch(error => setError(error))
+    }
+
+    useEffect(() => {
+        updateAnalyzersList();
     }, [authToken]);
 
-    const handleCreateAnalyzer = (analyzerData: AnalyzerModel) => {
-        createAnalyzer(analyzerData, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
-    };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
         changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
@@ -45,8 +46,13 @@ const AnalyzersPage: React.FC = () => {
                 <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create New Analyzer</Button>
                 <CreateAnalyzerDialog
                     open={isCreateDialogOpen}
-                    onClose={() => setCreateDialogOpen(false)}
-                    onCreate={handleCreateAnalyzer}
+                    authToken={authToken as string}
+                    onClose={(result: boolean) => {
+                        if (result) {
+                            updateAnalyzersList();
+                        }
+                        setCreateDialogOpen(false);
+                    }}
                 />
             </div>
             <TableContainer component={Paper}>

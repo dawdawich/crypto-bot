@@ -26,11 +26,11 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
     const [tokens, setTokens] = useState<ApiToken[]>([])
     const [data, setData] = useState<{
         customAnalyzerId: string;
-        active: boolean;
+        status: string;
         apiTokenId: string | null;
     }>({
         customAnalyzerId: "",
-        active: false,
+        status: 'INACTIVE',
         apiTokenId: null
     })
     const [, navigate] = useLocation();
@@ -43,11 +43,6 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
 
     useEffect(() => {
         if (open) {
-            setData({
-                customAnalyzerId: "",
-                active: false,
-                apiTokenId: null
-            });
             getApiTokens(authToken as string)
                 .then(res => setTokens(res))
                 .catch(ex => {
@@ -61,7 +56,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         const { name, value, type, checked } = e.target;
         setData({
             ...data,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === 'checkbox' ? (checked ? 'ACTIVE' : 'INACTIVE') : value
         });
     };
 
@@ -104,7 +99,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                     onChange={handleChange}
                 />
                 <FormControlLabel
-                    control={<Switch checked={data.active} onChange={handleChange} name="active" />}
+                    control={<Switch checked={data.status === 'ACTIVE'} onChange={handleChange} name="status" />}
                     label="Active"
                 />
             </DialogContent>

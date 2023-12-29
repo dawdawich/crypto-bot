@@ -9,9 +9,10 @@ import org.springframework.kafka.listener.MessageListener
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.repositories.GridTableAnalyzerRepository
-import space.dawdawich.repositories.entity.AnalyzerChooseStrategy
+import space.dawdawich.repositories.entity.constants.AnalyzerChooseStrategy
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.entity.constants.ManagerStatus
 import space.dawdawich.service.helper.PositionManager
 import space.dawdawich.service.model.Order
 import space.dawdawich.service.model.Position
@@ -28,7 +29,8 @@ class TradeManager(
     private val tradeManagerData: TradeManagerDocument,
     private val priceTickerListenerFactoryService: PriceTickerListenerFactoryService,
     private val analyzerRepository: GridTableAnalyzerRepository,
-    private val bybitService: ByBitPrivateHttpClient
+    private val bybitService: ByBitPrivateHttpClient,
+    private val managerService: TradeManagerService
 ) {
     private var priceListener: ConcurrentMessageListenerContainer<String, String>? = null
     lateinit var webSocketClient: ByBitWebSocketClient
@@ -49,7 +51,7 @@ class TradeManager(
     var middlePrice: Double = -1.0
 
     init {
-        if (tradeManagerData.isActive) {
+        if (tradeManagerData.status == ManagerStatus.ACTIVE) {
             setupAnalyzer()
             updateCapital()
         }
@@ -73,26 +75,30 @@ class TradeManager(
     }
 
     private fun updatePrice(newPrice: Double) {
-        if (tradeManagerData.isActive && analyzer != null) {
-            if (price <= 0) {
-                middlePrice = analyzer!!.middlePrice!!
-                setUpPrices()
-            }
-
-            price = newPrice
-
-            checkOrders()
-
-            positionManager?.getPositions()?.filter { position ->
-                if (position.size > 0.0) {
-                    val result = capital + position.calculateProfit(price)
-                    return@filter result > capital.plusPercent(analyzer!!.positionTakeProfit) || result < capital.plusPercent(
-                        -analyzer!!.positionStopLoss
-                    )
+        if (tradeManagerData.status == ManagerStatus.ACTIVE) {
+            if (analyzer != null && analyzer!!.middlePrice != null) {
+                if (price <= 0) {
+                    middlePrice = analyzer!!.middlePrice!!
+                    setUpPrices()
                 }
-                return@filter false
-            }?.forEach {
-                closePosition(it)
+
+                price = newPrice
+
+                checkOrders()
+
+                positionManager?.getPositions()?.filter { position ->
+                    if (position.size > 0.0) {
+                        val result = capital + position.calculateProfit(price)
+                        return@filter result > capital.plusPercent(analyzer!!.positionTakeProfit) || result < capital.plusPercent(
+                            -analyzer!!.positionStopLoss
+                        )
+                    }
+                    return@filter false
+                }?.forEach {
+                    closePosition(it)
+                }
+            } else {
+                analyzer = null
             }
         }
         findNewAnalyzer()
@@ -162,7 +168,7 @@ class TradeManager(
 
         nearOrders.filter { it.value == null }.forEach {
             val moneyPerPosition = capital / analyzer!!.gridSize
-            
+
             val isLong = it.key < middlePrice
             val regexToSplit = "[.,]".toRegex()
             val floatNumberLength =
@@ -231,20 +237,6 @@ class TradeManager(
         }
     }
 
-    fun updateTradeData(incomeData: TradeManagerDocument) {
-        if (tradeManagerData.updateTime < incomeData.updateTime) {
-            if (tradeManagerData.isActive != incomeData.isActive) {
-                updateManagerStatus()
-            }
-            if (tradeManagerData.chooseStrategy != incomeData.chooseStrategy) {
-                updateManagerStrategy(incomeData.chooseStrategy)
-            }
-            if (tradeManagerData.customAnalyzerId != incomeData.customAnalyzerId) {
-                updateManagerCustomAnalyzerId(incomeData.customAnalyzerId)
-            }
-        }
-    }
-
     fun updateMiddlePrice(middlePrice: Double) {
         closeAllPositionsAndOrders()
         this.middlePrice = middlePrice
@@ -282,35 +274,14 @@ class TradeManager(
         }
     }
 
-    private fun updateManagerCustomAnalyzerId(customAnalyzerId: String) {
-        tradeManagerData.customAnalyzerId = customAnalyzerId
-    }
-
-    private fun updateManagerStrategy(chooseStrategy: AnalyzerChooseStrategy) {
-        tradeManagerData.chooseStrategy = chooseStrategy
-    }
-
-    private fun updateManagerStatus() {
-        tradeManagerData.isActive = !tradeManagerData.isActive
-
-        if (!tradeManagerData.isActive) {
-            priceListener?.stop()
-            priceListener = null
-            analyzer = null
-        } else {
-            println("Start manager: '${tradeManagerData.id}'")
-            setupAnalyzer()
-        }
-    }
-
     private fun setupAnalyzer() {
-        if (tradeManagerData.isActive) {
+        if (tradeManagerData.status == ManagerStatus.ACTIVE) {
             if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.CUSTOM && tradeManagerData.customAnalyzerId.isNotBlank()) {
                 analyzer = analyzerRepository.findById(tradeManagerData.customAnalyzerId).get()
             } else if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.BIGGEST_BY_MONEY) {
                 analyzer = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
             }
-            if (analyzer != null) {
+            if (analyzer != null && analyzer!!.middlePrice != null) {
                 runBlocking {
                     bybitService.setMarginMultiplier(analyzer!!.symbolInfo.symbol, analyzer!!.multiplayer)
                 }
@@ -328,20 +299,30 @@ class TradeManager(
                             )
                         }
                     })
-            }
 
-            priceListener?.stop()
-            priceListener = priceTickerListenerFactoryService.getPriceListener(analyzer!!.symbolInfo.symbol, analyzer!!.symbolInfo.testServer)
-            priceListener!!.setupMessageListener(MessageListener<String, String> {
-                updatePrice(it.value().toDouble())
-                println("Update price in manager '${tradeManagerData.id}'; price - $price")
-            })
-            priceListener!!.start()
+
+                priceListener?.stop()
+                priceListener = priceTickerListenerFactoryService.getPriceListener(
+                    analyzer!!.symbolInfo.symbol,
+                    analyzer!!.symbolInfo.testServer
+                )
+                priceListener!!.setupMessageListener(MessageListener<String, String> {
+                    try {
+                        updatePrice(it.value().toDouble())
+                    } catch (ex: Exception) {
+                        managerService.deactivateTradeManager(tradeManagerData.id, ex)
+                    }
+                    println("Update price in manager '${tradeManagerData.id}'; price - $price")
+                })
+                priceListener!!.start()
+            } else {
+                analyzer = null
+            }
         }
     }
 
     private fun findNewAnalyzer() {
-        if (analyzerUpdateTimestamp < System.currentTimeMillis()) {
+        if (analyzer == null || analyzerUpdateTimestamp < System.currentTimeMillis()) {
             analyzerUpdateTimestamp = System.currentTimeMillis() + 10.minutes.inWholeMilliseconds
             val biggestAnalyzers = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
             val biggestValue = biggestAnalyzers.maxBy { it.money }
@@ -352,6 +333,19 @@ class TradeManager(
                 middlePrice = analyzer!!.middlePrice!!
                 setUpPrices()
             }
+        }
+    }
+
+    fun deactivateManager() {
+        try {
+            closeAllPositionsAndOrders()
+            webSocketClient.close()
+            if (priceListener?.isRunning == true) {
+                priceListener?.stop()
+            }
+            priceListener = null
+        } catch (ex: Exception) {
+            println("Error: Failed to deactivate manager")
         }
     }
 
