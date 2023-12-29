@@ -12,6 +12,8 @@ const AnalyzersPage: React.FC = () => {
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
 
+    console.log('test')
+
     if (!authToken) {
         navigate('/');
         window.location.reload();
@@ -29,11 +31,15 @@ const AnalyzersPage: React.FC = () => {
 
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
+            .then(() => updateAnalyzersList())
+            .catch((error) => setError(error));
     }
 
     const deleteItem = (id: string) => {
-        deleteAnalyzer(id, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+        deleteAnalyzer(id, authToken as string)
+            .then(() => updateAnalyzersList())
+            .catch((error) => setError(error));
     }
 
     if (error) return <div>Error: {error.message}</div>
@@ -42,7 +48,8 @@ const AnalyzersPage: React.FC = () => {
         <div>
             <h1>Analyzers Page</h1>
             <div>
-                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create New Analyzer</Button>
+                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create
+                    New Analyzer</Button>
                 <CreateAnalyzerDialog
                     open={isCreateDialogOpen}
                     authToken={authToken as string}
@@ -87,10 +94,13 @@ const AnalyzersPage: React.FC = () => {
                                 <TableCell align="left">{analyzer.startCapital}</TableCell>
                                 <TableCell align="left">{analyzer.money}</TableCell>
                                 <TableCell align="left">
-                                    <Button variant='contained' size={'medium'} color={analyzer.isActive ? 'warning' : 'success'} onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
+                                    <Button variant='contained' size={'medium'}
+                                            color={analyzer.isActive ? 'warning' : 'success'}
+                                            onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
                                 </TableCell>
                                 <TableCell align="left">
-                                    <Button variant='contained' size={'medium'} color={'error'} onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
+                                    <Button variant='contained' size={'medium'} color={'error'}
+                                            onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
