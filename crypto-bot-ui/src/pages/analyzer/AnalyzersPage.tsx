@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {changeAnalyzerStatus, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import {Analyzer} from "./model/Analyzer";
@@ -17,16 +17,15 @@ const AnalyzersPage: React.FC = () => {
         window.location.reload();
     }
 
-    const updateAnalyzersList = () => {
-
+    const updateAnalyzersList = useCallback(() => {
         fetchAnalyzersList(authToken as string)
             .then(data => setData(data))
             .catch(error => setError(error))
-    }
+    }, [authToken])
 
     useEffect(() => {
         updateAnalyzersList();
-    }, [authToken]);
+    }, [updateAnalyzersList]);
 
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
