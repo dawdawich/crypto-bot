@@ -2,7 +2,8 @@ package space.dawdawich.repositories.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import java.util.*
+import space.dawdawich.repositories.entity.constants.AnalyzerChooseStrategy
+import space.dawdawich.repositories.entity.constants.ManagerStatus
 
 @Document("trade_manager")
 data class TradeManagerDocument(
@@ -13,11 +14,8 @@ data class TradeManagerDocument(
     var money: Double = 0.0,
     var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
     var customAnalyzerId: String = "",
-    var isActive: Boolean = false,
+    var status: ManagerStatus = ManagerStatus.INACTIVE,
+    var errorDescription: String? = null,
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = System.currentTimeMillis()
 )
-
-enum class AnalyzerChooseStrategy {
-    BIGGEST_BY_MONEY, CUSTOM
-}

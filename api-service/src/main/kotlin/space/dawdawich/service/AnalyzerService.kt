@@ -2,6 +2,7 @@ package space.dawdawich.service
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -31,8 +32,10 @@ class AnalyzerService(
             percentDifference
         }.map { GridTableAnalyzerResponse(it) }.take(20)
 
-    fun getAnalyzers(accountId: String): List<GridTableAnalyzerResponse> =
-        gridTableAnalyzerRepository.findAllByAccountId(accountId).map { GridTableAnalyzerResponse(it) }.toList()
+    fun getAnalyzers(accountId: String, page: Int, size: Int): List<GridTableAnalyzerResponse> =
+        gridTableAnalyzerRepository.findAllByAccountId(accountId, PageRequest.of(page, size)).map { GridTableAnalyzerResponse(it) }.toList()
+
+    fun getAnalyzersCount(accountId: String) = gridTableAnalyzerRepository.countByAccountId(accountId)
 
     fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) {
         if (gridTableAnalyzerRepository.countByIdAndAccountId(id, accountId) > 0) {

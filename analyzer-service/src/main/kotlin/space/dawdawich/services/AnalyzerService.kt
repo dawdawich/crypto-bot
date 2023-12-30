@@ -3,7 +3,6 @@ package space.dawdawich.services
 import kotlinx.serialization.json.Json
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCORE_ID
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
@@ -105,7 +104,7 @@ open class AnalyzerService(
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
                 listenerContainerFactory.createContainer(
-                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.END)
+                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition)
                 )
             )
         }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }

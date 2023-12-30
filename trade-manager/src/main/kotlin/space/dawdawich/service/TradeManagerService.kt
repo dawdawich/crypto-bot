@@ -3,48 +3,31 @@ package space.dawdawich.service
 import com.mongodb.client.model.changestream.OperationType
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.data.mongodb.core.changeStream
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Criteria.where
+import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Service
+import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
+import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.repositories.TradeManagerRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.entity.constants.ManagerStatus
 import space.dawdawich.service.factory.TradeManagerFactory
+import java.util.*
 
 @Service
 open class TradeManagerService(
-    tradeManagerRepository: TradeManagerRepository,
+    private val tradeManagerRepository: TradeManagerRepository,
     mongoTemplate: ReactiveMongoTemplate,
     private val tradeManagerFactory: TradeManagerFactory
 ) {
 
-    private val tradeManagers: MutableList<TradeManager> = mutableListOf()
+    private val tradeManagers: MutableList<TradeManager> = Collections.synchronizedList(mutableListOf())
 
     init {
-        tradeManagers.addAll(tradeManagerRepository.findAllByIsActive().map { data ->
-            tradeManagerFactory.createTradeManager(data)
+        tradeManagers.addAll(tradeManagerRepository.findAllByStatus().map { data ->
+            tradeManagerFactory.createTradeManager(data, this)
         })
 
-//        mongoTemplate.changeStream<TradeManagerDocument>()
-//            .watchCollection("trade_manager")
-//            .filter(where("operationType").`is`(OperationType.INSERT))
-//            .listen()
-//            .subscribe {
-//                val newTradeManager = it.body
-//                newTradeManager?.let { data ->
-//                    tradeManagers += tradeManagerFactory.createTradeManager(data)
-//                }
-//            }
-//        mongoTemplate.changeStream<TradeManagerDocument>()
-//            .watchCollection("trade_manager")
-//            .filter(where("operationType").`in`(OperationType.UPDATE, OperationType.REPLACE))
-//            .listen()
-//            .subscribe {
-//                it.body?.let { changedDocument ->
-//                    tradeManagers.find { manager -> manager.getId() == changedDocument.id }
-//                        ?.updateTradeData(changedDocument)
-//                }
-//            }
         mongoTemplate.changeStream<GridTableAnalyzerDocument>()
             .watchCollection("grid_table_analyzer")
             .listen()
@@ -57,5 +40,36 @@ open class TradeManagerService(
                 }
             }
 
+        Runtime.getRuntime().addShutdownHook(Thread {
+            tradeManagers.parallelStream().forEach {
+                it.deactivateManager()
+                tradeManagerRepository.updateTradeManagerStatus(it.getId(), ManagerStatus.INACTIVE)
+            }
+            tradeManagers.clear()
+        })
+    }
+
+    @KafkaListener(topics = [ACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group", containerFactory = "managerDocumentKafkaListenerContainerFactory")
+    fun activateManager(manager: TradeManagerDocument) {
+        val newTradeManager = tradeManagerFactory.createTradeManager(manager, this)
+        tradeManagers.add(newTradeManager)
+    }
+
+    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
+    fun deactivateManager(managerId: String) {
+        deactivateTradeManager(managerId)
+    }
+
+    fun deactivateTradeManager(managerId: String, ex: Exception? = null) {
+        tradeManagers.removeIf {
+            if (it.getId() == managerId) {
+                it.deactivateManager()
+                return@removeIf true
+            }
+            return@removeIf false
+        }
+        ex?.let {
+            tradeManagerRepository.updateTradeManagerStatus(managerId, ManagerStatus.CRASHED, it.message ?: "Error description absent")
+        }
     }
 }
