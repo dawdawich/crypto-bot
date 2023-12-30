@@ -2,13 +2,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px; /* Adjust the padding as needed */
-    background-color: #fff; /* Adjust the color as needed */
-    /* Add other styles such as box-shadow or border as per your design */
+    padding: 10px 20px;
+    background-color: #fff;
 }
 
-.logo-container {
-    /* Add styles for the logo container if needed */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .logo {

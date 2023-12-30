@@ -1,47 +1,69 @@
 import {useLocation} from "wouter";
-import {AppBar, Box, Button, styled, Toolbar} from "@mui/material";
-
-const StyledToolbar = styled(Toolbar)({
-    justifyContent: 'space-between',
-    gap: '10px',
-});
+import {Button, Divider} from "@mui/material";
+import "../css/HeaderStyles.css";
+import {useState} from "react";
+import RegLoginDialog from "./account/dialog/RegLoginDialog";
 
 const MainHeader = () => {
+    const [isRegistrationDialogOpen, setRegistrationDialogOpen] = useState(false)
+    const [isRegistrationDialog, setRegistrationDialog] = useState(false)
+    const [location, navigate] = useLocation();
     let userData = localStorage.getItem('auth.token');
-    const [, navigate] = useLocation();
 
-    // if (!userData) {
-    //     return (
-    //         <div className='links-box'>
-    //             <div className='links-box-item'><Link to={"/login"} className='cute-link'>Login</Link></div>
-    //             <div className='links-box-item'><Link to={"/signup"} className='cute-link'>Sign Up</Link></div>
-    //         </div>
-    //     )
-    // }
+    let loginPlace: any;
+
+    if (userData == null) {
+        loginPlace = (<div><Button color="inherit" onClick={() => openRegLoginDialog(false)}>Login</Button>
+            <Button color="inherit" onClick={() => openRegLoginDialog(true)}>Sign Up</Button></div>);
+    } else {
+        const username = JSON.parse(atob(userData.split('.')[1])).username;
+        loginPlace = (<strong>{username}</strong>);
+    }
 
     const role = localStorage.getItem('auth.role')
 
+    const openRegLoginDialog = (registration: boolean) => {
+        setRegistrationDialog(registration);
+        setRegistrationDialogOpen(true);
+    }
+
     return (
-        <AppBar position="static" color="default" elevation={1}>
-            <StyledToolbar>
-                <Box display="flex" alignItems="center">
-                    <img src="" alt="Logo" style={{ height: 50 }} />
-                </Box>
-                <Box display="flex" gap={2}>
-                    <Button color="inherit" onClick={() => navigate("/analyzer")}>Analyzers</Button>
-                    <Button color="inherit" onClick={() => navigate("/top-analyzers")}>Public Top Analyzers</Button>
-                    <Button color="inherit" onClick={() => navigate("/manager")}>Managers</Button>
-                    <Button color="inherit" onClick={() => navigate("/account")}>Account</Button>
+        <div>
+            <header className="header">
+                <div className="logo-container">
+                    <img src="" alt="Logo" className="logo"/>
+                </div>
+                <nav className="navigation">
+                    {
+                        userData != null &&
+                        <Button color="inherit" onClick={() => navigate("/analyzer")}
+                             variant={location === "/analyzer" ? 'contained' : undefined}>Analyzers</Button>
+                    }
+                    <Button color="inherit" onClick={() => navigate("/top-analyzers")}
+                            variant={location === "/top-analyzers" ? 'contained' : undefined}>Public Top
+                        Analyzers</Button>
+                    {
+                        userData != null &&
+                        <Button color="inherit" onClick={() => navigate("/manager")}
+                             variant={location === "/manager" ? 'contained' : undefined}>Managers</Button>
+                    }
+                    {
+                        userData != null &&
+                        <Button color="inherit" onClick={() => navigate("/account")}
+                                variant={location === "/account" ? 'contained' : undefined}>Account</Button>
+                    }
                     {
                         role === 'ADMIN' &&
-                        <Button color="inherit" onClick={() => navigate("/symbols")}>Symbols</Button>
+                        <Button color="inherit" onClick={() => navigate("/symbols")}
+                                variant={location === "/symbols" ? 'contained' : undefined}>Symbols</Button>
                     }
-                </Box>
-                <Button variant="outlined" color="primary">
-                    Connect Wallet
-                </Button>
-            </StyledToolbar>
-        </AppBar>
+                </nav>
+                {loginPlace}
+            </header>
+            <Divider light/>
+            <RegLoginDialog open={isRegistrationDialogOpen} isRegistration={isRegistrationDialog} setRegistrationDialog={setRegistrationDialog}
+                            onClose={() => setRegistrationDialogOpen(false)}/>
+        </div>
     );
 }
 
