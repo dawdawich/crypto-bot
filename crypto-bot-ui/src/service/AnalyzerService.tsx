@@ -37,9 +37,9 @@ export const fetchAnalyzerData = async (analyzerId: string) => {
     throw new Error('Failed to fetch data');
 }
 
-export const fetchAnalyzersList = async (authToken: string) => {
+export const fetchAnalyzersList = async (authToken: string, page: number, size: number) => {
     try {
-        const response = await fetch(`${API_URL}`, {
+        const response = await fetch(`${API_URL}?page=${page}&size=${size}`, {
             headers: {
                 Authorization: `Bearer ${authToken}`,
                 'Access-Control-Allow-Origin': '*'
@@ -47,6 +47,24 @@ export const fetchAnalyzersList = async (authToken: string) => {
         });
         if (response.ok) {
             return await response.json();
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+    throw new Error('Failed to fetch analyzers list');
+}
+
+export const fetchAnalyzersSize = async (authToken: string) => {
+    try {
+        const response = await fetch(`${API_URL}/count`, {
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
+        if (response.ok) {
+            return parseInt(await response.text());
         }
     } catch (error) {
         console.error(error);

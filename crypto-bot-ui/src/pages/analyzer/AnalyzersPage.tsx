@@ -1,6 +1,11 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {changeAnalyzerStatus, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
-import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
+import {
+    changeAnalyzerStatus,
+    deleteAnalyzer,
+    fetchAnalyzersList,
+    fetchAnalyzersSize
+} from "../../service/AnalyzerService";
+import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination} from "@mui/material";
 import {Analyzer} from "./model/Analyzer";
 import {useLocation} from "wouter";
 import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
@@ -11,8 +16,9 @@ const AnalyzersPage: React.FC = () => {
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
-
-    console.log('test')
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [dataSize, setDataSize] = useState(0);
 
     if (!authToken) {
         navigate('/');
@@ -20,15 +26,28 @@ const AnalyzersPage: React.FC = () => {
     }
 
     const updateAnalyzersList = useCallback(() => {
-        fetchAnalyzersList(authToken as string)
+        fetchAnalyzersSize(authToken as string)
+            .then(count => setDataSize(count))
+            .catch(error => setError(error))
+        fetchAnalyzersList(authToken as string, page, rowsPerPage)
             .then(data => setData(data))
             .catch(error => setError(error))
-    }, [authToken])
+    }, [authToken, page, rowsPerPage])
 
     useEffect(() => {
         updateAnalyzersList();
     }, [updateAnalyzersList]);
 
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+        updateAnalyzersList();
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+        updateAnalyzersList();
+    };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
         changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
@@ -106,6 +125,14 @@ const AnalyzersPage: React.FC = () => {
                         ))}
                     </TableBody>
                 </Table>
+                <TablePagination
+                  component="div"
+                  count={dataSize}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
             </TableContainer>
         </div>
     );
