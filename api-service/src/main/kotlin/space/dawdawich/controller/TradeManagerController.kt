@@ -4,9 +4,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.controller.model.ActivationRequest
 import space.dawdawich.controller.model.TradeManagerRequest
 import space.dawdawich.controller.model.TradeManagerResponse.Companion.convert
+import space.dawdawich.controller.model.TradeManagerStatusRequest
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.service.TradeManagerService
 
@@ -17,7 +17,7 @@ class TradeManagerController(private val tradeMangerService: TradeManagerService
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     fun createNewTradeManager(user: Authentication, @RequestBody request: TradeManagerRequest) =
-        tradeMangerService.createNewTraderManager(request.apiTokenId, request.active, request.customAnalyzerId, user.name)
+        tradeMangerService.createNewTraderManager(request.apiTokenId, request.status, request.customAnalyzerId, user.name)
 
     @GetMapping
     fun getAllManagers(user: Authentication) = tradeMangerService.findAllByAccountId(user.name).map { it.convert() }
@@ -35,7 +35,7 @@ class TradeManagerController(private val tradeMangerService: TradeManagerService
 
     @PutMapping("/{managerId}/status")
     @ResponseStatus(HttpStatus.OK)
-    fun changeManagerStatus(user: Authentication, @PathVariable managerId: String, @RequestBody request: ActivationRequest) = tradeMangerService.updateTradeManagerStatus(managerId, user.name, request.status)
+    fun changeManagerStatus(user: Authentication, @PathVariable managerId: String, @RequestBody request: TradeManagerStatusRequest) = tradeMangerService.updateTradeManagerStatus(managerId, user.name, request.status)
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)

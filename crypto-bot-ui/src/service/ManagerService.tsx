@@ -57,7 +57,7 @@ export const createManager = async (manager: any, authToken: string) => {
     throw new Error('Failed to create manager data');
 }
 
-export const updateManagerStatus = async (managerId: string, status: boolean, authToken: string) => {
+export const updateManagerStatus = async (managerId: string, status: string, authToken: string) => {
     try {
         const response = await fetch(`${API_URL}/${managerId}/status`, {
             method: 'PUT',

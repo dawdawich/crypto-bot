@@ -15,15 +15,16 @@ import {
 } from '@mui/material';
 import React, {useEffect, useState} from "react";
 import {fetchSymbolsNameList} from "../../../service/SymbolService";
+import {createAnalyzer} from "../../../service/AnalyzerService";
 
 
 interface CreateAnalyzerDialogProps {
     open: boolean;
-    onClose: () => void;
-    onCreate: (analyzerData: AnalyzerModel) => void;
+    authToken: string;
+    onClose: (result: boolean) => void;
 }
 
-const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({ open, onClose, onCreate }) => {
+const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({open, authToken, onClose}) => {
     const [symbols, setSymbols] = useState<string[]>([])
     const [analyzerData, setAnalyzerData] = useState<AnalyzerModel>({
         public: false,
@@ -43,7 +44,7 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({ open, onClo
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
+        const {name, value, type, checked} = e.target;
         setAnalyzerData({
             ...analyzerData,
             [name]: type === 'checkbox' ? checked : value
@@ -51,8 +52,13 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({ open, onClo
     };
 
     const handleSubmit = () => {
-        onCreate(analyzerData);
-        onClose();
+        createAnalyzer(analyzerData, authToken)
+            .then(() => {
+                onClose(true)
+            })
+            .catch(() => {
+                onClose(false)
+            });
     };
 
     return (
@@ -128,16 +134,16 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({ open, onClo
                     onChange={handleChange}
                 />
                 <FormControlLabel
-                    control={<Switch checked={analyzerData.public} onChange={handleChange} name="public" />}
+                    control={<Switch checked={analyzerData.public} onChange={handleChange} name="public"/>}
                     label="Public"
                 />
                 <FormControlLabel
-                    control={<Switch checked={analyzerData.active} onChange={handleChange} name="active" />}
+                    control={<Switch checked={analyzerData.active} onChange={handleChange} name="active"/>}
                     label="Active"
                 />
             </DialogContent>
             <DialogActions>
-                <Button variant='contained' onClick={onClose} color="error">
+                <Button variant='contained' onClick={() => onClose(false)} color="error">
                     Cancel
                 </Button>
                 <Button variant='contained' onClick={handleSubmit} color="primary">

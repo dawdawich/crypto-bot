@@ -1,26 +1,24 @@
 package space.dawdawich.analyzers
 
 import space.dawdawich.analyzers.helper.PositionManager
-import java.util.*
 import space.dawdawich.data.Order
 import space.dawdawich.data.Trend
 import space.dawdawich.utils.plusPercent
-import java.math.BigDecimal
-import java.math.RoundingMode
+import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
 
 class GridTableAnalyzer(
-    val diapason: Int,
-    val gridSize: Int,
-    money: Double,
-    val multiplier: Int,
-    val stopLoss: Int,
-    val takeProfit: Int,
+    private val diapason: Int,
+    private val gridSize: Int,
+    private var money: Double,
+    private val multiplier: Int,
+    private val stopLoss: Int,
+    private val takeProfit: Int,
     val symbol: String,
-    val isOneWayMode: Boolean,
-    val priceMinStep: Double,
+    isOneWayMode: Boolean,
+    private val priceMinStep: Double,
     val id: String = UUID.randomUUID().toString(),
     moneyChangeFunction: (KProperty<*>, Double, Double) -> Unit = { _, _, _ -> },
     private val updateMiddlePrice: (Double) -> Unit = {_->}
@@ -33,7 +31,7 @@ class GridTableAnalyzer(
 
     private var orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
 
-    var money: Double by Delegates.observable(money) { _, _, newValue ->
+    private var moneyWithProfit: Double by Delegates.observable(money) { _, _, newValue ->
         if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {
             moneyHandler = newValue
         }
@@ -52,8 +50,8 @@ class GridTableAnalyzer(
 
         positionManager.getPositions().filter { position ->
             if (position.size > 0.0) {
-                val result = money + position.calculateProfit(currentPrice)
-                return@filter result > money.plusPercent(takeProfit) || result < money.plusPercent(-stopLoss)
+                moneyWithProfit = money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
+                return@filter moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)
             }
             return@filter false
         }.forEach {
@@ -134,7 +132,6 @@ class GridTableAnalyzer(
             } else if (order.isTakeProfitExceeded(currentPrice) || order.isStopLossExceeded(currentPrice)) {
                 order.isFilled = false
                 orderPriceGrid[orderPriceGrid.entries.first { it.value == order }.key] = null
-//                orderPriceGrid.remove(orderPriceGrid.entries.first { it.value == order }.key)
             }
         }
     }

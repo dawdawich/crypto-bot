@@ -18,7 +18,11 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> = analyzerService.getTopAnalyzers()
 
     @GetMapping
-    fun getAnalyzers(authentication: Authentication) = analyzerService.getAnalyzers(authentication.name)
+    fun getAnalyzers(authentication: Authentication, @RequestParam("page", defaultValue = "0") page: Int, @RequestParam("size", defaultValue = "10") size: Int) = analyzerService.getAnalyzers(authentication.name, page, size)
+
+    @GetMapping("/count")
+    @ResponseStatus(HttpStatus.OK)
+    fun getAnalyzersCount(authentication: Authentication) = analyzerService.getAnalyzersCount(authentication.name)
 
     @GetMapping("/{analyzerId}")
     fun getAnalyzer(@PathVariable analyzerId: String): GridTableAnalyzerResponse =

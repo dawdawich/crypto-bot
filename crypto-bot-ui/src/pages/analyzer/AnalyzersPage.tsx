@@ -1,10 +1,14 @@
-import React, {useEffect, useState} from "react";
-import {changeAnalyzerStatus, createAnalyzer, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
-import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
+import React, {useCallback, useEffect, useState} from "react";
+import {
+    changeAnalyzerStatus,
+    deleteAnalyzer,
+    fetchAnalyzersList,
+    fetchAnalyzersSize
+} from "../../service/AnalyzerService";
+import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination} from "@mui/material";
 import {Analyzer} from "./model/Analyzer";
 import {useLocation} from "wouter";
 import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
-import {AnalyzerModel} from "../../model/AnalyzerModel";
 
 const AnalyzersPage: React.FC = () => {
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
@@ -12,28 +16,49 @@ const AnalyzersPage: React.FC = () => {
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [dataSize, setDataSize] = useState(0);
 
     if (!authToken) {
         navigate('/');
         window.location.reload();
     }
 
-    useEffect(() => {
-        fetchAnalyzersList(authToken as string)
+    const updateAnalyzersList = useCallback(() => {
+        fetchAnalyzersSize(authToken as string)
+            .then(count => setDataSize(count))
+            .catch(error => setError(error))
+        fetchAnalyzersList(authToken as string, page, rowsPerPage)
             .then(data => setData(data))
             .catch(error => setError(error))
-    }, [authToken]);
+    }, [authToken, page, rowsPerPage])
 
-    const handleCreateAnalyzer = (analyzerData: AnalyzerModel) => {
-        createAnalyzer(analyzerData, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+    useEffect(() => {
+        updateAnalyzersList();
+    }, [updateAnalyzersList]);
+
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+        updateAnalyzersList();
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+        updateAnalyzersList();
     };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
+            .then(() => updateAnalyzersList())
+            .catch((error) => setError(error));
     }
 
     const deleteItem = (id: string) => {
-        deleteAnalyzer(id, authToken as string).then(() => window.location.reload()); // TODO: Add error handling
+        deleteAnalyzer(id, authToken as string)
+            .then(() => updateAnalyzersList())
+            .catch((error) => setError(error));
     }
 
     if (error) return <div>Error: {error.message}</div>
@@ -42,11 +67,17 @@ const AnalyzersPage: React.FC = () => {
         <div>
             <h1>Analyzers Page</h1>
             <div>
-                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create New Analyzer</Button>
+                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create
+                    New Analyzer</Button>
                 <CreateAnalyzerDialog
                     open={isCreateDialogOpen}
-                    onClose={() => setCreateDialogOpen(false)}
-                    onCreate={handleCreateAnalyzer}
+                    authToken={authToken as string}
+                    onClose={(result: boolean) => {
+                        if (result) {
+                            updateAnalyzersList();
+                        }
+                        setCreateDialogOpen(false);
+                    }}
                 />
             </div>
             <TableContainer component={Paper}>
@@ -82,15 +113,26 @@ const AnalyzersPage: React.FC = () => {
                                 <TableCell align="left">{analyzer.startCapital}</TableCell>
                                 <TableCell align="left">{analyzer.money}</TableCell>
                                 <TableCell align="left">
-                                    <Button variant='contained' size={'medium'} color={analyzer.isActive ? 'warning' : 'success'} onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
+                                    <Button variant='contained' size={'medium'}
+                                            color={analyzer.isActive ? 'warning' : 'success'}
+                                            onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
                                 </TableCell>
                                 <TableCell align="left">
-                                    <Button variant='contained' size={'medium'} color={'error'} onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
+                                    <Button variant='contained' size={'medium'} color={'error'}
+                                            onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
+                <TablePagination
+                  component="div"
+                  count={dataSize}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
             </TableContainer>
         </div>
     );

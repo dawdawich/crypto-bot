@@ -43,8 +43,8 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
     }
 
     const changeManagerStatus = () => {
-        manager!.active = !manager!.active;
-        updateManagerStatus(manager!.id, manager!.active, authToken as string)
+        manager!.status = manager!.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        updateManagerStatus(manager!.id, manager!.status, authToken as string)
             .then(result => {
                 if (result) {
                     fetchManagerData(authToken as string, props.params.managerId)
@@ -93,12 +93,14 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                         <MenuItem value={"CUSTOM"}>Custom</MenuItem>
                     </Select>
                 </FormControl>
+                <p><strong>Status:</strong> <span id="status">{manager.status}</span></p>
+                {manager.errorDescription ? <p><strong>Error description:</strong> <span id="error-description">{manager.errorDescription}</span></p> : null}
                 <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleTimeString()}</span></p>
                 <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleTimeString()}</span></p>
             </CardContent>
             <CardActions>
-                <Button variant='contained' size="medium" onClick={changeManagerStatus}>{manager?.active ? (<PowerOffIcon />) : (<PowerOnIcon />)}
-                    {manager?.active ? "Turn Off" : "Turn On"}</Button>
+                <Button variant='contained' size="medium" onClick={changeManagerStatus}>{manager.status === 'ACTIVE' ? (<PowerOffIcon />) : (<PowerOnIcon />)}
+                    {manager.status === 'ACTIVE' ? "Turn Off" : "Turn On"}</Button>
                 <Button variant='contained' size="medium" color={'error'} onClick={handleDeleteManager}><Delete />Delete</Button>
             </CardActions>
         </Card>

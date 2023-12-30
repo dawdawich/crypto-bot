@@ -57,7 +57,7 @@ const ManagersPage: React.FC = () => {
                         <TableCell component="th" scope="row">{manager.id}</TableCell>
                         <TableCell align="left">{manager.chooseStrategy}</TableCell>
                         <TableCell align="left">{manager.customAnalyzerId}</TableCell>
-                        <TableCell align="left">{manager.active ? "Active" : "Disabled"}</TableCell>
+                        <TableCell align="left">{manager.status}</TableCell>
                     </TableRow>
                 ))}
             </TableBody>

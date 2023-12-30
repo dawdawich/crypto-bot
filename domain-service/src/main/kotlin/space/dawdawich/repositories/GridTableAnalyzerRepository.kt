@@ -23,9 +23,11 @@ interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocumen
 
     fun countByIdAndAccountId(id: String, accountId: String): Int
 
+    fun countByAccountId(accountId: String): Int
+
     fun findAllByOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
 
-    fun findAllByAccountId(accountId: String): List<GridTableAnalyzerDocument>
+    fun findAllByAccountId(accountId: String, pageable: Pageable): List<GridTableAnalyzerDocument>
 
     fun findAllByPublic(public: Boolean = true): List<GridTableAnalyzerDocument>
 }

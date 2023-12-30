@@ -9,6 +9,7 @@ import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.service.PriceTickerListenerFactoryService
 import space.dawdawich.service.TradeManager
+import space.dawdawich.service.TradeManagerService
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -21,7 +22,7 @@ class TradeManagerFactory(
     private val serviceFactory: PrivateHttpClientFactory
 ) {
 
-    fun createTradeManager(tradeManagerData: TradeManagerDocument): TradeManager {
+    fun createTradeManager(tradeManagerData: TradeManagerDocument, managerService: TradeManagerService): TradeManager {
         val apiTokens = apiAccessTokenRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
@@ -32,7 +33,7 @@ class TradeManagerFactory(
             )
         }
 
-        val tradeManager = TradeManager(tradeManagerData, priceListener, analyzerRepository, serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor))
+        val tradeManager = TradeManager(tradeManagerData, priceListener, analyzerRepository, serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor), managerService)
         tradeManager.webSocketClient = ByBitWebSocketClient(
             apiTokens.test,
             apiTokens.apiKey,
