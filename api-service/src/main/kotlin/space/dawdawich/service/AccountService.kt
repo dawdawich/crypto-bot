@@ -28,7 +28,9 @@ class AccountService(
         val jwtHeader = "{ \"alg\": \"HS256\", \"typ\": \"JWT\"}".baseEncode()
     }
 
-    fun isAccountEmailExist(email: String): Boolean = accountRepository.existsByEmail(email)
+    fun isEmailAllowedToRegistration(email: String): Boolean = accountRepository.existsByEmail(email)
+
+    fun isAccountAlreadyRegistered(email: String, username: String): Boolean = accountRepository.existsByEmailAndUsername(email, username)
 
     fun fillAccountInfo(email: String, username: String, name: String, surname: String, password: String) =
         accountRepository.fillAccountInfo(email, username, name, surname, passwordEncoder.encode(password))

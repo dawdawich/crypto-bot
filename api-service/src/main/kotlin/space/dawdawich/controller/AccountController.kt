@@ -18,18 +18,21 @@ import space.dawdawich.service.AccountService
 class AccountController(private val accountService: AccountService) {
 
     @PostMapping
-    fun createAccount(@RequestBody accRequest: CreateAccountRequest): ResponseEntity<Unit> { // TODO: Add checks that account did not registered
-        if (accountService.isAccountEmailExist(accRequest.email.lowercase())) {
-            accountService.fillAccountInfo(
+    fun createAccount(@RequestBody accRequest: CreateAccountRequest): ResponseEntity<Unit> {
+        if (!accountService.isEmailAllowedToRegistration(accRequest.email.lowercase())) {
+            return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
+        }
+        if (accountService.isAccountAlreadyRegistered(accRequest.email.lowercase(), accRequest.username)) {
+            return ResponseEntity(HttpStatus.CONFLICT)
+        }
+        accountService.fillAccountInfo(
                 accRequest.email.lowercase(),
                 accRequest.username,
                 accRequest.name,
                 accRequest.surname,
-                accRequest.password
-            )
-            return ResponseEntity(HttpStatus.OK)
-        }
-        return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
+                accRequest.password)
+
+        return ResponseEntity(HttpStatus.OK)
     }
 
     @GetMapping
