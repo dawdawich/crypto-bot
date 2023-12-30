@@ -1,0 +1,53 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #fff;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.logo {
+    /* Style your logo here */
+    height: 50px; /* Adjust size as needed */
+}
+
+.navigation {
+    display: flex;
+    gap: 10px; /* Adjust the gap between buttons as needed */
+}
+
+.nav-button {
+    padding: 5px 15px; /* Adjust padding as needed */
+    cursor: pointer;
+    /* Add styles for your buttons */
+}
+
+.api-button .new-tag {
+    margin-left: 5px;
+    color: green; /* Adjust color as needed */
+    font-size: 0.8em; /* Adjust size as needed */
+}
+
+.connect-wallet {
+    padding: 10px 20px; /* Adjust padding as needed */
+    cursor: pointer;
+    /* Style your button here, add border or background color as needed */
+}
+
+/* Add responsive styles if needed */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+    }
+    .navigation,
+    .connect-wallet {
+        width: 100%;
+        text-align: center;
+    }
+}
