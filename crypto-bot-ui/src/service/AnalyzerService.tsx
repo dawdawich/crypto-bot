@@ -1,5 +1,6 @@
 import {AnalyzerModel} from "../model/AnalyzerModel";
 import {SERVER_HOST} from "./Constants";
+import {Analyzer} from "../pages/analyzer/model/Analyzer";
 
 const API_URL = `${SERVER_HOST}/analyzer`;
 
@@ -46,7 +47,7 @@ export const fetchAnalyzersList = async (authToken: string, page: number, size: 
             }
         });
         if (response.ok) {
-            return await response.json();
+            return await response.json() as {analyzers: Analyzer[], totalSize: number};
         }
     } catch (error) {
         console.error(error);
@@ -54,25 +55,6 @@ export const fetchAnalyzersList = async (authToken: string, page: number, size: 
     }
     throw new Error('Failed to fetch analyzers list');
 }
-
-export const fetchAnalyzersSize = async (authToken: string) => {
-    try {
-        const response = await fetch(`${API_URL}/count`, {
-            headers: {
-                Authorization: `Bearer ${authToken}`,
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
-        if (response.ok) {
-            return parseInt(await response.text());
-        }
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-    throw new Error('Failed to fetch analyzers list');
-}
-
 export const createAnalyzer = async (analyzer: AnalyzerModel, authToken: string) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',

@@ -4,10 +4,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.controller.model.ActivationRequest
-import space.dawdawich.controller.model.AnalyzerBulkCreateRequest
-import space.dawdawich.controller.model.CreateAnalyzerRequest
-import space.dawdawich.controller.model.GridTableAnalyzerResponse
+import space.dawdawich.controller.model.*
 import space.dawdawich.service.AnalyzerService
 
 @RestController
@@ -18,11 +15,9 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> = analyzerService.getTopAnalyzers()
 
     @GetMapping
-    fun getAnalyzers(authentication: Authentication, @RequestParam("page", defaultValue = "0") page: Int, @RequestParam("size", defaultValue = "10") size: Int) = analyzerService.getAnalyzers(authentication.name, page, size)
-
-    @GetMapping("/count")
-    @ResponseStatus(HttpStatus.OK)
-    fun getAnalyzersCount(authentication: Authentication) = analyzerService.getAnalyzersCount(authentication.name)
+    fun getAnalyzers(authentication: Authentication, @RequestParam("page", defaultValue = "0") page: Int, @RequestParam("size", defaultValue = "10") size: Int): GetAnalyzersResponse {
+        return GetAnalyzersResponse(analyzerService.getAnalyzers(authentication.name, page, size), analyzerService.getAnalyzersCount(authentication.name))
+    }
 
     @GetMapping("/{analyzerId}")
     fun getAnalyzer(@PathVariable analyzerId: String): GridTableAnalyzerResponse =
