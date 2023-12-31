@@ -55,7 +55,7 @@ const AnalyzersPage: React.FC = () => {
     };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
+        changeAnalyzerStatus(analyzer.id, !analyzer.active, authToken as string)
             .then(() => updateAnalyzersList())
             .catch((error) => setError(error));
     }
@@ -119,8 +119,8 @@ const AnalyzersPage: React.FC = () => {
                                 <TableCell align="left">{analyzer.money}</TableCell>
                                 <TableCell align="left">
                                     <Button variant='contained' size={'medium'}
-                                            color={analyzer.isActive ? 'warning' : 'success'}
-                                            onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
+                                            color={analyzer.active ? 'warning' : 'success'}
+                                            onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.active ? 'Deactivate' : 'Activate'}</Button>
                                 </TableCell>
                                 <TableCell align="left">
                                     <Button variant='contained' size={'medium'} color={'error'}
