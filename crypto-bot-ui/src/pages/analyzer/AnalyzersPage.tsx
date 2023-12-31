@@ -1,11 +1,16 @@
 import React, {useCallback, useEffect, useState} from "react";
+import {changeAnalyzerStatus, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
 import {
-    changeAnalyzerStatus,
-    deleteAnalyzer,
-    fetchAnalyzersList,
-    fetchAnalyzersSize
-} from "../../service/AnalyzerService";
-import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination} from "@mui/material";
+    Button,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow
+} from "@mui/material";
 import {Analyzer} from "./model/Analyzer";
 import {useLocation} from "wouter";
 import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
@@ -26,13 +31,13 @@ const AnalyzersPage: React.FC = () => {
     }
 
     const updateAnalyzersList = useCallback(() => {
-        fetchAnalyzersSize(authToken as string)
-            .then(count => setDataSize(count))
-            .catch(error => setError(error))
         fetchAnalyzersList(authToken as string, page, rowsPerPage)
-            .then(data => setData(data))
+            .then(data => {
+                setData(data.analyzers);
+                setDataSize(data.totalSize);
+            })
             .catch(error => setError(error))
-    }, [authToken, page, rowsPerPage])
+    }, [authToken, page, rowsPerPage]);
 
     useEffect(() => {
         updateAnalyzersList();
