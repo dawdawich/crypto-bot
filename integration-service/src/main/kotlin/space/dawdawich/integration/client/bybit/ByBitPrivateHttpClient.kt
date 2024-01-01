@@ -3,7 +3,9 @@ package space.dawdawich.integration.client.bybit
 import com.jayway.jsonpath.ParseContext
 import space.dawdawich.integration.model.PositionInfo
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
@@ -35,7 +37,8 @@ class ByBitPrivateHttpClient(
         isLong: Boolean,
         positionIdx: Int,
         orderId: String,
-        triggerDirection: Int
+        triggerDirection: Int,
+        repeatCount: Int = 2
     ): Boolean {
         val request = buildJsonObject {
             put("symbol", symbol)
@@ -54,7 +57,7 @@ class ByBitPrivateHttpClient(
         }.toString()
 
         try {
-            val response = post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request))
+            val response = repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
@@ -75,14 +78,14 @@ class ByBitPrivateHttpClient(
         return false
     }
 
-    suspend fun cancelAllOrder(symbol: String) {
+    suspend fun cancelAllOrder(symbol: String, repeatCount: Int = 2) {
         val request = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
         }.toString()
 
         try {
-            val response = post(CANCEL_ALL_ORDERS, request, getByBitHeadersWithSign(request))
+            val response = repeatCount repeatTry { post(CANCEL_ALL_ORDERS, request, getByBitHeadersWithSign(request)) }
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
             val returnCode = parsedJson.read<Int>("$.retCode")
@@ -94,9 +97,9 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun getAccountBalance(): Double {
+    suspend fun getAccountBalance(repeatCount: Int = 2): Double {
         val query = "accountType=UNIFIED&coin=USDT"
-        val response: HttpResponse = get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query))
+        val response: HttpResponse = repeatCount repeatTry { get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query)) }
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
@@ -137,16 +140,16 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun setMarginMultiplier(symbol: String, multiplayer: Int): Boolean {
+    suspend fun setMarginMultiplier(symbol: String, multiplayer: Int, retryCount: Int = 2): Boolean {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
             put("buyLeverage", multiplayer.toString())
             put("sellLeverage", multiplayer.toString())
         }.toString()
-
         try {
-            val response: HttpResponse = post(SET_MARGIN, request, getByBitHeadersWithSign(request))
+            val response: HttpResponse =  retryCount repeatTry { post(SET_MARGIN, request, getByBitHeadersWithSign(request)) }
+
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
@@ -163,7 +166,7 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int) {
+    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int, repeatCount: Int = 2) {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
@@ -177,7 +180,7 @@ class ByBitPrivateHttpClient(
         }.toString()
 
         try {
-            val response: HttpResponse = post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request))
+            val response: HttpResponse = repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("$.retCode")) {
@@ -190,6 +193,20 @@ class ByBitPrivateHttpClient(
         } catch (e: Exception) {
             throw e
         }
+    }
+
+
+    private suspend infix fun <T> Int.repeatTry(block: suspend () -> T) : T {
+        return try {
+            block()
+        } catch (timeoutEx: HttpRequestTimeoutException) {
+            if (this > 0) {
+                (this - 1).repeatTry(block)
+            } else {
+                throw timeoutEx
+            }
+        }
+
     }
 
     private fun getByBitHeadersWithSign(body: String): Array<Pair<String, String>> {

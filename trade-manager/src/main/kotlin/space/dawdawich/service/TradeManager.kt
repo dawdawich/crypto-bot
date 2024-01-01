@@ -283,7 +283,7 @@ class TradeManager(
             }
             if (analyzer != null && analyzer!!.middlePrice != null) {
                 runBlocking {
-                    bybitService.setMarginMultiplier(analyzer!!.symbolInfo.symbol, analyzer!!.multiplayer)
+                    bybitService.setMarginMultiplier(analyzer!!.symbolInfo.symbol, analyzer!!.multiplayer, 3)
                 }
                 priceInstruction = runBlocking { bybitService.getPairInstructions(analyzer!!.symbolInfo.symbol) }
                 positionManager =
