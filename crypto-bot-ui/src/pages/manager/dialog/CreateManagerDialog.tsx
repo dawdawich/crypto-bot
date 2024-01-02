@@ -28,10 +28,14 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         customAnalyzerId: string;
         status: string;
         apiTokenId: string | null;
+        stopLoss: number | null;
+        takeProfit: number | null;
     }>({
         customAnalyzerId: "",
         status: 'INACTIVE',
-        apiTokenId: null
+        apiTokenId: null,
+        stopLoss: null,
+        takeProfit: null
     })
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
@@ -52,11 +56,19 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         }
     }, [open, authToken]);
 
+    const convertOptionalValues = (value: string) => {
+        if (value === "" || parseInt(value) < 1) {
+            return null;
+        }
+        return parseInt(value);
+    }
+
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
+        const {name, value, type, checked} = e.target;
         setData({
             ...data,
-            [name]: type === 'checkbox' ? (checked ? 'ACTIVE' : 'INACTIVE') : value
+            [name]: type === 'checkbox' ? (checked ? 'ACTIVE' : 'INACTIVE') : (name === 'stopLoss' || name === 'takeProfit') ? convertOptionalValues(value) : value
         });
     };
 
@@ -85,7 +97,8 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                         name="apiTokenId"
                     >
                         {tokens.map((option) => (
-                            <MenuItem key={option.id} value={option.id}>{option.id.toString() + ' | ' + option.apiKey.toString() + ' | ' + option.market.toString() + ' | ' + (option.test ? 'Test Account' : '')}</MenuItem>
+                            <MenuItem key={option.id}
+                                      value={option.id}>{option.id.toString() + ' | ' + option.apiKey.toString() + ' | ' + option.market.toString() + ' | ' + (option.test ? 'Test Account' : '')}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
@@ -98,8 +111,26 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                     value={data.customAnalyzerId}
                     onChange={handleChange}
                 />
+                <TextField
+                    margin="dense"
+                    name="stopLoss"
+                    label="Take Profit (Optional)"
+                    type="number"
+                    fullWidth
+                    value={data.stopLoss}
+                    onChange={handleChange}
+                />
+                <TextField
+                    margin="dense"
+                    name="takeProfit"
+                    label="Take Profit (Optional)"
+                    type="number"
+                    fullWidth
+                    value={data.takeProfit}
+                    onChange={handleChange}
+                />
                 <FormControlLabel
-                    control={<Switch checked={data.status === 'ACTIVE'} onChange={handleChange} name="status" />}
+                    control={<Switch checked={data.status === 'ACTIVE'} onChange={handleChange} name="status"/>}
                     label="Active"
                 />
             </DialogContent>

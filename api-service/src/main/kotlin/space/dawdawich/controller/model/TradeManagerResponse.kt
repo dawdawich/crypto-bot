@@ -12,9 +12,12 @@ data class TradeManagerResponse(
     val apiTokenId: String,
     val createTime: Long,
     val updateTime: Long,
-    val errorDescription: String? = null
+    val stopLoss: Int? = null,
+    val takeProfit: Int? = null,
+    val stopDescription: String? = null,
+    val errorDescription: String? = null,
 ) {
     companion object {
-        fun TradeManagerDocument.convert() = TradeManagerResponse(this.id, this.chooseStrategy.name, this.customAnalyzerId, this.status.name, this.apiTokensId, this.createTime, this.updateTime, this.errorDescription)
+        fun TradeManagerDocument.convert() = TradeManagerResponse(this.id, this.chooseStrategy.name, this.customAnalyzerId, this.status.name, this.apiTokensId, this.createTime, this.updateTime, this.stopLoss, this.takeProfit, this.stopDescription, this.errorDescription)
     }
 }

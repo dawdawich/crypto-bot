@@ -16,6 +16,7 @@ import space.dawdawich.repositories.entity.constants.ManagerStatus
 import space.dawdawich.service.helper.PositionManager
 import space.dawdawich.service.model.Order
 import space.dawdawich.service.model.Position
+import space.dawdawich.utils.calculatePercentageChange
 import space.dawdawich.utils.plusPercent
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -37,6 +38,7 @@ class TradeManager(
 
     var analyzer: GridTableAnalyzerDocument? = null
 
+    private var startCapital = 0.0
     private var capital = 0.0
     private lateinit var priceInstruction: PairInfo
 
@@ -54,6 +56,7 @@ class TradeManager(
         if (tradeManagerData.status == ManagerStatus.ACTIVE) {
             setupAnalyzer()
             updateCapital()
+            startCapital = capital
         }
     }
 
@@ -95,6 +98,7 @@ class TradeManager(
                     }
                     return@filter false
                 }?.forEach {
+                    println("Cancel position. SL/TP exited. $it")
                     closePosition(it)
                 }
             } else {
@@ -125,41 +129,44 @@ class TradeManager(
     }
 
     private fun closePosition(position: Position) {
-        val calculateProfit = position.calculateProfit(price)
-
-        val direction = if (position.isLong) 1 else -1
-        val tpPrice = capital.plusPercent(analyzer!!.positionTakeProfit * direction)
-        val slPrice = capital.plusPercent(-analyzer!!.positionStopLoss * direction)
-        if (position.size > 0.0 && (calculateProfit + capital) !in slPrice..tpPrice
-        ) {
-            try {
-                runBlocking {
-                    bybitService.closePosition(
-                        position.symbol,
-                        position.isLong,
-                        position.size,
-                        position.positionIdx
-                    )
-                }
-            } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
-                positionManager =
-                    PositionManager(runBlocking {
-                        bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
-                            Position(
-                                it.symbol,
-                                it.isLong,
-                                it.size,
-                                it.entryPrice,
-                                it.positionIdx,
-                                it.updateTime
-                            )
-                        }
-                    })
+        try {
+            runBlocking {
+                bybitService.closePosition(
+                    position.symbol,
+                    position.isLong,
+                    position.size,
+                    position.positionIdx
+                )
             }
-            println("Cancel position. SL/TP exited. $position")
-            updateCapital()
-            println("New capital: $capital")
+        } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
+            positionManager =
+                PositionManager(runBlocking {
+                    bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
+                        Position(
+                            it.symbol,
+                            it.isLong,
+                            it.size,
+                            it.entryPrice,
+                            it.positionIdx,
+                            it.updateTime
+                        )
+                    }
+                })
         }
+
+        updateCapital()
+        val percentChange = startCapital.calculatePercentageChange(capital)
+        tradeManagerData.stopLoss?.let {
+            if (percentChange < -it) {
+                managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Stop Loss exceeded")
+            }
+        }
+        tradeManagerData.takeProfit?.let {
+            if (percentChange > it) {
+                managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Take Profit exceeded")
+            }
+        }
+        println("New capital: $capital")
     }
 
     private fun checkOrders() {
@@ -172,13 +179,15 @@ class TradeManager(
             val isLong = it.key < middlePrice
             val regexToSplit = "[.,]".toRegex()
             val floatNumberLength =
-                if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize).split(regexToSplit)[1].length else 0
+                if (priceInstruction.tickSize != 1.0) df.format(priceInstruction.tickSize)
+                    .split(regexToSplit)[1].length else 0
             val inPrice = BigDecimal(it.key).setScale(
                 floatNumberLength,
                 RoundingMode.HALF_DOWN
             ).toDouble()
 
-            val length = if (priceInstruction.minOrderQty != 1.0) df.format(priceInstruction.minOrderQty).split(regexToSplit)[1].length else 0
+            val length = if (priceInstruction.minOrderQty != 1.0) df.format(priceInstruction.minOrderQty)
+                .split(regexToSplit)[1].length else 0
             val qty = BigDecimal(moneyPerPosition * analyzer!!.multiplayer / inPrice).setScale(
                 length, RoundingMode.HALF_DOWN
             ).toDouble()
@@ -310,7 +319,7 @@ class TradeManager(
                     try {
                         updatePrice(it.value().toDouble())
                     } catch (ex: Exception) {
-                        managerService.deactivateTradeManager(tradeManagerData.id, ex)
+                        managerService.deactivateTradeManager(tradeManagerData.id, ex = ex)
                     }
                     println("Update price in manager '${tradeManagerData.id}'; price - $price")
                 })

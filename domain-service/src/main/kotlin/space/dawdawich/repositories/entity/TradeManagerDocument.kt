@@ -15,6 +15,9 @@ data class TradeManagerDocument(
     var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
     var customAnalyzerId: String = "",
     var status: ManagerStatus = ManagerStatus.INACTIVE,
+    val stopLoss: Int? = null,
+    val takeProfit: Int? = null,
+    var stopDescription: String? = null,
     var errorDescription: String? = null,
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = System.currentTimeMillis()

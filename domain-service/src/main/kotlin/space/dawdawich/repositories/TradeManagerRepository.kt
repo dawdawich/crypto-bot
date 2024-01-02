@@ -9,8 +9,8 @@ import space.dawdawich.repositories.entity.constants.ManagerStatus
 interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String> {
 
     @Query("{_id: ?0}")
-    @Update("{\$set: {status: ?1, errorDescription: ?2, updateTime: ?3}}")
-    fun updateTradeManagerStatus(id: String, status: ManagerStatus, errorDescription: String? = null, updateTime: Long = System.currentTimeMillis())
+    @Update("{\$set: {status: ?1, stopDescription: ?2, errorDescription: ?3, updateTime: ?4}}")
+    fun updateTradeManagerStatus(id: String, status: ManagerStatus, stopDescription: String? = null, errorDescription: String? = null, updateTime: Long = System.currentTimeMillis())
 
     fun findAllByAccountId(accountId: String): List<TradeManagerDocument>
 

@@ -57,10 +57,10 @@ open class TradeManagerService(
 
     @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
     fun deactivateManager(managerId: String) {
-        deactivateTradeManager(managerId)
+        deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
     }
 
-    fun deactivateTradeManager(managerId: String, ex: Exception? = null) {
+    fun deactivateTradeManager(managerId: String, status: ManagerStatus = ManagerStatus.CRASHED, stopDescription: String? = null, ex: Exception? = null) {
         tradeManagers.removeIf {
             if (it.getId() == managerId) {
                 it.deactivateManager()
@@ -68,8 +68,6 @@ open class TradeManagerService(
             }
             return@removeIf false
         }
-        ex?.let {
-            tradeManagerRepository.updateTradeManagerStatus(managerId, ManagerStatus.CRASHED, it.message ?: "Error description absent")
-        }
+        tradeManagerRepository.updateTradeManagerStatus(managerId, status, stopDescription, ex?.message)
     }
 }

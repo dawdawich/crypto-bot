@@ -21,6 +21,8 @@ class TradeManagerService(
         apiTokenId: String,
         status: ManagerStatus,
         customAnalyzerId: String,
+        stopLoss: Int?,
+        takeProfit: Int?,
         accountId: String
     ): String {
         return tradeManagerRepository.insert(
@@ -29,7 +31,9 @@ class TradeManagerService(
                 accountId,
                 apiTokenId,
                 customAnalyzerId = customAnalyzerId,
-                status = status
+                status = status,
+                stopLoss = stopLoss,
+                takeProfit = takeProfit
             )
         ).id
     }
