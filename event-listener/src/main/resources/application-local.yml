@@ -11,3 +11,6 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
     consumer:
       group-id: test
+
+server:
+  port: 8702

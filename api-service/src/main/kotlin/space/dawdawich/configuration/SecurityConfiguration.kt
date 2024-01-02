@@ -92,6 +92,7 @@ open class SecurityConfiguration(
                     requestMatchers("/trade-manager").authenticated()
                     requestMatchers("/symbol/all").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
+                    requestMatchers(HttpMethod.GET, "/health-check").hasAuthority("ADMIN")
                     anyRequest().permitAll()
                 }
             }

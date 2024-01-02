@@ -10,3 +10,6 @@ spring:
       host: localhost
       port: 27017
       database: crypto-bot
+
+server:
+  port: 8701
