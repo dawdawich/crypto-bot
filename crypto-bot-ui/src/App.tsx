@@ -10,6 +10,7 @@ import TopAnalyzersPage from "./pages/analyzer/TopAnalyzersPage";
 import AccountPage from "./pages/account/AccountPage";
 import {createTheme, ThemeProvider} from "@mui/material";
 import {lightGreen, lime, orange, purple, red} from "@mui/material/colors";
+import MonitoringPage from "./pages/monitor/MonitoringPage";
 
 const App: React.FC = () => {
     const theme = createTheme({
@@ -33,6 +34,7 @@ const App: React.FC = () => {
                     <Route path="/analyzer/:analyzerId" component={AnalyzerInfoPage}/>
                     <Route path="/manager/:managerId" component={ManagerPageEditor}/>
                     <Route path="/symbols" component={SymbolsPage}/>
+                    <Route path="/monitoring" component={MonitoringPage}/>
                 </Switch>
             </div>
         </ThemeProvider>

@@ -40,7 +40,7 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connect
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         if (remote) {
-            runBlocking { launch { reconnect() } }
+            GlobalScope.launch { reconnect() }
         }
     }
 

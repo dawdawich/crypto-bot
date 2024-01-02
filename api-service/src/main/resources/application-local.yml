@@ -15,3 +15,6 @@ spring:
 logging:
   level:
     org.springframework: DEBUG
+
+app:
+  services-url: "analyzer-service=http://localhost:8701/actuator/health,event-listener-service=http://localhost:8702/actuator/health,event-listener-topics-updates=http://localhost:8702/topics-update-time,trade-manager-service=http://localhost:8703/actuator/health"

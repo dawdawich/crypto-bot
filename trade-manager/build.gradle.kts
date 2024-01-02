@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":integration-service"))
 
     implementation("org.java-websocket:Java-WebSocket")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")

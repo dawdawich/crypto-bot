@@ -57,6 +57,11 @@ const MainHeader = () => {
                         <Button color="inherit" onClick={() => navigate("/symbols")}
                                 variant={location === "/symbols" ? 'contained' : undefined}>Symbols</Button>
                     }
+                    {
+                        role === 'ADMIN' &&
+                        <Button color="inherit" onClick={() => navigate("/monitoring")}
+                                variant={location === "/monitoring" ? 'contained' : undefined}>Monitoring</Button>
+                    }
                 </nav>
                 {loginPlace}
             </header>
