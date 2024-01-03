@@ -3,6 +3,7 @@ package space.dawdawich.service
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.integration.model.PairInfo
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
@@ -33,6 +34,8 @@ class TradeManager(
     private val bybitService: ByBitPrivateHttpClient,
     private val managerService: TradeManagerService
 ) {
+    private val logger = KotlinLogging.logger {}
+
     private var priceListener: ConcurrentMessageListenerContainer<String, String>? = null
     lateinit var webSocketClient: ByBitWebSocketClient
 
@@ -62,7 +65,7 @@ class TradeManager(
 
     private fun updateCapital() {
         capital = runBlocking { bybitService.getAccountBalance() }
-        println("Capital is: $capital")
+        logger.info { "Capital is: $capital" }
     }
 
     fun updatePosition(position: List<Position>) {
@@ -70,10 +73,10 @@ class TradeManager(
     }
 
     fun updateOrder(order: Order) {
-        println("Obtained order to update; id: ${order.orderLinkId}, status: ${order.orderStatus}")
+        logger.info { "Obtained order to update; id: ${order.orderLinkId}, status: ${order.orderStatus}" }
         orderPriceGrid.entries.firstOrNull { it.value?.orderLinkId == order.orderLinkId }?.key?.apply {
             orderPriceGrid[this] = order
-            println("Updated order in store with: $order")
+            logger.info { "Updated order in store with: $order" }
         }
     }
 
@@ -98,7 +101,7 @@ class TradeManager(
                     }
                     return@filter false
                 }?.forEach {
-                    println("Cancel position. SL/TP exited. $it")
+                    logger.info { "Cancel position. SL/TP exited. $it" }
                     closePosition(it)
                 }
             } else {
@@ -166,7 +169,7 @@ class TradeManager(
                 managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Take Profit exceeded")
             }
         }
-        println("New capital: $capital")
+        logger.info { "Updated capital: $capital" }
     }
 
     private fun checkOrders() {
@@ -222,9 +225,9 @@ class TradeManager(
 
             if (result) {
                 orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", orderId)
-                println("Added order to store id: $orderId")
+                logger.info { "Added order to store id: $orderId" }
             } else {
-                println("FAILED TO CREATE ORDER")
+                logger.warn { "FAILED TO CREATE ORDER" }
             }
         }
 
@@ -239,7 +242,7 @@ class TradeManager(
                 val maxPrice = middlePrice.plusPercent(analyzer!!.diapason)
                 val step = (maxPrice - minPrice) / analyzer!!.gridSize
                 if ((it.value!!.price - price).absoluteValue > step) {
-                    println("Removed Order from store: ${it.key}")
+                    logger.info { "Order at price ${it.key} reopened for interact" }
                     orderPriceGrid[it.key] = null
                 }
             }
@@ -249,8 +252,7 @@ class TradeManager(
     fun updateMiddlePrice(middlePrice: Double) {
         closeAllPositionsAndOrders()
         this.middlePrice = middlePrice
-        println("Changed middle price")
-
+        logger.info { "Middle price updated" }
     }
 
     private fun closeAllPositionsAndOrders() {
@@ -321,7 +323,6 @@ class TradeManager(
                     } catch (ex: Exception) {
                         managerService.deactivateTradeManager(tradeManagerData.id, ex = ex)
                     }
-                    println("Update price in manager '${tradeManagerData.id}'; price - $price")
                 })
                 priceListener!!.start()
             } else {
@@ -354,7 +355,7 @@ class TradeManager(
             }
             priceListener = null
         } catch (ex: Exception) {
-            println("Error: Failed to deactivate manager")
+            logger.error(ex) { "Error: Failed to deactivate manager" }
         }
     }
 

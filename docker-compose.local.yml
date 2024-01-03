@@ -38,58 +38,6 @@ services:
       test: mongosh --eval 'try { rs.initiate(); } catch(e) {} rs.status().ok;' || exit 1
       retries: 1
 
-  event-listener:
-    build:
-      context: .
-      dockerfile: dockerfiles/EventListenerDockerfile
-    environment:
-      spring.profiles.active: docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-
-  analyzer-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/AnalyzerServiceDockerfile
-    environment:
-      spring.profiles.active: docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      event-listener:
-        condition: service_started
-
-  api-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/ApiServiceDockerfile
-    environment:
-      spring.profiles.active: docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-    ports:
-      - "8080:8080"
-
-  trade-manager-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/TradeManagerDockerfile
-    environment:
-      spring.profiles.active: docker
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-
 volumes:
   zookeeper_data:
     driver: local

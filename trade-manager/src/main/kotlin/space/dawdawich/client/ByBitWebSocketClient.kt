@@ -1,23 +1,18 @@
 package space.dawdawich.client
 
-import com.jayway.jsonpath.Configuration
-import com.jayway.jsonpath.JsonPath
-import com.jayway.jsonpath.Option
 import com.jayway.jsonpath.ParseContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
+import mu.KotlinLogging.logger
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.json.JSONObject
-import space.dawdawich.client.responses.OrderResponse
-import space.dawdawich.client.responses.PositionResponse
 import space.dawdawich.service.TradeManager
 import space.dawdawich.service.model.Order
 import space.dawdawich.service.model.Position
-import java.lang.Exception
 import java.net.URI
 import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration.Companion.hours
 
 class ByBitWebSocketClient(
@@ -31,6 +26,8 @@ class ByBitWebSocketClient(
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
         const val BYBIT_TEST_SERVER_URL = "wss://stream-testnet.bybit.com/v5/private"
     }
+
+    private val logger = KotlinLogging.logger {}
 
     private var signatureWithExpiration: Pair<String, Long>
 
@@ -91,14 +88,16 @@ class ByBitWebSocketClient(
                                 )
                             )
                         } else {
-                            listOf(Position(
-                                position["symbol"].toString(),
-                                position["side"].toString().equals("buy", true),
-                                position["size"].toString().toDouble(),
-                                position["entryPrice"].toString().toDouble(),
-                                position["positionIdx"].toString().toInt(),
-                                position["updatedTime"].toString().toLong()
-                            ))
+                            listOf(
+                                Position(
+                                    position["symbol"].toString(),
+                                    position["side"].toString().equals("buy", true),
+                                    position["size"].toString().toDouble(),
+                                    position["entryPrice"].toString().toDouble(),
+                                    position["positionIdx"].toString().toInt(),
+                                    position["updatedTime"].toString().toLong()
+                                )
+                            )
                         }
                         tradeManager.updatePosition(toUpdate)
                     }
@@ -127,7 +126,7 @@ class ByBitWebSocketClient(
     }
 
     override fun onError(ex: Exception?) {
-        println("Failed to listen websocket. $ex")
+        logger.error(ex) { "Failed to listen websocket" }
     }
 
     private fun getAuthData(): Pair<String, Long> {
