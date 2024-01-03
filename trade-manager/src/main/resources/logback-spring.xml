@@ -8,7 +8,7 @@
         </encoder>
     </appender>
     <appender name="SOCKET" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>localhost:5025</destination>
+        <destination>logstash:5025</destination>
         <includeCallerData>true</includeCallerData>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
