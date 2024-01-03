@@ -148,7 +148,7 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.3
     ports:
-      - "5025:5000"
+      - "5000"
     volumes:
       - ./init-files/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     depends_on:
