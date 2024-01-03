@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <appender name="CONSOLE_APPENDER" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+    <appender name="SOCKET" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>localhost:5025</destination>
+        <includeCallerData>true</includeCallerData>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <pattern>
+                    <pattern>
+                        {
+                        "app_name":"analyzer-service"
+                        }
+                    </pattern>
+                </pattern>
+                <timestamp/>
+                <logLevel/>
+                <loggerName/>
+                <threadName/>
+                <mdc/>
+                <message/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <springProfile name="local">
+        <root level="TRACE">
+            <appender-ref ref="CONSOLE_APPENDER"/>
+        </root>
+    </springProfile>
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_APPENDER"/>
+            <appender-ref ref="SOCKET"/>
+        </root>
+    </springProfile>
+</configuration>

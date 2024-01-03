@@ -30,7 +30,6 @@ class SymbolService(
         }
         val isOneWayMode = runBlocking {
             val positionInfo = httpClient.getPositionInfo(symbol)
-            println()
             positionInfo.size == 1
         }
 

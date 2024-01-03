@@ -8,6 +8,7 @@ import io.ktor.client.statement.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import mu.KotlinLogging
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
@@ -28,6 +29,8 @@ class ByBitPrivateHttpClient(
         const val CANCEL_ORDER = "/order/cancel"
         const val GET_POSITIONS = "/position/list"
     }
+
+    private val logger = KotlinLogging.logger {}
 
     suspend fun createOrder(
         symbol:
@@ -73,7 +76,7 @@ class ByBitPrivateHttpClient(
                 }
             }
         } catch (e: Exception) {
-            println("Warn: ${e.message}")
+            logger.warn(e) { "Failed to create order on bybit server" }
         }
         return false
     }

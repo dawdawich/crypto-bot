@@ -1,6 +1,7 @@
 package space.dawdawich.client
 
 import kotlinx.coroutines.*
+import mu.KotlinLogging
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.springframework.stereotype.Component
@@ -12,6 +13,7 @@ import java.lang.Exception
 import java.net.URI
 
 class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connectionUrl: String, isTest: Boolean) : WebSocketClient(URI(connectionUrl)) {
+    private val logger = KotlinLogging.logger {}
     private val topicName: String = if (isTest) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC
 
     val mapSymbolsToPartition: MutableMap<String, Int> = mutableMapOf()
@@ -45,6 +47,6 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connect
     }
 
     override fun onError(ex: Exception?) {
-        println(ex)
+        logger.error(ex) { "Ticker websocket got an error." }
     }
 }

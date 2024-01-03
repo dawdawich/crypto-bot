@@ -20,7 +20,6 @@ class PositionManager(instructionPositions: List<Position>) {
     }
 
     fun updatePosition(positionsToUpdate: List<Position>) {
-        println("Position Update: $positionsToUpdate")
         positionsToUpdate.forEach {position ->
             positions.find { it.isLong == position.isLong && it.updateTime < position.updateTime }?.let {
                 positions.remove(it)

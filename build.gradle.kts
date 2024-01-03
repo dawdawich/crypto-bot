@@ -39,6 +39,8 @@ subprojects {
         implementation("org.springframework.kafka:spring-kafka")
         implementation("org.jetbrains.kotlin:kotlin-reflect")
         // **--**--**--**--**--**--**--**--**--**--**--**--**--**--**--**--
+        implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+        implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
     }
 }
 
