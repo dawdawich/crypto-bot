@@ -56,7 +56,7 @@ services:
       kafka:
         condition: service_started
       logstash:
-        condition: service_healthy
+        condition: service_started
     networks:
       - "crypto-bot-network"
 
@@ -74,7 +74,7 @@ services:
       event-listener:
         condition: service_started
       logstash:
-        condition: service_healthy
+        condition: service_started
     networks:
       - "crypto-bot-network"
 
@@ -90,7 +90,7 @@ services:
       kafka:
         condition: service_started
       logstash:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8080:8080"
     networks:
@@ -108,7 +108,7 @@ services:
       kafka:
         condition: service_started
       logstash:
-        condition: service_healthy
+        condition: service_started
     networks:
       - "crypto-bot-network"
 
