@@ -29,7 +29,6 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
 
     if (!authToken) {
         navigate('/');
-        window.location.reload();
     }
 
     useEffect(() => {
@@ -94,6 +93,9 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                     </Select>
                 </FormControl>
                 <p><strong>Status:</strong> <span id="status">{manager.status}</span></p>
+                {manager.stopLoss ? <p><strong>Stop Loss:</strong> <span id="error-description">{manager.stopLoss}</span></p> : null}
+                {manager.takeProfit ? <p><strong>Take Profit:</strong> <span id="error-description">{manager.takeProfit}</span></p> : null}
+                {manager.stopDescription ? <p><strong>Stop description:</strong> <span id="error-description">{manager.stopDescription}</span></p> : null}
                 {manager.errorDescription ? <p><strong>Error description:</strong> <span id="error-description">{manager.errorDescription}</span></p> : null}
                 <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleTimeString()}</span></p>
                 <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleTimeString()}</span></p>

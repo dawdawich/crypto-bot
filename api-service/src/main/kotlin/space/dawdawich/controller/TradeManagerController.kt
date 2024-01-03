@@ -17,7 +17,14 @@ class TradeManagerController(private val tradeMangerService: TradeManagerService
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     fun createNewTradeManager(user: Authentication, @RequestBody request: TradeManagerRequest) =
-        tradeMangerService.createNewTraderManager(request.apiTokenId, request.status, request.customAnalyzerId, user.name)
+        tradeMangerService.createNewTraderManager(
+            request.apiTokenId,
+            request.status,
+            request.customAnalyzerId,
+            request.stopLoss,
+            request.takeProfit,
+            user.name
+        )
 
     @GetMapping
     fun getAllManagers(user: Authentication) = tradeMangerService.findAllByAccountId(user.name).map { it.convert() }
