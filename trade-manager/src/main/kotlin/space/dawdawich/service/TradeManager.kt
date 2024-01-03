@@ -3,7 +3,10 @@ package space.dawdawich.service
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.integration.model.PairInfo
 import kotlinx.coroutines.runBlocking
+import mu.KLogger
 import mu.KotlinLogging
+import org.slf4j.MDC
+import org.slf4j.event.Level
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
@@ -34,7 +37,13 @@ class TradeManager(
     private val bybitService: ByBitPrivateHttpClient,
     private val managerService: TradeManagerService
 ) {
-    private val logger = KotlinLogging.logger {}
+    private val _logger = KotlinLogging.logger {}
+    private infix fun logger(action: (KLogger) -> Unit) {
+        MDC.put("manager-id", tradeManagerData.id)
+        action(_logger)
+        MDC.clear()
+    }
+
 
     private var priceListener: ConcurrentMessageListenerContainer<String, String>? = null
     lateinit var webSocketClient: ByBitWebSocketClient
@@ -65,7 +74,7 @@ class TradeManager(
 
     private fun updateCapital() {
         capital = runBlocking { bybitService.getAccountBalance() }
-        logger.info { "Capital is: $capital" }
+        logger { it.info { "Capital is: $capital" } }
     }
 
     fun updatePosition(position: List<Position>) {
@@ -73,10 +82,10 @@ class TradeManager(
     }
 
     fun updateOrder(order: Order) {
-        logger.info { "Obtained order to update; id: ${order.orderLinkId}, status: ${order.orderStatus}" }
+        logger { it.info { "Obtained order to update; id: ${order.orderLinkId}, status: ${order.orderStatus}" } }
         orderPriceGrid.entries.firstOrNull { it.value?.orderLinkId == order.orderLinkId }?.key?.apply {
             orderPriceGrid[this] = order
-            logger.info { "Updated order in store with: $order" }
+            logger { it.info { "Updated order in store with: $order" } }
         }
     }
 
@@ -101,7 +110,7 @@ class TradeManager(
                     }
                     return@filter false
                 }?.forEach {
-                    logger.info { "Cancel position. SL/TP exited. $it" }
+                    logger { it.info { "Cancel position. SL/TP exited. $it" } }
                     closePosition(it)
                 }
             } else {
@@ -169,7 +178,7 @@ class TradeManager(
                 managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Take Profit exceeded")
             }
         }
-        logger.info { "Updated capital: $capital" }
+        logger { it.info { "Updated capital: $capital" } }
     }
 
     private fun checkOrders() {
@@ -225,14 +234,14 @@ class TradeManager(
 
             if (result) {
                 orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", orderId)
-                logger.info { "Added order to store id: $orderId" }
+                logger { it.info { "Added order to store id: $orderId" } }
             } else {
-                logger.warn { "FAILED TO CREATE ORDER" }
+                logger { it.warn { "FAILED TO CREATE ORDER" } }
             }
         }
 
-        orderPriceGrid.entries.filter { it.value != null }.forEach {
-            val status = it.value!!.orderStatus
+        orderPriceGrid.entries.filter { it.value != null }.forEach { pair ->
+            val status = pair.value!!.orderStatus
             if (status.equals("Filled", true) || status.equals("Deactivated", true) || status.equals(
                     "Rejected",
                     true
@@ -241,9 +250,9 @@ class TradeManager(
                 val minPrice = middlePrice.plusPercent(-analyzer!!.diapason)
                 val maxPrice = middlePrice.plusPercent(analyzer!!.diapason)
                 val step = (maxPrice - minPrice) / analyzer!!.gridSize
-                if ((it.value!!.price - price).absoluteValue > step) {
-                    logger.info { "Order at price ${it.key} reopened for interact" }
-                    orderPriceGrid[it.key] = null
+                if ((pair.value!!.price - price).absoluteValue > step) {
+                    logger { it.info { "Order at price ${pair.key} reopened for interact" } }
+                    orderPriceGrid[pair.key] = null
                 }
             }
         }
@@ -252,36 +261,38 @@ class TradeManager(
     fun updateMiddlePrice(middlePrice: Double) {
         closeAllPositionsAndOrders()
         this.middlePrice = middlePrice
-        logger.info { "Middle price updated" }
+        logger { it.info { "Middle price updated" } }
     }
 
     private fun closeAllPositionsAndOrders() {
-        runBlocking { bybitService.cancelAllOrder(analyzer!!.symbolInfo.symbol) }
-        try {
-            positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
-                runBlocking {
-                    bybitService.closePosition(
-                        position.symbol,
-                        position.isLong,
-                        position.size,
-                        position.positionIdx
-                    )
-                }
-            }
-        } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
-            positionManager =
-                PositionManager(runBlocking {
-                    bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
-                        Position(
-                            it.symbol,
-                            it.isLong,
-                            it.size,
-                            it.entryPrice,
-                            it.positionIdx,
-                            it.updateTime
+        analyzer?.let { analyzer ->
+            runBlocking { bybitService.cancelAllOrder(analyzer.symbolInfo.symbol) }
+            try {
+                positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
+                    runBlocking {
+                        bybitService.closePosition(
+                            position.symbol,
+                            position.isLong,
+                            position.size,
+                            position.positionIdx
                         )
                     }
-                })
+                }
+            } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
+                positionManager =
+                    PositionManager(runBlocking {
+                        bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
+                            Position(
+                                it.symbol,
+                                it.isLong,
+                                it.size,
+                                it.entryPrice,
+                                it.positionIdx,
+                                it.updateTime
+                            )
+                        }
+                    })
+            }
         }
     }
 
@@ -319,10 +330,12 @@ class TradeManager(
                 )
                 priceListener!!.setupMessageListener(MessageListener<String, String> {
                     try {
+                        MDC.put("manager-id", tradeManagerData.id)
                         updatePrice(it.value().toDouble())
                     } catch (ex: Exception) {
                         managerService.deactivateTradeManager(tradeManagerData.id, ex = ex)
                     }
+                    MDC.clear()
                 })
                 priceListener!!.start()
             } else {
@@ -355,7 +368,7 @@ class TradeManager(
             }
             priceListener = null
         } catch (ex: Exception) {
-            logger.error(ex) { "Error: Failed to deactivate manager" }
+            logger { it.error(ex) { "Error: Failed to deactivate manager" } }
         }
     }
 
