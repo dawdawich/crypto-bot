@@ -330,8 +330,11 @@ class TradeManager(
                 )
                 priceListener!!.setupMessageListener(MessageListener<String, String> {
                     try {
-                        updatePrice(it.value().toDouble())
+                        val newPrice = it.value().toDouble()
+                        logger { log -> log.info { "Manager accepts price: $newPrice; symbol: ${analyzer!!.symbolInfo.symbol}" } }
+                        updatePrice(newPrice)
                     } catch (ex: Exception) {
+                        logger { log -> log.error(ex) { "Failed to update manager price." } }
                         managerService.deactivateTradeManager(tradeManagerData.id, ex = ex)
                     }
                 })
