@@ -297,6 +297,7 @@ class TradeManager(
     }
 
     private fun setupAnalyzer() {
+        logger { it.info { "Trade manager setup: $tradeManagerData" } }
         if (tradeManagerData.status == ManagerStatus.ACTIVE) {
             if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.CUSTOM && tradeManagerData.customAnalyzerId.isNotBlank()) {
                 analyzer = analyzerRepository.findById(tradeManagerData.customAnalyzerId).get()
