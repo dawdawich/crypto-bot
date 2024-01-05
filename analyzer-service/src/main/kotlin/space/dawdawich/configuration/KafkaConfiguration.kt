@@ -25,6 +25,7 @@ open class KafkaConfiguration {
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
+        configProps[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = "5000"
         return DefaultKafkaConsumerFactory(configProps)
     }
 }
