@@ -330,12 +330,10 @@ class TradeManager(
                 )
                 priceListener!!.setupMessageListener(MessageListener<String, String> {
                     try {
-                        MDC.put("manager-id", tradeManagerData.id)
                         updatePrice(it.value().toDouble())
                     } catch (ex: Exception) {
                         managerService.deactivateTradeManager(tradeManagerData.id, ex = ex)
                     }
-                    MDC.clear()
                 })
                 priceListener!!.start()
             } else {
