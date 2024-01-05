@@ -301,8 +301,10 @@ class TradeManager(
         if (tradeManagerData.status == ManagerStatus.ACTIVE) {
             if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.CUSTOM && tradeManagerData.customAnalyzerId.isNotBlank()) {
                 analyzer = analyzerRepository.findById(tradeManagerData.customAnalyzerId).get()
+                logger { log -> log.info { "Found Custom analyzer: $analyzer" } }
             } else if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.BIGGEST_BY_MONEY) {
                 analyzer = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
+                logger { log -> log.info { "Found analyzer Biggest By Money: $analyzer" } }
             }
             if (analyzer != null && analyzer!!.middlePrice != null) {
                 logger { log -> log.info { "Assigned analyzer to manager '${analyzer!!.id}'" } }
