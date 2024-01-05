@@ -304,6 +304,7 @@ class TradeManager(
                 analyzer = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
             }
             if (analyzer != null && analyzer!!.middlePrice != null) {
+                logger { log -> log.info { "Assigned analyzer to manager '${analyzer!!.id}'" } }
                 runBlocking {
                     bybitService.setMarginMultiplier(analyzer!!.symbolInfo.symbol, analyzer!!.multiplayer, 3)
                 }
@@ -339,6 +340,7 @@ class TradeManager(
                     }
                 })
                 priceListener!!.start()
+                logger { log -> log.info { "Price listener started." } }
             } else {
                 analyzer = null
             }
