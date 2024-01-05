@@ -8,7 +8,7 @@ class PriceTickerListener(private val kafkaContainer: ConcurrentMessageListenerC
     private val observers = mutableListOf<(Double, Double) -> Unit>()
 
     private var price: Double by Delegates.observable(0.0) { _, oldValue, newValue ->
-        observers.parallelStream().forEach { it(if (oldValue == 0.0) newValue else oldValue, newValue) }
+        observers.forEach { it(if (oldValue == 0.0) newValue else oldValue, newValue) }
     }
 
     init {
