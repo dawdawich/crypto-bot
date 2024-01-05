@@ -28,7 +28,7 @@ open class KafkaConfiguration {
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "api-group"
+        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
         return DefaultKafkaConsumerFactory(configProps)
     }
 
@@ -38,7 +38,7 @@ open class KafkaConfiguration {
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = JsonDeserializer::class.java
-        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "api-group"
+        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
         configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
         return DefaultKafkaConsumerFactory(configProps)
     }

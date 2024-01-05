@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.support.serializer.JsonDeserializer
-import space.dawdawich.repositories.entity.TradeManagerDocument
 
 @Configuration
 open class KafkaConfiguration {
@@ -24,7 +22,7 @@ open class KafkaConfiguration {
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-//        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
+        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
         return DefaultKafkaConsumerFactory(configProps)
     }
 }

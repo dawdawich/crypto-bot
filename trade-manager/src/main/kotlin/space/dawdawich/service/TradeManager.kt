@@ -6,7 +6,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KLogger
 import mu.KotlinLogging
 import org.slf4j.MDC
-import org.slf4j.event.Level
 import org.springframework.data.domain.Pageable
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
@@ -303,7 +302,7 @@ class TradeManager(
                 analyzer = analyzerRepository.findById(tradeManagerData.customAnalyzerId).get()
                 logger { log -> log.info { "Found Custom analyzer: $analyzer" } }
             } else if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.BIGGEST_BY_MONEY) {
-                analyzer = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
+                analyzer = analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
                 logger { log -> log.info { "Found analyzer Biggest By Money: $analyzer" } }
             }
             if (analyzer != null && analyzer!!.middlePrice != null) {
@@ -353,7 +352,7 @@ class TradeManager(
     private fun findNewAnalyzer() {
         if (analyzer == null || analyzerUpdateTimestamp < System.currentTimeMillis()) {
             analyzerUpdateTimestamp = System.currentTimeMillis() + 10.minutes.inWholeMilliseconds
-            val biggestAnalyzers = analyzerRepository.findAllByOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
+            val biggestAnalyzers = analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
             val biggestValue = biggestAnalyzers.maxBy { it.money }
 
             if (biggestAnalyzers.filter { it.money == biggestValue.money }.none { it.id == analyzer?.id }) {

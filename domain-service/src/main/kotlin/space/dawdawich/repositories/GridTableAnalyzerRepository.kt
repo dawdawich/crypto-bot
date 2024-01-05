@@ -6,7 +6,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
-import org.springframework.data.repository.query.Param
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 
 interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String> {
@@ -25,7 +24,7 @@ interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocumen
 
     fun countByAccountId(accountId: String): Int
 
-    fun findAllByOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
+    fun findAllByIsActiveIsTrueOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
 
     fun findAllByAccountId(accountId: String, pageable: Pageable): List<GridTableAnalyzerDocument>
 

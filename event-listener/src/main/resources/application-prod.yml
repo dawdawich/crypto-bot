@@ -9,5 +9,6 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      client-id: ticker_group
     consumer:
       group-id: test

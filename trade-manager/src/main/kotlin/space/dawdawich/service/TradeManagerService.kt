@@ -43,7 +43,6 @@ open class TradeManagerService(
         Runtime.getRuntime().addShutdownHook(Thread {
             tradeManagers.parallelStream().forEach {
                 it.deactivateManager()
-                tradeManagerRepository.updateTradeManagerStatus(it.getId(), ManagerStatus.INACTIVE)
             }
             tradeManagers.clear()
         })
