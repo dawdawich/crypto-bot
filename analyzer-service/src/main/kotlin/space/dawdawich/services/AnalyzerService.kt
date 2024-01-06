@@ -69,7 +69,7 @@ open class AnalyzerService(
         removeAnalyzer(analyzerId)
     }
 
-    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
         if (middlePriceUpdateQueue.isNotEmpty()) {
             updateList(middlePriceUpdateQueue, "middlePrice")
@@ -104,7 +104,7 @@ open class AnalyzerService(
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
                 listenerContainerFactory.createContainer(
-                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition)
+                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.TIMESTAMP)
                 )
             )
         }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }
