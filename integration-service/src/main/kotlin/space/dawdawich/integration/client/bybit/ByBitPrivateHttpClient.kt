@@ -188,7 +188,7 @@ class ByBitPrivateHttpClient(
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("$.retCode")) {
                 0 -> return
-                10017 -> throw ReduceOnlyRuleNotSatisfiedException()
+                110017 -> throw ReduceOnlyRuleNotSatisfiedException()
                 else -> {
                     throw UnknownRetCodeException(returnCode)
                 }

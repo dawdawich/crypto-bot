@@ -109,7 +109,7 @@ class TradeManager(
                     }
                     return@filter false
                 }?.forEach {
-                    logger { it.info { "Cancel position. SL/TP exited. $it" } }
+                    logger { log -> log.info { "Cancel position. SL/TP exceeded. $it" } }
                     closePosition(it)
                 }
             } else {
@@ -141,6 +141,7 @@ class TradeManager(
 
     private fun closePosition(position: Position) {
         try {
+            logger { log -> log.info { "Try to close position: $position" } }
             runBlocking {
                 bybitService.closePosition(
                     position.symbol,
@@ -150,6 +151,7 @@ class TradeManager(
                 )
             }
         } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
+            logger { log -> log.warn { "Failed to close position, reduce only rule not satisfied" } }
             positionManager =
                 PositionManager(runBlocking {
                     bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
@@ -165,18 +167,28 @@ class TradeManager(
                 })
         }
 
-        updateCapital()
         val percentChange = startCapital.calculatePercentageChange(capital)
         tradeManagerData.stopLoss?.let {
             if (percentChange < -it) {
-                managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Stop Loss exceeded")
+                logger { log -> log.info { "Deactivated manager cause of stop loss" } }
+                managerService.deactivateTradeManager(
+                    tradeManagerData.id,
+                    status = ManagerStatus.INACTIVE,
+                    stopDescription = "Stop Loss exceeded"
+                )
             }
         }
         tradeManagerData.takeProfit?.let {
             if (percentChange > it) {
-                managerService.deactivateTradeManager(tradeManagerData.id, status = ManagerStatus.INACTIVE, stopDescription = "Take Profit exceeded")
+                logger { log -> log.info { "Deactivated manager cause of take profit" } }
+                managerService.deactivateTradeManager(
+                    tradeManagerData.id,
+                    status = ManagerStatus.INACTIVE,
+                    stopDescription = "Take Profit exceeded"
+                )
             }
         }
+        updateCapital()
         logger { it.info { "Updated capital: $capital" } }
     }
 
@@ -264,33 +276,11 @@ class TradeManager(
     }
 
     private fun closeAllPositionsAndOrders() {
+        logger { log -> log.info { "Try to close all positions and orders" } }
         analyzer?.let { analyzer ->
             runBlocking { bybitService.cancelAllOrder(analyzer.symbolInfo.symbol) }
-            try {
-                positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
-                    runBlocking {
-                        bybitService.closePosition(
-                            position.symbol,
-                            position.isLong,
-                            position.size,
-                            position.positionIdx
-                        )
-                    }
-                }
-            } catch (ex: ReduceOnlyRuleNotSatisfiedException) {
-                positionManager =
-                    PositionManager(runBlocking {
-                        bybitService.getPositionInfo(analyzer!!.symbolInfo.symbol).map {
-                            Position(
-                                it.symbol,
-                                it.isLong,
-                                it.size,
-                                it.entryPrice,
-                                it.positionIdx,
-                                it.updateTime
-                            )
-                        }
-                    })
+            positionManager?.getPositions()?.filter { it.size > 0.0 }?.forEach { position ->
+                closePosition(position)
             }
         }
     }
@@ -302,7 +292,8 @@ class TradeManager(
                 analyzer = analyzerRepository.findById(tradeManagerData.customAnalyzerId).get()
                 logger { log -> log.info { "Found Custom analyzer: $analyzer" } }
             } else if (tradeManagerData.chooseStrategy == AnalyzerChooseStrategy.BIGGEST_BY_MONEY) {
-                analyzer = analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
+                analyzer =
+                    analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(1)).get().toList()[0]
                 logger { log -> log.info { "Found analyzer Biggest By Money: $analyzer" } }
             }
             if (analyzer != null && analyzer!!.middlePrice != null) {
@@ -352,7 +343,8 @@ class TradeManager(
     private fun findNewAnalyzer() {
         if (analyzer == null || analyzerUpdateTimestamp < System.currentTimeMillis()) {
             analyzerUpdateTimestamp = System.currentTimeMillis() + 10.minutes.inWholeMilliseconds
-            val biggestAnalyzers = analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
+            val biggestAnalyzers =
+                analyzerRepository.findAllByIsActiveIsTrueOrderByMoneyDesc(Pageable.ofSize(50)).get().toList()
             val biggestValue = biggestAnalyzers.maxBy { it.money }
 
             if (biggestAnalyzers.filter { it.money == biggestValue.money }.none { it.id == analyzer?.id }) {
