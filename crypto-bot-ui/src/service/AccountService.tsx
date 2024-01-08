@@ -58,9 +58,7 @@ export const createAccount = async (username: string, name: string, surname: str
             body: JSON.stringify(body)
         });
         console.log('Request finish');
-        if (response.ok) {
-            return true;
-        }
+        return await response
     } catch (error) {
         console.error(error);
         throw error;

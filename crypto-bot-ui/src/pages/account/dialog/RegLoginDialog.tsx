@@ -1,6 +1,9 @@
 import React, {useState} from "react";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} from "@mui/material";
 import {createAccount, fetchAuthToken} from "../../../service/AccountService";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import {showToast} from "../../../exception/Toasts";
 
 interface RegLoginDialogProps {
     open: boolean;
@@ -30,10 +33,12 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
 
     const tryToCreateAccount = () => {
         createAccount(username, name, surname, email, password)
-            .then(() => {
-                setRegistrationDialog(false);
-            })
-            .catch((error) => setError(error));
+            .then(async (response) => {
+                if (response.ok)
+                    setRegistrationDialog(false);
+                else
+                    showToast(await response.json());
+            }).catch(error => setError(error))
     };
 
     const login = () => {
@@ -126,6 +131,7 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
                 <Button variant='contained' disabled={!allFieldsValidated()}
                         onClick={isRegistration ? tryToCreateAccount : login} color="primary">
                     {isRegistration ? 'Sign Up' : 'Login'}
+                    <ToastContainer />
                 </Button>
             </DialogActions>
         </Dialog>

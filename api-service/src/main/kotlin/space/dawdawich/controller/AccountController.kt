@@ -11,6 +11,8 @@ import space.dawdawich.controller.model.AccountResponse
 import space.dawdawich.controller.model.ApiTokenResponse
 import space.dawdawich.controller.model.CreateAccountRequest
 import space.dawdawich.controller.model.CreateApiTokenRequest
+import space.dawdawich.exception.errors.ConflictException
+import space.dawdawich.exception.errors.PreconditionException
 import space.dawdawich.service.AccountService
 
 @RestController
@@ -20,10 +22,10 @@ class AccountController(private val accountService: AccountService) {
     @PostMapping
     fun createAccount(@RequestBody accRequest: CreateAccountRequest): ResponseEntity<Unit> {
         if (!accountService.isEmailAllowedToRegistration(accRequest.email.lowercase())) {
-            return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
+            throw PreconditionException("This email is not allowed for registration")
         }
         if (accountService.isAccountAlreadyRegistered(accRequest.email.lowercase(), accRequest.username)) {
-            return ResponseEntity(HttpStatus.CONFLICT)
+            throw ConflictException("This account is already registered")
         }
         accountService.fillAccountInfo(
                 accRequest.email.lowercase(),
