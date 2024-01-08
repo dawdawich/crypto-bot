@@ -9,11 +9,13 @@ import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.GridTableAnalyzer
 import space.dawdawich.constants.*
+import space.dawdawich.model.analyzer.GridTableDetailInfoModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -25,7 +27,8 @@ open class AnalyzerService(
     private val listenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
     private val symbolRepository: SymbolRepository,
     private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val mongoTemplate: MongoTemplate
+    private val mongoTemplate: MongoTemplate,
+    private val analyzerInfoDocumentKafkaTemplate: KafkaTemplate<String, GridTableDetailInfoModel>
 ) {
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
@@ -69,6 +72,13 @@ open class AnalyzerService(
         removeAnalyzer(analyzerId)
     }
 
+    @KafkaListener(topics = [REQUEST_ANALYZER_TOPIC])
+    fun requestAnalyzerData(analyzerId: String) {
+        analyzers.find { analyzerId == it.id }?.let { activeAnalyzer ->
+            analyzerInfoDocumentKafkaTemplate.send(RESPONSE_ANALYZER_TOPIC, activeAnalyzer.getInfo())
+        }
+    }
+
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
         if (middlePriceUpdateQueue.isNotEmpty()) {
@@ -104,7 +114,11 @@ open class AnalyzerService(
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
                 listenerContainerFactory.createContainer(
-                    TopicPartitionOffset(BYBIT_TEST_TICKER_TOPIC, partition, TopicPartitionOffset.SeekPosition.TIMESTAMP)
+                    TopicPartitionOffset(
+                        BYBIT_TEST_TICKER_TOPIC,
+                        partition,
+                        TopicPartitionOffset.SeekPosition.TIMESTAMP
+                    )
                 )
             )
         }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }

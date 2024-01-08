@@ -4,9 +4,13 @@ import com.mongodb.client.model.changestream.OperationType
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.data.mongodb.core.changeStream
 import org.springframework.kafka.annotation.KafkaListener
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
+import space.dawdawich.constants.REQUEST_MANAGER_TOPIC
+import space.dawdawich.constants.RESPONSE_MANAGER_TOPIC
+import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.repositories.TradeManagerRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.entity.TradeManagerDocument
@@ -18,7 +22,8 @@ import java.util.*
 open class TradeManagerService(
     private val tradeManagerRepository: TradeManagerRepository,
     mongoTemplate: ReactiveMongoTemplate,
-    private val tradeManagerFactory: TradeManagerFactory
+    private val tradeManagerFactory: TradeManagerFactory,
+    private val managerInfoKafkaTemplate: KafkaTemplate<String, ManagerInfoModel>
 ) {
 
     private val tradeManagers: MutableList<TradeManager> = Collections.synchronizedList(mutableListOf())
@@ -57,6 +62,13 @@ open class TradeManagerService(
     @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
     fun deactivateManager(managerId: String) {
         deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
+    }
+
+    @KafkaListener(topics = [REQUEST_MANAGER_TOPIC])
+    fun requestManagerInfo(managerId: String) {
+        tradeManagers.find { manager -> managerId == manager.getId() }?.let { manager ->
+            managerInfoKafkaTemplate.send(RESPONSE_MANAGER_TOPIC, manager.getManagerInfo())
+        }
     }
 
     fun deactivateTradeManager(managerId: String, status: ManagerStatus = ManagerStatus.CRASHED, stopDescription: String? = null, ex: Exception? = null) {

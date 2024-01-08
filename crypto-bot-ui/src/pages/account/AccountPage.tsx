@@ -23,7 +23,7 @@ const AccountPage: React.FC = () => {
         fetchAccountInfo(authToken as string)
             .then(res => setData(res))
             .catch(ex => setError(ex))
-    }, [])
+    }, [authToken])
 
     const handleNewApiToken = (apiToken: ApiToken) => {
         if (data) {
@@ -78,7 +78,8 @@ const AccountPage: React.FC = () => {
                     <td>{token.market}</td>
                     <td>{token.test.toString()}</td>
                     <td>
-                        <Button variant='contained' size={'medium'} color={'error'} onClick={() => handleDeleteApiToken(token.id)}>Delete</Button>
+                        <Button variant='contained' size={'medium'} color={'error'}
+                                onClick={() => handleDeleteApiToken(token.id)}>Delete</Button>
                     </td>
                 </tr>
             ))}
@@ -99,7 +100,8 @@ const AccountPage: React.FC = () => {
                     <p><strong>Account Creation Date:</strong> <span
                         id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
                 </div>
-                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
+                <Button variant='contained' size={'medium'} color={'primary'}
+                        onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
                 <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
                                    onCreate={handleNewApiToken}/>
             </div>

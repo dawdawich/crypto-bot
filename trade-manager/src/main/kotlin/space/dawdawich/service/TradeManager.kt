@@ -11,6 +11,8 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.MessageListener
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
+import space.dawdawich.model.analyzer.PositionModel
+import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.constants.AnalyzerChooseStrategy
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -71,11 +73,6 @@ class TradeManager(
         }
     }
 
-    private fun updateCapital() {
-        capital = runBlocking { bybitService.getAccountBalance() }
-        logger { it.info { "Capital is: $capital" } }
-    }
-
     fun updatePosition(position: List<Position>) {
         positionManager?.updatePosition(position)
     }
@@ -86,6 +83,21 @@ class TradeManager(
             orderPriceGrid[this] = order
             logger { it.info { "Updated order in store with: $order" } }
         }
+    }
+
+    fun getManagerInfo() = ManagerInfoModel(
+        tradeManagerData.id,
+        price,
+        analyzer?.id ?: "",
+        startCapital,
+        capital,
+        orderPriceGrid.map { (key, value) -> "$key=${value != null}" },
+        positionManager?.getPositions()?.map { PositionModel(it.isLong, it.size, it.entryPrice) } ?: listOf()
+    )
+
+    private fun updateCapital() {
+        capital = runBlocking { bybitService.getAccountBalance() }
+        logger { it.info { "Capital is: $capital" } }
     }
 
     private fun updatePrice(newPrice: Double) {
@@ -245,9 +257,9 @@ class TradeManager(
 
             if (result) {
                 orderPriceGrid[it.key] = Order(symbol, isLong, it.key, qty, "Untriggered", orderId)
-                logger { it.info { "Added order to store id: $orderId" } }
+                logger { log -> log.info { "Added order to store id: $orderId" } }
             } else {
-                logger { it.warn { "FAILED TO CREATE ORDER" } }
+                logger { log -> log.warn { "FAILED TO CREATE ORDER" } }
             }
         }
 

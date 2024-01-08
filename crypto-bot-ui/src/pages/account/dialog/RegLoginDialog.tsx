@@ -16,7 +16,7 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState();
+    const [error, setError] = useState<Error>();
 
     const allFieldsValidated = () => {
         return isRegistration ?
@@ -45,6 +45,15 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
         })
             .catch(error => setError(error))
     };
+
+    if (!!error) {
+        return (
+            <div>
+                <h1>Error occurred</h1>
+                <p>{error.message}</p>
+            </div>
+        );
+    }
 
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title">

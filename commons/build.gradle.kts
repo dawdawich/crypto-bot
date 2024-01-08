@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 group = "space.dawdawich"
@@ -10,7 +11,7 @@ repositories {
 }
 
 dependencies {
-
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 }
 
 tasks.test {
