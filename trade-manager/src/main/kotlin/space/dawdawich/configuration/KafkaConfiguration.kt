@@ -1,14 +1,18 @@
 package space.dawdawich.configuration
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.core.ConsumerFactory
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
+import org.springframework.kafka.core.*
 import org.springframework.kafka.support.serializer.JsonDeserializer
+import org.springframework.kafka.support.serializer.JsonSerializer
+import space.dawdawich.model.analyzer.GridTableDetailInfoModel
+import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
 @Configuration
@@ -42,4 +46,17 @@ open class KafkaConfiguration {
         configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
         return DefaultKafkaConsumerFactory(configProps)
     }
+
+    @Bean
+    open fun managerInfoProducerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ProducerFactory<String, ManagerInfoModel> {
+        val configProps: MutableMap<String, Any> = HashMap()
+        configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
+        configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+        configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean
+    open fun managerInfoKafkaTemplate(factory: ProducerFactory<String, ManagerInfoModel>): KafkaTemplate<String, ManagerInfoModel> =
+        KafkaTemplate(factory)
 }

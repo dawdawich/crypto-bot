@@ -3,6 +3,8 @@ package space.dawdawich.analyzers
 import space.dawdawich.analyzers.helper.PositionManager
 import space.dawdawich.data.Order
 import space.dawdawich.data.Trend
+import space.dawdawich.model.analyzer.GridTableDetailInfoModel
+import space.dawdawich.model.analyzer.PositionModel
 import space.dawdawich.utils.plusPercent
 import java.util.*
 import kotlin.math.absoluteValue
@@ -21,8 +23,9 @@ class GridTableAnalyzer(
     private val priceMinStep: Double,
     val id: String = UUID.randomUUID().toString(),
     moneyChangeFunction: (KProperty<*>, Double, Double) -> Unit = { _, _, _ -> },
-    private val updateMiddlePrice: (Double) -> Unit = {_->}
+    private val updateMiddlePrice: (Double) -> Unit = { _ -> }
 ) {
+    private var currentPrice = 0.0
     private var minPrice: Double = -1.0
     private var maxPrice: Double = -1.0
     private var outOfBoundCounter = 0
@@ -38,8 +41,14 @@ class GridTableAnalyzer(
     }
     private var moneyHandler: Double by Delegates.observable(money, moneyChangeFunction)
 
+    fun getInfo() = GridTableDetailInfoModel(
+        id,
+        orderPriceGrid.map { (key, value) -> "$key=${value != null}" },
+        currentPrice,
+        positionManager.getPositions().map { PositionModel(it.trend.direction > 0, it.size, it.entryPrice) })
 
     fun acceptPriceChange(previousPrice: Double, currentPrice: Double) {
+        this.currentPrice = currentPrice
         if (minPrice <= 0.0) {
             setUpPrices(currentPrice)
         }
@@ -50,7 +59,8 @@ class GridTableAnalyzer(
 
         positionManager.getPositions().filter { position ->
             if (position.size > 0.0) {
-                moneyWithProfit = money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
+                moneyWithProfit =
+                    money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
                 return@filter moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)
             }
             return@filter false

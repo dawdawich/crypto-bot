@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.socket.EnableWebSocketSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -92,6 +93,7 @@ open class SecurityConfiguration(
                     requestMatchers("/trade-manager").authenticated()
                     requestMatchers("/symbol/all").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
+                    requestMatchers("/ws/*").permitAll()
                     requestMatchers(HttpMethod.GET, "/health-check").hasAuthority("ADMIN")
                     anyRequest().permitAll()
                 }

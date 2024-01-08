@@ -17,13 +17,27 @@ import {
 import PowerOffIcon from "@mui/icons-material/PowerOff"
 import PowerOnIcon from "@mui/icons-material/Power"
 import {Delete} from "@mui/icons-material";
+import {webSocketManagerService} from "../../service/WebSocketService";
 
 interface ManagerEditorPageProps extends RouteComponentProps<{ readonly managerId: string }> {
 }
 
 const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEditorPageProps) => {
-    const [manager, setManager] = useState<Manager | null>(null);
-    const [managerFetchError, setManagerFetchError] = useState<Error | null>(null);
+    const [manager, setManager] = useState<Manager>();
+    const [managerFetchError, setManagerFetchError] = useState<Error>();
+    const [managerInfo, setManagerInfo] = useState<{
+        id: string;
+        currentPrice: number;
+        analyzerId: number;
+        startCapital: number;
+        currentCapital: number;
+        orders: string[];
+        positions: {
+            long: boolean;
+            size: number;
+            entryPrice: number;
+        }[]
+    }>();
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
 
@@ -36,6 +50,20 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
             .then(data => setManager(data))
             .catch(error => setManagerFetchError(error));
     }, [props.params.managerId, authToken]);
+
+    useEffect(() => {
+        if (!!manager && manager.status === 'ACTIVE') {
+            webSocketManagerService.connect((managerInfo) => {
+                setManagerInfo(JSON.parse(managerInfo));
+            });
+            const intervalId = setInterval(() => {
+                webSocketManagerService.sendMessage(JSON.stringify({id: manager.id}));
+            }, 1000);
+            webSocketManagerService.onDisconnect = () => {
+                clearTimeout(intervalId);
+            }
+        }
+    }, [manager]);
 
     let handleStrategyChange = function (event: SelectChangeEvent) {
         manager!.chooseStrategy = event.target.value as string;
@@ -99,6 +127,17 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                 {manager.errorDescription ? <p><strong>Error description:</strong> <span id="error-description">{manager.errorDescription}</span></p> : null}
                 <p><strong>Create Time:</strong> <span id="create-time">{createDate.toLocaleDateString() + ' : ' + createDate.toLocaleTimeString()}</span></p>
                 <p><strong>Update Time:</strong> <span id="update-time">{updateDate.toLocaleDateString() + ' : ' + updateDate.toLocaleTimeString()}</span></p>
+
+                {!!managerInfo &&
+                    <div>
+                        <div>Current Price: {managerInfo.currentPrice}</div>
+                        <div>Analyzer Id: {managerInfo.analyzerId}</div>
+                        <div>Start Capital: {managerInfo.startCapital}</div>
+                        <div>Current Capital: {managerInfo.currentCapital}</div>
+                        <div>Orders: {managerInfo.orders}</div>
+                        <div>positions: {JSON.stringify(managerInfo.positions)}</div>
+                    </div>
+                }
             </CardContent>
             <CardActions>
                 <Button variant='contained' size="medium" onClick={changeManagerStatus}>{manager.status === 'ACTIVE' ? (<PowerOffIcon />) : (<PowerOnIcon />)}
