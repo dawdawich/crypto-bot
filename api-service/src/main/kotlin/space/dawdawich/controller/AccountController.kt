@@ -4,6 +4,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.configuration.provider.model.AccountDetails
@@ -85,7 +86,11 @@ class AccountController(private val accountService: AccountService) {
             required = true
         ) authorization: String
     ): ResponseEntity<String> {
-        val jwt = accountService.requestAccessToken(authorization)
-        return ResponseEntity.ok(jwt.toString())
+        return try {
+            val jwt = accountService.requestAccessToken(authorization)
+            ResponseEntity.ok(jwt.toString())
+        } catch (ex : BadCredentialsException){
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
     }
 }

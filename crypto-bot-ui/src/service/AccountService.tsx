@@ -5,23 +5,26 @@ const API_URL = `${SERVER_HOST}/account`;
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
     const encodedCredentials = btoa(`${email}:${password}`);
-    try {
-        const options = {
-            method: 'GET',
-            headers: {
-                'Authorization': `Basic ${encodedCredentials}`,
-                'Access-Control-Allow-Origin': '*'
-            },
-            mode: 'cors' as RequestMode
-        };
-        const response = await fetch(`${API_URL}/token`, options)
-        if (response.ok) {
-            return await response.text() as string
+    const options = {
+        method: 'GET',
+        headers: {
+            'Authorization': `Basic ${encodedCredentials}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        mode: 'cors' as RequestMode
+    };
+    const response = await fetch(`${API_URL}/token`, options)
+    if (!response.ok) {
+        switch (response.status) {
+            case 401:
+                throw 'Invalid credentials';
+            case 500:
+                throw 'Something went wrong on the server';
+            default:
+                throw 'Something went wrong';
         }
-    } catch (error) {
-        throw error;
     }
-    throw new Error('Failed to login');
+    return await response.text() as string
 }
 
 export const fetchAccountInfo = async (authToken: string) => {
