@@ -1,4 +1,4 @@
-package space.dawdawich.exception.errors
+package space.dawdawich.exception.model
 
 import kotlinx.serialization.Serializable
 

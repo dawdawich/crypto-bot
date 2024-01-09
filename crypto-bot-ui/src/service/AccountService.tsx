@@ -19,7 +19,6 @@ export const fetchAuthToken = async (email: string, password: string) => {
             return await response.text() as string
         }
     } catch (error) {
-        console.error(error);
         throw error;
     }
     throw new Error('Failed to login');
@@ -39,7 +38,6 @@ export const fetchAccountInfo = async (authToken: string) => {
             return await response.json();
         }
     } catch (error) {
-        console.error(error);
         throw error;
     }
     throw new Error('Failed to fetch account info');
@@ -47,27 +45,30 @@ export const fetchAccountInfo = async (authToken: string) => {
 
 export const createAccount = async (username: string, name: string, surname: string, email: string, password: string) => {
     const body = {username: username, name: name, surname: surname, email: email, password: password};
-    try {
-        console.log('Start request');
-        const response = await fetch(`${API_URL}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify(body)
-        });
-        console.log('Request finish');
-        return await response
-    } catch (error) {
-        console.error(error);
-        throw error;
+    const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+        switch (response.status) {
+            case 412:
+                throw 'This email is not allowed for registration';
+            case 409:
+                throw 'This account is already registered';
+            case 500:
+                throw 'Something went wrong on the server';
+            default:
+                throw 'Something went wrong';
+        }
     }
-    throw new Error('Failed to create account');
+    return response;
 }
 
 export const getApiTokens = async (authToken: string) => {
-    console.log(authToken) // TODO: remove
     const response = await fetch(`${API_URL}/api-token`, {
         method: 'GET',
         headers: {

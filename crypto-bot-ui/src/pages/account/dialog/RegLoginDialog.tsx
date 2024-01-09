@@ -3,7 +3,7 @@ import {Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} fr
 import {createAccount, fetchAuthToken} from "../../../service/AccountService";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import {showToast} from "../../../exception/Toasts";
+import {errorToast} from "../../toast/Toasts";
 
 interface RegLoginDialogProps {
     open: boolean;
@@ -33,12 +33,8 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
 
     const tryToCreateAccount = () => {
         createAccount(username, name, surname, email, password)
-            .then(async (response) => {
-                if (response.ok)
-                    setRegistrationDialog(false);
-                else
-                    showToast(await response.json());
-            }).catch(error => setError(error))
+            .then(() => setRegistrationDialog(false))
+            .catch(errorMsg => errorToast(errorMsg))
     };
 
     const login = () => {
