@@ -11,7 +11,6 @@ export const fetchAuthToken = async (email: string, password: string) => {
             'Authorization': `Basic ${encodedCredentials}`,
             'Access-Control-Allow-Origin': '*'
         },
-        mode: 'cors' as RequestMode
     };
     const response = await fetch(`${API_URL}/token`, options)
     if (!response.ok) {

@@ -60,6 +60,7 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title">
             <DialogTitle id="form-dialog-title">{isRegistration ? 'Registration' : 'Login'}</DialogTitle>
+            <ToastContainer/>
             <DialogContent style={{display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px'}}>
                 {
                     isRegistration &&
@@ -128,7 +129,6 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
                 <Button variant='contained' disabled={!allFieldsValidated()}
                         onClick={isRegistration ? tryToCreateAccount : login} color="primary">
                     {isRegistration ? 'Sign Up' : 'Login'}
-                    <ToastContainer/>
                 </Button>
             </DialogActions>
         </Dialog>
