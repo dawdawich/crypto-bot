@@ -1,6 +1,9 @@
 import React, {useState} from "react";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} from "@mui/material";
 import {createAccount, fetchAuthToken} from "../../../service/AccountService";
+import {ToastContainer, toast} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import {errorToast} from "../../toast/Toasts";
 
 interface RegLoginDialogProps {
     open: boolean;
@@ -30,20 +33,19 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
 
     const tryToCreateAccount = () => {
         createAccount(username, name, surname, email, password)
-            .then(() => {
-                setRegistrationDialog(false);
-            })
-            .catch((error) => setError(error));
+            .then(() => setRegistrationDialog(false))
+            .catch(errorMsg => errorToast(errorMsg))
     };
 
     const login = () => {
-        fetchAuthToken(email, password).then((token) => {
-            const role = JSON.parse(atob(token.split('.')[1])).role
-            localStorage.setItem('auth.token', token);
-            localStorage.setItem('auth.role', role);
-            onClose();
-        })
-            .catch(error => setError(error))
+        fetchAuthToken(email, password)
+            .then((token) => {
+                const role = JSON.parse(atob(token.split('.')[1])).role
+                localStorage.setItem('auth.token', token);
+                localStorage.setItem('auth.role', role);
+                onClose();
+            })
+            .catch(errorMsg => errorToast(errorMsg))
     };
 
     if (!!error) {
@@ -58,7 +60,8 @@ const RegLoginDialog: React.FC<RegLoginDialogProps> = ({open, isRegistration, on
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title">
             <DialogTitle id="form-dialog-title">{isRegistration ? 'Registration' : 'Login'}</DialogTitle>
-            <DialogContent style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px'}}>
+            <ToastContainer/>
+            <DialogContent style={{display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px'}}>
                 {
                     isRegistration &&
                     <TextField
