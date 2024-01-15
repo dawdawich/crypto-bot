@@ -1,0 +1,20 @@
+spring:
+  data:
+    mongodb:
+      host: mongodb
+      port: 27017
+      database: crypto-bot
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  mvc:
+    dispatch-options-request: true
+
+logging:
+  level:
+    org.springframework: INFO
+
+app:
+  services-url: "analyzer-service=http://analyzer-service:8701/actuator/health,event-listener-service=http://event-listener:8702/actuator/health,event-listener-topics-updates=http://event-listener:8702/topics-update-time,trade-manager-service=http://trade-manager-service:8703/actuator/health"
