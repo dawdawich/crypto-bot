@@ -30,14 +30,12 @@
         </encoder>
     </appender>
 
-    <springProfile name="local">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE_APPENDER"/>
-        </root>
-    </springProfile>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_APPENDER"/>
+    </root>
+
     <springProfile name="prod">
-        <logger name="ROOT" level="INFO">
-            <appender-ref ref="CONSOLE_APPENDER"/>
+        <logger level="INFO" name="prod">
             <appender-ref ref="SOCKET"/>
         </logger>
     </springProfile>

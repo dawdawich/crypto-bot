@@ -30,16 +30,14 @@
         </encoder>
     </appender>
 
-    <springProfile name="local">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE_APPENDER"/>
-        </root>
-    </springProfile>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_APPENDER"/>
+    </root>
+
     <springProfile name="prod">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE_APPENDER"/>
+        <logger level="INFO" name="prod">
             <appender-ref ref="SOCKET"/>
-        </root>
+        </logger>
     </springProfile>
 
     <logger name="org.apache.kafka.clients.consumer.internals.ConsumerCoordinator" level="OFF"/>

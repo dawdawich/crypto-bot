@@ -1,0 +1,16 @@
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      group-id: api_group
+  data:
+    mongodb:
+      host: mongodb
+      port: 27017
+      database: crypto-bot
+
+logging:
+  level:
+    org.springframework: INFO
