@@ -64,7 +64,19 @@ class AnalyzerEndpoint(
     )
     fun getAnalyzerInfo(analyzerInfo: GridTableDetailInfoModel) {
         connections.filter { it.value.contains(analyzerInfo.id) }.keys.forEach { session ->
-            session.asyncRemote.sendText(Json.encodeToString(analyzerInfo))
+            try {
+                if (session.isOpen) {
+                    session.asyncRemote.sendText(Json.encodeToString(analyzerInfo))
+                } else {
+                    connections -= session
+                }
+            } catch (e: IllegalStateException) {
+                logger.warn(e) { "Failed to send message via endpoint" }
+                if (session.isOpen) {
+                    session.close()
+                }
+                connections -= session
+            }
         }
     }
 }

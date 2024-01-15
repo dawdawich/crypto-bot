@@ -40,6 +40,10 @@ class WebSocketService {
         }
     }
 
+    public isOpen(): boolean {
+        return this.socket !== null;
+    }
+
     public sendMessage(message: string): void {
         if (this.socket) {
             this.socket.send(message);

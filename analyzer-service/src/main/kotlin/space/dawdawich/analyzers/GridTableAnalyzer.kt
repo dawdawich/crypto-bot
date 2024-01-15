@@ -29,6 +29,9 @@ class GridTableAnalyzer(
     private var minPrice: Double = -1.0
     private var maxPrice: Double = -1.0
     private var outOfBoundCounter = 0
+    private var middlePrice by Delegates.observable(0.0) { _, _, newValue ->
+        updateMiddlePrice(newValue)
+    }
     private val positionManager: PositionManager =
         PositionManager(isOneWayMode, stopLoss.toDouble(), takeProfit.toDouble())
 
@@ -45,6 +48,7 @@ class GridTableAnalyzer(
         id,
         orderPriceGrid.map { (key, value) -> "$key=${value != null}" },
         currentPrice,
+        middlePrice,
         positionManager.getPositions().map { PositionModel(it.trend.direction > 0, it.size, it.entryPrice) })
 
     fun acceptPriceChange(previousPrice: Double, currentPrice: Double) {
@@ -167,6 +171,6 @@ class GridTableAnalyzer(
         orderPriceGrid = mutableMapOf(*gridPrices.map {
             it to null
         }.toTypedArray())
-        updateMiddlePrice(currentPrice)
+        middlePrice = currentPrice
     }
 }
