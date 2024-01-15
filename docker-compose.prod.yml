@@ -114,7 +114,7 @@ services:
   ui:
     build:
       context: crypto-bot-ui
-      dockerfile: ../dockerfiles/UIDockerfile
+      dockerfile: ../dockerfiles/UIDockerfileProd
     depends_on:
       - api-service
     ports:
