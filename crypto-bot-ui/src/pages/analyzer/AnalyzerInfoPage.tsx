@@ -36,27 +36,34 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     }, [props.params.analyzerId]);
 
     useEffect(() => {
+        let intervalId: NodeJS.Timer;
         if (!!analyzer && analyzer.isActive) {
             if (!webSocketAnalyzerService.isOpen()) {
                 webSocketAnalyzerService.connect((analyzer) => {
                     setAnalyzerInfo(JSON.parse(analyzer));
                 });
             }
-            const intervalId = setInterval(() => {
+            intervalId = setInterval(() => {
                 webSocketAnalyzerService.sendMessage(JSON.stringify({id: analyzer.id}));
             }, 5000);
             webSocketAnalyzerService.onDisconnect = () => {
                 clearTimeout(intervalId);
             }
+        }
 
-            if (!!analyzerInfo) {
-                const position = analyzerInfo.positions.find((pos) => pos.size > 0);
-                if (!!position) {
-                    updatePositionInfoCard(position, analyzerInfo.currentPrice);
-                }
+        return () => {
+            clearTimeout(intervalId)
+        };
+    }, [analyzer, analyzerPositionInfo]);
+
+    useEffect(() => {
+        if (!!analyzerInfo) {
+            const position = analyzerInfo.positions.find((pos) => pos.size > 0);
+            if (!!position) {
+                updatePositionInfoCard(position, analyzerInfo.currentPrice);
             }
         }
-    }, [analyzer, analyzerInfo, analyzerPositionInfo]);
+    }, [analyzerInfo]);
 
     const updatePositionInfoCard = (position: {
         long: boolean;
