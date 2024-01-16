@@ -1,4 +1,4 @@
-import React, {createRef, JSX, useEffect, useState} from "react";
+import React, {createRef, JSX, useEffect, useMemo, useState} from "react";
 import {Box, FormControl, InputLabel, MenuItem, Select, styled} from "@mui/material";
 import Draggable from "./Draggable";
 import "../../../css/PriceIndicator.css";
@@ -22,6 +22,9 @@ const AnalyzerProcessesChart: React.FC<AnalyzerBarData> = ({info}) => {
     const [lowerLabels, setLowerLabels] = useState<JSX.Element[]>([]);
     const [centerPositionValue, setCenterPositionValue] = useState<number>(0);
     const scrollRef = createRef<HTMLDivElement>();
+    const delimitersView = useMemo(() => delimiters.map((value) => (
+        <Delimiter key={value} style={{height: `${stepHeight}px`}}>{value}</Delimiter>
+    )), [delimiters, stepHeight]);
 
     useEffect(() => {
             if (!!info && (delimiters.length === 0 || (delimiters[0] - delimiters[1]) !== stepSize)) { // check that delimiters should be reinitialized
@@ -183,9 +186,7 @@ const AnalyzerProcessesChart: React.FC<AnalyzerBarData> = ({info}) => {
                 <IndicatorContainer>
                     <Draggable reference={scrollRef}>
                         <div>
-                            {delimiters.map((value) => (
-                                <Delimiter key={value} style={{height: `${stepHeight}px`}}>{value}</Delimiter>
-                            ))}
+                            {delimitersView}
                         </div>
                     </Draggable>
                 </IndicatorContainer>
