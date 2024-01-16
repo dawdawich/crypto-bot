@@ -23,8 +23,8 @@ const AnalyzerProcessesChart: React.FC<AnalyzerBarData> = ({info}) => {
     const [centerPositionValue, setCenterPositionValue] = useState<number>(0);
     const scrollRef = createRef<HTMLDivElement>();
     const delimitersView = useMemo(() => delimiters.map((value) => (
-        <Delimiter key={value} style={{height: `${stepHeight}px`}}>{value}</Delimiter>
-    )), [delimiters, stepHeight]);
+        <Delimiter key={value} style={{height: `${stepHeight}px`}}>{roundToNearest(value, stepSize)}</Delimiter>
+    )), [delimiters, stepHeight, stepSize]);
 
     useEffect(() => {
             if (!!info && (delimiters.length === 0 || (delimiters[0] - delimiters[1]) !== stepSize)) { // check that delimiters should be reinitialized
@@ -74,7 +74,7 @@ const AnalyzerProcessesChart: React.FC<AnalyzerBarData> = ({info}) => {
                 const setCenterPriceFunction = () => {
                     const centerPricePosition = scrollRef.current!.scrollTop + 200;
                     const centerPricePositionValue = minPrice + ((centerPricePosition - containerHeight) / -containerHeight) * (maxPrice - minPrice);
-                    setCenterPositionValue(roundToNearest(centerPricePositionValue, 1));
+                    setCenterPositionValue(roundToNearest(centerPricePositionValue, stepSize));
                 };
 
                 setCenterPriceFunction();
