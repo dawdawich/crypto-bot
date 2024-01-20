@@ -36,7 +36,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     }, [props.params.analyzerId]);
 
     useEffect(() => {
-        let intervalId: NodeJS.Timer;
+        let intervalId: NodeJS.Timeout;
         if (!!analyzer && analyzer.isActive) {
             if (!webSocketAnalyzerService.isOpen()) {
                 webSocketAnalyzerService.connect((analyzer) => {
