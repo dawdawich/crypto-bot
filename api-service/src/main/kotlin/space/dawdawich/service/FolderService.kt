@@ -11,38 +11,38 @@ import kotlin.NoSuchElementException
 class FolderService(private val folderRepository: FolderRepository) {
 
     fun getAllFolders(accountId: String): List<String> =
-            folderRepository.findAllByAccountId(accountId).map { it.folderId }.toList()
+            folderRepository.findAllByAccountId(accountId).map { it.name }.toList()
 
-    fun createFolder(accountId: String, folderId: String): FolderDocument {
-        if (isFolderExist(accountId, folderId)) {
-            throw EntityAlreadyExistsException("Folder '$folderId' is already exist")
+    fun createFolder(accountId: String, name: String): FolderDocument {
+        if (isFolderExist(accountId, name)) {
+            throw EntityAlreadyExistsException("Folder '$name' is already exist")
         }
-        return folderRepository.insert(FolderDocument(UUID.randomUUID().toString(), accountId, folderId, emptyList()))
+        return folderRepository.insert(FolderDocument(UUID.randomUUID().toString(), accountId, name, emptyList()))
     }
 
-    fun updateFolder(accountId: String, oldFolderId: String, newFolderId: String): FolderDocument {
-        if (isFolderExist(accountId, newFolderId)) {
-            throw EntityAlreadyExistsException("Folder '$newFolderId' is already exist")
+    fun updateFolder(accountId: String, oldName: String, newName: String): FolderDocument {
+        if (isFolderExist(accountId, newName)) {
+            throw EntityAlreadyExistsException("Folder '$newName' is already exist")
         }
-        val folder = findFolderByAccountIdAndFolderId(accountId, oldFolderId)
-        folder.folderId = newFolderId
+        val folder = findFolderByAccountIdAndName(accountId, oldName)
+        folder.name = newName
         return folderRepository.save(folder)
     }
 
-    fun deleteFolder(accountId: String, folderId: String) {
-        if (!isFolderExist(accountId, folderId)) {
-            throw NoSuchElementException("Folder '$folderId' is not found")
+    fun deleteFolder(accountId: String, name: String) {
+        if (!isFolderExist(accountId, name)) {
+            throw NoSuchElementException("Folder '$name' is not found")
         }
-        folderRepository.deleteByAccountIdAndFolderId(accountId, folderId)
+        folderRepository.deleteByAccountIdAndName(accountId, name)
     }
 
-    fun getAnalyzersInFolder(accountId: String, folderId: String): List<String> =
-            findFolderByAccountIdAndFolderId(accountId, folderId).analyzers ?: emptyList()
+    fun getAnalyzersInFolder(accountId: String, name: String): List<String> =
+            findFolderByAccountIdAndName(accountId, name).analyzers ?: emptyList()
 
-    private fun findFolderByAccountIdAndFolderId(accountId: String, folderId: String): FolderDocument =
-            folderRepository.findByAccountIdAndFolderId(accountId, folderId)
-                    ?: throw NoSuchElementException("Folder '$folderId' is not found")
+    private fun findFolderByAccountIdAndName(accountId: String, name: String): FolderDocument =
+            folderRepository.findByAccountIdAndName(accountId, name)
+                    ?: throw NoSuchElementException("Folder '$name' is not found")
 
-    private fun isFolderExist(accountId: String, folderId: String): Boolean =
-            folderRepository.existsByAccountIdAndFolderId(accountId, folderId)
+    private fun isFolderExist(accountId: String, name: String): Boolean =
+            folderRepository.existsByAccountIdAndName(accountId, name)
 }

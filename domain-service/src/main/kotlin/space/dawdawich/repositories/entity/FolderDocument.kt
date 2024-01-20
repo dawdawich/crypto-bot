@@ -10,6 +10,6 @@ data class FolderDocument(
         val id: String,
         @Indexed
         val accountId: String,
-        var folderId: String,
+        var name: String,
         var analyzers: List<String>?
 )

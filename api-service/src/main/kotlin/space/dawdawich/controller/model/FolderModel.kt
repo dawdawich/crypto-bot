@@ -1,3 +1,12 @@
 package space.dawdawich.controller.model
 
-data class FolderModel(val folderId: String, val analyzers: List<String>?)
+import com.fasterxml.jackson.annotation.JsonInclude
+
+data class FolderModel(
+        val name: String,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val analyzers: List<String>?
+) {
+
+    constructor(name: String) : this(name, null)
+}
