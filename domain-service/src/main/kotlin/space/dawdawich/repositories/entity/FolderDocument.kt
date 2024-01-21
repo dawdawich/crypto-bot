@@ -11,5 +11,5 @@ data class FolderDocument(
         @Indexed
         val accountId: String,
         var name: String,
-        var analyzers: List<String>?
+        var analyzers: Set<String>?
 )

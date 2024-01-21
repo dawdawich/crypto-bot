@@ -7,9 +7,11 @@ interface FolderRepository : MongoRepository<FolderDocument, String> {
 
     fun findAllByAccountId(accountId: String): List<FolderDocument>
 
+    fun existsByAccountIdAndId(accountId: String, id: String): Boolean
+
     fun existsByAccountIdAndName(accountId: String, name: String): Boolean
 
-    fun findByAccountIdAndName(accountId: String, name: String): FolderDocument?
+    fun findByAccountIdAndId(accountId: String, id: String): FolderDocument?
 
-    fun deleteByAccountIdAndName(accountId: String, name: String)
+    fun deleteByAccountIdAndId(accountId: String, id: String)
 }
