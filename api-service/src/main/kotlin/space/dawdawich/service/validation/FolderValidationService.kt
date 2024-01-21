@@ -10,12 +10,12 @@ class FolderValidationService(
         private val folderRepository: FolderRepository,
 ) {
     fun validateFolderExistById(folderId: String, accountId: String) {
-        if (!folderRepository.existsByAccountIdAndId(accountId, folderId))
+        if (!folderRepository.existsByIdAndAccountId(folderId, accountId))
             throw FolderNotFoundException("Folder with id: '$folderId' is not found")
     }
 
     fun validateFolderNotExistByName(name: String, accountId: String) {
-        if (folderRepository.existsByAccountIdAndName(name, accountId))
+        if (folderRepository.existsByNameAndAccountId(name, accountId))
             throw EntityAlreadyExistsException("Folder with name: '$name' is already exist")
     }
 }

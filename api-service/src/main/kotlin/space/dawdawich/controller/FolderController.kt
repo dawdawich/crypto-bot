@@ -56,7 +56,7 @@ class FolderController(private val folderService: FolderService) {
     @GetMapping("/{id}/analyzers")
     fun getAnalyzersInFolder(authentication: Authentication, @PathVariable id: String): ResponseEntity<Set<String>> {
         return try {
-            val analyzers = folderService.getFolderByAccountIdAndId(authentication.name, id).analyzers ?: emptySet()
+            val analyzers = folderService.getFolderByIdAndAccountId(id, authentication.name).analyzers ?: emptySet()
             ResponseEntity(analyzers, HttpStatus.OK)
         } catch (ex: FolderNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)

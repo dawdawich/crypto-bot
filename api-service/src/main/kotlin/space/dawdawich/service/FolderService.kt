@@ -29,20 +29,20 @@ class FolderService(
 
     fun updateFolder(accountId: String, folderId: String, newFolderName: String): FolderDocument {
         folderValidationService.validateFolderNotExistByName(newFolderName, accountId)
-        val folder = getFolderByAccountIdAndId(accountId, folderId)
+        val folder = getFolderByIdAndAccountId(folderId, accountId)
         folder.name = newFolderName
         return folderRepository.save(folder)
     }
 
     fun deleteFolder(accountId: String, id: String) {
         folderValidationService.validateFolderExistById(id, accountId)
-        folderRepository.deleteByAccountIdAndId(accountId, id)
+        folderRepository.deleteByIdAndAccountId(id, accountId)
     }
 
-    fun addAnalyzersToFolder(accountId: String, id: String, analyzersToAdd: Set<String>): FolderDocument {
+    fun addAnalyzersToFolder(accountId: String, folderId: String, analyzersToAdd: Set<String>): FolderDocument {
         analyzerValidationService.validateAnalyzersExistByIds(analyzersToAdd, accountId)
 
-        val folder = getFolderByAccountIdAndId(accountId, id)
+        val folder = getFolderByIdAndAccountId(folderId, accountId)
 
         val updatedAnalyzers = folder.analyzers?.toMutableSet()?.apply {
             addAll(analyzersToAdd)
@@ -52,10 +52,10 @@ class FolderService(
         return folderRepository.save(updatedFolder)
     }
 
-    fun removeAnalyzersFromFolder(accountId: String, id: String, analyzersToRemove: Set<String>): FolderDocument {
+    fun removeAnalyzersFromFolder(accountId: String, folderId: String, analyzersToRemove: Set<String>): FolderDocument {
         analyzerValidationService.validateAnalyzersExistByIds(analyzersToRemove, accountId)
 
-        val folder = getFolderByAccountIdAndId(accountId, id)
+        val folder = getFolderByIdAndAccountId(folderId, accountId)
 
         val updatedAnalyzers = folder.analyzers?.toMutableSet()?.apply {
             removeAll(analyzersToRemove)
@@ -65,7 +65,7 @@ class FolderService(
         return folderRepository.save(updatedFolder)
     }
 
-    fun getFolderByAccountIdAndId(accountId: String, id: String): FolderDocument =
-            folderRepository.findByAccountIdAndId(accountId, id)
-                    ?: throw FolderNotFoundException("Folder '$id' is not found")
+    fun getFolderByIdAndAccountId(folderId: String, accountId: String): FolderDocument =
+            folderRepository.findByIdAndAccountId(folderId, accountId)
+                    ?: throw FolderNotFoundException("Folder '$folderId' is not found")
 }
