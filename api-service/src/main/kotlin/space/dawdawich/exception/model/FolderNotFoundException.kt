@@ -1,3 +1,3 @@
 package space.dawdawich.exception.model
 
-class FolderNotFoundException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class FolderNotFoundException(message: String, cause: Throwable? = null) : Exception(message, cause)
