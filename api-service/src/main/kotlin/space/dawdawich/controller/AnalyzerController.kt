@@ -2,9 +2,11 @@ package space.dawdawich.controller
 
 import jakarta.annotation.security.RolesAllowed
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.*
+import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.service.AnalyzerService
 
 @RestController
@@ -20,8 +22,13 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     }
 
     @GetMapping("/{analyzerId}")
-    fun getAnalyzer(@PathVariable analyzerId: String): GridTableAnalyzerResponse =
-        analyzerService.getAnalyzer(analyzerId) // TODO: Add check for UUID
+    fun getAnalyzer(@PathVariable analyzerId: String): ResponseEntity<Any> {
+        return try {
+            ResponseEntity(analyzerService.getAnalyzer(analyzerId), HttpStatus.OK)
+        } catch (ex: AnalyzerNotFoundException) {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
 
     @DeleteMapping("/{analyzerId}")
     fun deleteAnalyzer(@PathVariable analyzerId: String) = analyzerService.deleteAnalyzer(analyzerId)
@@ -50,11 +57,23 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
 
     @PutMapping("/{analyzerId}/activate")
     @ResponseStatus(HttpStatus.OK)
-    fun activateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String) =
-        analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, true)
+    fun activateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<HttpStatus> {
+        return try {
+            analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, true)
+            ResponseEntity(HttpStatus.OK)
+        } catch (ex: AnalyzerNotFoundException) {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
 
     @PutMapping("/{analyzerId}/deactivate")
     @ResponseStatus(HttpStatus.OK)
-    fun deactivateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String) =
-        analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, false)
+    fun deactivateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<HttpStatus> {
+        return try {
+            analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, false)
+            ResponseEntity(HttpStatus.OK)
+        } catch (ex: AnalyzerNotFoundException) {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
 }
