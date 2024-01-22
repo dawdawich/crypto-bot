@@ -18,9 +18,10 @@ class AnalyzerValidationService(
     }
 
     @Throws(AnalyzerNotFoundException::class)
-    fun validateAnalyzerExistByIdAndAccountId(analyzerId: String, accountId: String) {
+    fun <T> validateAnalyzerExistByIdAndAccountId(analyzerId: String, accountId: String, action: () -> T): T {
         if (!analyzerRepository.existsByIdAndAccountId(analyzerId, accountId)) {
             throw AnalyzerNotFoundException("Analyzer with id '$analyzerId' is not found")
         }
+        return action()
     }
 }

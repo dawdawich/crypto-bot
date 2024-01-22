@@ -38,11 +38,10 @@ class FolderService(
                 UpdateFolderResponse(updatedFolder.id, updatedFolder.name)
             }
 
-    fun deleteFolder(accountId: String, id: String) {
-        folderValidationService.validateFolderExistById(id, accountId) {
-            folderRepository.deleteByIdAndAccountId(id, accountId)
-        }
-    }
+    fun deleteFolder(accountId: String, id: String) =
+            folderValidationService.validateFolderExistById(id, accountId) {
+                folderRepository.deleteByIdAndAccountId(id, accountId)
+            }
 
     fun addAnalyzersToFolder(accountId: String, folderId: String, analyzersToAdd: Set<String>): MutableSet<String> =
             analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzersToAdd, accountId) {

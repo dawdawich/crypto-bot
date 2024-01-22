@@ -1,7 +1,7 @@
 package space.dawdawich.service.validation
 
 import org.springframework.stereotype.Service
-import space.dawdawich.exception.model.EntityAlreadyExistsException
+import space.dawdawich.exception.model.RecordAlreadyExistsException
 import space.dawdawich.exception.model.FolderNotFoundException
 import space.dawdawich.repositories.FolderRepository
 import kotlin.jvm.Throws
@@ -19,10 +19,10 @@ class FolderValidationService(
         return action()
     }
 
-    @Throws(EntityAlreadyExistsException::class)
+    @Throws(RecordAlreadyExistsException::class)
     fun <T> validateFolderNotExistByName(name: String, accountId: String, action: () -> T): T {
         if (folderRepository.existsByNameAndAccountId(name, accountId)) {
-            throw EntityAlreadyExistsException("Folder with name: '$name' is already exist")
+            throw RecordAlreadyExistsException("Folder with name: '$name' is already exist")
         }
         return action()
     }
