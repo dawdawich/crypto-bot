@@ -1,16 +1,16 @@
 import {AnalyzerModel} from "../model/AnalyzerModel";
 import {SERVER_HOST} from "./Constants";
 import {Analyzer} from "../pages/analyzer/model/Analyzer";
+import {fetchWrapper} from "../components/api/fetchWrapper";
 
 const API_URL = `${SERVER_HOST}/analyzer`;
 
 export const fetchTopAnalyzersData = async () => {
     try {
-        const response = await fetch(`${API_URL}/top20`, {
-            headers: {
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
+        const path = `top20`;
+        const request = fetchWrapper({baseUrl: API_URL});
+        const response = await request.methodGET(path);
+        //TODO: Handling response and errors in next steps
         if (response.ok) {
             return await response.json();
         }
@@ -23,11 +23,9 @@ export const fetchTopAnalyzersData = async () => {
 
 export const fetchAnalyzerData = async (analyzerId: string) => {
     try {
-        const response = await fetch(`${API_URL}/${analyzerId}`, {
-            headers: {
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
+        const path = `${analyzerId}`
+        const request = fetchWrapper({baseUrl: API_URL})
+        const response = await request.methodGET(path)
         if (response.ok) {
             return await response.json();
         }
@@ -40,12 +38,10 @@ export const fetchAnalyzerData = async (analyzerId: string) => {
 
 export const fetchAnalyzersList = async (authToken: string, page: number, size: number) => {
     try {
-        const response = await fetch(`${API_URL}?page=${page}&size=${size}`, {
-            headers: {
-                Authorization: `Bearer ${authToken}`,
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
+        const path = `?page=${page}&size=${size}`
+        const request = fetchWrapper({baseUrl: API_URL, token: authToken})
+        const response = await request.methodGET(path)
+        //TODO: Handling response and errors in next steps
         if (response.ok) {
             return await response.json() as {analyzers: Analyzer[], totalSize: number};
         }
@@ -56,15 +52,10 @@ export const fetchAnalyzersList = async (authToken: string, page: number, size: 
     throw new Error('Failed to fetch analyzers list');
 }
 export const createAnalyzer = async (analyzer: AnalyzerModel, authToken: string) => {
-    const response = await fetch(`${API_URL}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-            'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify(analyzer)
-    });
+    const path = ``
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken})
+    const response = await request.methodPOST(path, JSON.stringify(analyzer))
+    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return;
     }
@@ -72,15 +63,11 @@ export const createAnalyzer = async (analyzer: AnalyzerModel, authToken: string)
 }
 
 export const changeAnalyzerStatus = async (id: string, status: boolean, authToken: string) => {
-    const path = status ? 'activate' : 'deactivate';
-    const response = await fetch(`${API_URL}/${id}/${path}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-            'Access-Control-Allow-Origin': '*'
-        }
-    });
+    const activation_state = status ? 'activate' : 'deactivate';
+    const path = `${id}/${activation_state}`
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken})
+    const response = await request.methodPUT(path)
+    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return;
     }
@@ -88,13 +75,10 @@ export const changeAnalyzerStatus = async (id: string, status: boolean, authToke
 }
 
 export const deleteAnalyzer = async (id: string, authToken: string) => {
-    const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: {
-            Authorization: `Bearer ${authToken}`,
-            'Access-Control-Allow-Origin': '*'
-        }
-    });
+    const path =`${id}`
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken})
+    const response = await request.methodDELETE(path)
+    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return;
     }
