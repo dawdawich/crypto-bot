@@ -20,8 +20,6 @@ interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocumen
 
     fun deleteByAccountId(accountId: String)
 
-    fun countByIdAndAccountId(id: String, accountId: String): Int
-
     fun countByAccountId(accountId: String): Int
 
     fun existsByIdAndAccountId(id: String, accountId: String): Boolean

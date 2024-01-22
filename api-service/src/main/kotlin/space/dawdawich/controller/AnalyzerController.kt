@@ -22,7 +22,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     }
 
     @GetMapping("/{analyzerId}")
-    fun getAnalyzer(@PathVariable analyzerId: String): ResponseEntity<Any> {
+    fun getAnalyzer(@PathVariable analyzerId: String): ResponseEntity<GridTableAnalyzerResponse> {
         return try {
             ResponseEntity(analyzerService.getAnalyzer(analyzerId), HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
@@ -31,7 +31,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     }
 
     @DeleteMapping("/{analyzerId}")
-    fun deleteAnalyzer(@PathVariable analyzerId: String) = analyzerService.deleteAnalyzer(analyzerId)
+    fun deleteAnalyzer(authentication: Authentication, @PathVariable analyzerId: String) = analyzerService.deleteAnalyzer(authentication.name, analyzerId)
 
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
@@ -56,8 +56,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     fun deleteAllAnalyzers(user: Authentication) = analyzerService.deleteAnalyzers(user.name)
 
     @PutMapping("/{analyzerId}/activate")
-    @ResponseStatus(HttpStatus.OK)
-    fun activateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<HttpStatus> {
+    fun activateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<Unit> {
         return try {
             analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, true)
             ResponseEntity(HttpStatus.OK)
@@ -67,8 +66,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     }
 
     @PutMapping("/{analyzerId}/deactivate")
-    @ResponseStatus(HttpStatus.OK)
-    fun deactivateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<HttpStatus> {
+    fun deactivateAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<Unit> {
         return try {
             analyzerService.updateAnalyzerStatus(authentication.name, analyzerId, false)
             ResponseEntity(HttpStatus.OK)

@@ -41,12 +41,13 @@ class AnalyzerService(
     fun getAnalyzersCount(accountId: String) = gridTableAnalyzerRepository.countByAccountId(accountId)
 
     fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) {
-        analyzerValidationService.validateAnalyzerExistById(id, accountId)
-        gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status) // TODO: move to analyzer service, change status in db after operation completion
+        analyzerValidationService.validateAnalyzerExistByIdAndAccountId(id, accountId)
+        gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status)
         kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
     }
 
-    fun deleteAnalyzer(id: String) {
+    fun deleteAnalyzer(accountId: String, id: String) {
+        analyzerValidationService.validateAnalyzerExistByIdAndAccountId(id, accountId)
         kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id)
     }
 

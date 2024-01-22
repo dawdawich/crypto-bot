@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.*
+import space.dawdawich.controller.model.folder.*
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.exception.model.EntityAlreadyExistsException
 import space.dawdawich.exception.model.FolderNotFoundException
@@ -16,24 +17,23 @@ import java.util.*
 class FolderController(private val folderService: FolderService) {
 
     @GetMapping
-    fun getAllFolders(authentication: Authentication): ResponseEntity<List<FolderModel>> =
+    fun getAllFolders(authentication: Authentication): ResponseEntity<List<GetFolderResponse>> =
             ResponseEntity(folderService.getAllFolders(authentication.name), HttpStatus.OK)
 
     @PostMapping
-    fun createFolder(authentication: Authentication, @RequestBody folderRequest: FolderModel): ResponseEntity<Any> {
+    fun createFolder(authentication: Authentication, @RequestBody folderRequest: CreateFolderRequest): ResponseEntity<CreateFolderResponse> {
         return try {
-            val createdFolder = folderService.createFolder(authentication.name, folderRequest.name)
-            ResponseEntity(FolderModel(createdFolder.id, createdFolder.name), HttpStatus.CREATED)
+            ResponseEntity(folderService.createFolder(authentication.name, folderRequest.name), HttpStatus.CREATED)
         } catch (ex: EntityAlreadyExistsException) {
             ResponseEntity(HttpStatus.CONFLICT)
         }
     }
 
     @PutMapping("/{id}/analyzers")
-    fun addAnalyzersToFolder(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Any> {
+    fun analyzersToAdd(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Set<String>> {
         return try {
-            val updatedFolder = folderService.addAnalyzersToFolder(authentication.name, id, analyzersToAdd)
-            ResponseEntity(updatedFolder.analyzers, HttpStatus.OK)
+            val analyzers = folderService.addAnalyzersToFolder(authentication.name, id, analyzersToAdd)
+            ResponseEntity(analyzers, HttpStatus.OK)
         } catch (ex: FolderNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         } catch (ex: AnalyzerNotFoundException) {
@@ -42,10 +42,10 @@ class FolderController(private val folderService: FolderService) {
     }
 
     @DeleteMapping("/{id}/analyzers")
-    fun removeAnalyzersFromFolder(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Any> {
+    fun analyzersToRemove(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Set<String>> {
         return try {
-            val updatedFolder = folderService.removeAnalyzersFromFolder(authentication.name, id, analyzersToAdd)
-            ResponseEntity(updatedFolder.analyzers, HttpStatus.OK)
+            val analyzers = folderService.removeAnalyzersFromFolder(authentication.name, id, analyzersToAdd)
+            ResponseEntity(analyzers, HttpStatus.OK)
         } catch (ex: FolderNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         } catch (ex: AnalyzerNotFoundException) {
@@ -56,7 +56,7 @@ class FolderController(private val folderService: FolderService) {
     @GetMapping("/{id}/analyzers")
     fun getAnalyzersInFolder(authentication: Authentication, @PathVariable id: String): ResponseEntity<Set<String>> {
         return try {
-            val analyzers = folderService.getFolderByIdAndAccountId(id, authentication.name).analyzers ?: emptySet()
+            val analyzers = folderService.getFolderByIdAndAccountId(id, authentication.name).analyzers
             ResponseEntity(analyzers, HttpStatus.OK)
         } catch (ex: FolderNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
@@ -67,11 +67,11 @@ class FolderController(private val folderService: FolderService) {
     fun updateFolder(
             authentication: Authentication,
             @PathVariable id: String,
-            @RequestBody folderRequest: FolderModel
-    ): ResponseEntity<Any> {
+            @RequestBody folderRequest: UpdateFolderRequest
+    ): ResponseEntity<UpdateFolderResponse> {
         return try {
             val updatedFolder = folderService.updateFolder(authentication.name, id, folderRequest.name)
-            ResponseEntity(FolderModel(updatedFolder.id, updatedFolder.name), HttpStatus.OK)
+            ResponseEntity(updatedFolder, HttpStatus.OK)
         } catch (ex: FolderNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         } catch (ex: EntityAlreadyExistsException) {
@@ -80,7 +80,7 @@ class FolderController(private val folderService: FolderService) {
     }
 
     @DeleteMapping("/{id}")
-    fun deleteFolder(authentication: Authentication, @PathVariable id: String): ResponseEntity<Any> {
+    fun deleteFolder(authentication: Authentication, @PathVariable id: String): ResponseEntity<Unit> {
         return try {
             folderService.deleteFolder(authentication.name, id)
             ResponseEntity(HttpStatus.OK)
