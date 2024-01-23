@@ -1,15 +1,18 @@
 import {Manager} from "../model/Manager";
 import {SERVER_HOST} from "./Constants";
 import {fetchWrapper} from "../components/api/fetchWrapper";
+import {FetchMethods} from "../components/api/type";
 
 
 const API_URL = `${SERVER_HOST}/trade-manager`;
 
 export const fetchManagersData = async (authToken: string) => {
     try {
-        const path = ``;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodGET(path);
+        const response = await fetchWrapper({
+            url: `${API_URL}`,
+            method: FetchMethods.GET,
+            token: authToken
+        });
         //TODO: Handling response and errors in next steps
         if (response.ok) {
             return await response.json();
@@ -23,9 +26,11 @@ export const fetchManagersData = async (authToken: string) => {
 
 export const fetchManagerData = async (authToken: string, managerId: string) => {
     try {
-        const path = `${managerId}`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodGET(path);
+        const response = await fetchWrapper({
+            url: `${API_URL}/${managerId}`,
+            method: FetchMethods.GET,
+            token: authToken
+        });
         //TODO: Handling response and errors in next steps
         if (response.ok) {
             return await response.json();
@@ -38,9 +43,12 @@ export const fetchManagerData = async (authToken: string, managerId: string) => 
 }
 
 export const createManager = async (manager: any, authToken: string) => {
-    const path = ``;
-    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-    const response = await request.methodPOST(path, manager);
+    const response = await fetchWrapper({
+        url: `${API_URL}`,
+        method: FetchMethods.POST,
+        token: authToken,
+        body: manager
+    });
     //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.text();
@@ -50,9 +58,12 @@ export const createManager = async (manager: any, authToken: string) => {
 
 export const updateManagerStatus = async (managerId: string, status: string, authToken: string) => {
     try {
-        const path = `${managerId}/status`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodPUT(path, {status});
+        const response = await fetchWrapper({
+            url: `${API_URL}/${managerId}/status`,
+            method: FetchMethods.PUT,
+            token: authToken,
+            body: {status}
+        });
         //TODO: Handling response and errors in next steps
         if (response.ok) {
             return true;
@@ -66,9 +77,11 @@ export const updateManagerStatus = async (managerId: string, status: string, aut
 
 export const deleteManager = async (managerId: string, authToken: string) => {
     try {
-        const path = `${managerId}`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodDELETE(path);
+        const response = await fetchWrapper({
+            url: `${API_URL}/${managerId}`,
+            method: FetchMethods.DELETE,
+            token: authToken,
+        });
         //TODO: Handling response and errors in next steps
         if (response.status === 204) {
             return true;
@@ -82,9 +95,11 @@ export const deleteManager = async (managerId: string, authToken: string) => {
 
 export const updateManagerData = async (manager: Manager, authToken: string) => {
     try {
-        const path = ``;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodPUT(path, manager);
+        const response = await fetchWrapper({
+            url: `${API_URL}`,
+            method: FetchMethods.PUT,
+            token: authToken,
+        });
         //TODO: Handling response and errors in next steps
         if (response.ok) {
             return true;
