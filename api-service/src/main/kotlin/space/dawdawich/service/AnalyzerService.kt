@@ -12,16 +12,19 @@ import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.controller.model.AnalyzerBulkCreateRequest
 import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
+import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.service.validation.AnalyzerValidationService
 import java.util.*
 
 @Service
 class AnalyzerService(
-    private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val symbolRepository: SymbolRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>
+        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
+        private val analyzerValidationService: AnalyzerValidationService,
+        private val symbolRepository: SymbolRepository,
+        private val kafkaTemplate: KafkaTemplate<String, String>
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -37,27 +40,22 @@ class AnalyzerService(
 
     fun getAnalyzersCount(accountId: String) = gridTableAnalyzerRepository.countByAccountId(accountId)
 
-    fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) {
-        if (gridTableAnalyzerRepository.countByIdAndAccountId(id, accountId) > 0) {
-            gridTableAnalyzerRepository.setAnalyzerActiveStatus(
-                id,
-                status
-            ) // TODO: move to analyzer service, change status in db after operation completion
-            kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
-        } else {
-            throw Exception("Account '$accountId' does not an owner of analyzer '$id'") // TODO extract to exact exception
-        }
-    }
+    fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) =
+            analyzerValidationService.validateAnalyzerExistByIdAndAccountId(id, accountId) {
+                gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status)
+                kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
+            }
 
-    fun deleteAnalyzer(id: String) {
-        kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id)
-    }
+    fun deleteAnalyzer(accountId: String, id: String) =
+            analyzerValidationService.validateAnalyzerExistByIdAndAccountId(id, accountId) {
+                kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id)
+            }
 
-    // TODO: Add check for null and throw not found exception
-    fun getAnalyzer(id: String): GridTableAnalyzerResponse =
-        GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdOrNull(id)!!)
+    fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
+            GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdAndAccountId(id, accountId)
+                    ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found"))
 
-    fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) {
+    fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
         analyzerData.apply {
             val gridTableAnalyzerDocument = GridTableAnalyzerDocument(
                 UUID.randomUUID().toString(),
@@ -74,7 +72,6 @@ class AnalyzerService(
             )
             kafkaTemplate.send(ADD_ANALYZER_TOPIC, Json.encodeToString(gridTableAnalyzerDocument))
         }
-    }
 
     fun bulkCreate(accountId: String, request: AnalyzerBulkCreateRequest) {
         val symbols = symbolRepository.findAllById(request.symbols)

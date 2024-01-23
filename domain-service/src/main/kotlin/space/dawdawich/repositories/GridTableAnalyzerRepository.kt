@@ -20,9 +20,11 @@ interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocumen
 
     fun deleteByAccountId(accountId: String)
 
-    fun countByIdAndAccountId(id: String, accountId: String): Int
-
     fun countByAccountId(accountId: String): Int
+
+    fun findByIdAndAccountId(id: String, accountId: String): GridTableAnalyzerDocument?
+
+    fun existsByIdAndAccountId(id: String, accountId: String): Boolean
 
     fun findAllByIsActiveIsTrueOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
 
