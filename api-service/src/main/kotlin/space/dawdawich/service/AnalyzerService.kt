@@ -51,8 +51,8 @@ class AnalyzerService(
                 kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id)
             }
 
-    fun getAnalyzer(id: String): GridTableAnalyzerResponse =
-            GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdOrNull(id)
+    fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
+            GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdAndAccountId(id, accountId)
                     ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found"))
 
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =

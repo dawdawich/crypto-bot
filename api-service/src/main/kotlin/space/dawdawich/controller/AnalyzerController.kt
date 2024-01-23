@@ -25,9 +25,9 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
 
 
     @GetMapping("/{analyzerId}")
-    fun getAnalyzer(@PathVariable analyzerId: String): ResponseEntity<GridTableAnalyzerResponse> =
+    fun getAnalyzer(authentication: Authentication, @PathVariable analyzerId: String): ResponseEntity<GridTableAnalyzerResponse> =
             try {
-                ResponseEntity(analyzerService.getAnalyzer(analyzerId), HttpStatus.OK)
+                ResponseEntity(analyzerService.getAnalyzer(analyzerId, authentication.name), HttpStatus.OK)
             } catch (ex: AnalyzerNotFoundException) {
                 ResponseEntity(HttpStatus.NOT_FOUND)
             }
