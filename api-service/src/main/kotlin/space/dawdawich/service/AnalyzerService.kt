@@ -40,14 +40,16 @@ class AnalyzerService(
 
     fun getAnalyzersCount(accountId: String) = gridTableAnalyzerRepository.countByAccountId(accountId)
 
-    fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean) : Unit = analyzerValidationService
-            .validateAnalyzerExistByIdAndAccountId(id, accountId)
-            .let { gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status) }
-            .let { kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id) }
+    fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean): Unit =
+            analyzerValidationService
+                    .validateAnalyzerExistByIdAndAccountId(id, accountId)
+                    .let { gridTableAnalyzerRepository.setAnalyzerActiveStatus(id, status) }
+                    .let { kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id) }
 
-    fun deleteAnalyzer(accountId: String, id: String) : Unit = analyzerValidationService
-            .validateAnalyzerExistByIdAndAccountId(id, accountId)
-            .let { kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
+    fun deleteAnalyzer(accountId: String, id: String): Unit =
+            analyzerValidationService
+                    .validateAnalyzerExistByIdAndAccountId(id, accountId)
+                    .let { kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
 
     fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
             GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdAndAccountId(id, accountId)
