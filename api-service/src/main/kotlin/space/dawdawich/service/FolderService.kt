@@ -36,7 +36,6 @@ class FolderService(
             .let { folderRepository.save(it) }
             .let { UpdateFolderResponse(it.id, it.name) }
 
-
     fun deleteFolder(accountId: String, id: String) = folderValidationService
             .validateFolderExistByIdAndAccountId(id, accountId)
             .let { folderRepository.deleteByIdAndAccountId(id, accountId) }
