@@ -5,7 +5,9 @@ import space.dawdawich.controller.model.folder.CreateFolderResponse
 import space.dawdawich.controller.model.folder.GetFolderResponse
 import space.dawdawich.controller.model.folder.UpdateFolderResponse
 import space.dawdawich.exception.model.FolderNotFoundException
+import space.dawdawich.repositories.FolderAnalyzerRepository
 import space.dawdawich.repositories.FolderRepository
+import space.dawdawich.repositories.entity.FolderAnalyzerDocument
 import space.dawdawich.repositories.entity.FolderDocument
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.service.validation.FolderValidationService
@@ -13,14 +15,15 @@ import space.dawdawich.service.validation.FolderValidationService
 @Service
 class FolderService(
         private val folderRepository: FolderRepository,
+        private val folderAnalyzerRepository: FolderAnalyzerRepository,
         private val analyzerValidationService: AnalyzerValidationService,
-        private val folderValidationService: FolderValidationService,
+        private val folderValidationService: FolderValidationService
 ) {
 
     fun getAllFolders(accountId: String): List<GetFolderResponse> =
             folderRepository
                     .findAllByAccountId(accountId)
-                    .map { GetFolderResponse(it.id, it.name, it.analyzers) }
+                    .map { GetFolderResponse(it.id, it.name, getAnalyzersByFolderId(it.id)) }
                     .toList()
 
     fun createFolder(accountId: String, name: String): CreateFolderResponse =
@@ -43,21 +46,36 @@ class FolderService(
                 folderRepository.deleteByIdAndAccountId(id, accountId)
             }
 
-    fun addAnalyzersToFolder(accountId: String, folderId: String, analyzersToAdd: Set<String>): MutableSet<String> =
-            analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzersToAdd, accountId) {
-                val folder = getFolderByIdAndAccountId(folderId, accountId)
-                folder.analyzers.addAll(analyzersToAdd)
-                folderRepository.save(folder).analyzers
+    fun getAnalyzersByFolderIdAndAccountId(accountId: String, folderId: String): MutableSet<String> =
+            folderValidationService.validateFolderExistById(folderId, accountId) {
+                getAnalyzersByFolderId(folderId)
             }
 
-    fun removeAnalyzersFromFolder(accountId: String, folderId: String, analyzersToRemove: Set<String>): MutableSet<String> =
-            analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzersToRemove, accountId) {
-                val folder = getFolderByIdAndAccountId(folderId, accountId)
-                folder.analyzers.removeAll(analyzersToRemove)
-                folderRepository.save(folder).analyzers
+    fun addAnalyzersToFolder(accountId: String, folderId: String, analyzerIds: MutableSet<String>): MutableSet<String> =
+            analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzerIds, accountId) {
+                folderValidationService.validateFolderExistById(folderId, accountId) {
+                    val existingAnalyzers = getAnalyzersByFolderId(folderId)
+                    analyzerIds.filterNot { existingAnalyzers.contains(it) }
+                            .map { FolderAnalyzerDocument(folderId = folderId, analyzerId = it) }
+                            .let { folderAnalyzerRepository.saveAll(it) }
+
+                    (existingAnalyzers + analyzerIds).toMutableSet()
+                }
             }
 
-    fun getFolderByIdAndAccountId(folderId: String, accountId: String): FolderDocument =
+    fun removeAnalyzersFromFolder(accountId: String, folderId: String, analyzerIds: Set<String>): Set<String> =
+            analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzerIds, accountId) {
+                folderValidationService.validateFolderExistById(folderId, accountId) {
+                    val existingAnalyzers = getAnalyzersByFolderId(folderId)
+                    analyzerIds.filter { existingAnalyzers.contains(it) }.let { folderAnalyzerRepository.deleteByAnalyzerIdIn(analyzerIds) }
+                    (existingAnalyzers - analyzerIds).toMutableSet()
+                }
+            }
+
+    private fun getAnalyzersByFolderId(folderId: String): MutableSet<String> =
+            folderAnalyzerRepository.findAllByFolderId(folderId).map { it.analyzerId }.toMutableSet()
+
+    private fun getFolderByIdAndAccountId(folderId: String, accountId: String): FolderDocument =
             folderRepository.findByIdAndAccountId(folderId, accountId)
                     ?: throw FolderNotFoundException("Folder '$folderId' is not found")
 }
