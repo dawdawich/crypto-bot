@@ -27,13 +27,13 @@ class FolderService(
                     .toList()
 
     fun createFolder(accountId: String, name: String): CreateFolderResponse =
-            folderValidationService.validateFolderNotExistByName(name, accountId) {
+            folderValidationService.validateFolderNotExistByNameAndAccountId(name, accountId) {
                 val folderDocument = folderRepository.insert(FolderDocument(accountId = accountId, name = name))
                 CreateFolderResponse(folderDocument.id, folderDocument.name)
             }
 
     fun updateFolder(accountId: String, folderId: String, newFolderName: String): UpdateFolderResponse =
-            folderValidationService.validateFolderNotExistByName(newFolderName, accountId) {
+            folderValidationService.validateFolderNotExistByNameAndAccountId(newFolderName, accountId) {
                 val folder = getFolderByIdAndAccountId(folderId, accountId)
                 folder.name = newFolderName
 
@@ -42,18 +42,18 @@ class FolderService(
             }
 
     fun deleteFolder(accountId: String, id: String) =
-            folderValidationService.validateFolderExistById(id, accountId) {
+            folderValidationService.validateFolderExistByIdAndAccountId(id, accountId) {
                 folderRepository.deleteByIdAndAccountId(id, accountId)
             }
 
     fun getAnalyzersByFolderIdAndAccountId(accountId: String, folderId: String): MutableSet<String> =
-            folderValidationService.validateFolderExistById(folderId, accountId) {
+            folderValidationService.validateFolderExistByIdAndAccountId(folderId, accountId) {
                 getAnalyzersByFolderId(folderId)
             }
 
     fun addAnalyzersToFolder(accountId: String, folderId: String, analyzerIds: MutableSet<String>): MutableSet<String> =
             analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzerIds, accountId) {
-                folderValidationService.validateFolderExistById(folderId, accountId) {
+                folderValidationService.validateFolderExistByIdAndAccountId(folderId, accountId) {
                     val existingAnalyzers = getAnalyzersByFolderId(folderId)
                     analyzerIds.filterNot { existingAnalyzers.contains(it) }
                             .map { FolderAnalyzerDocument(folderId = folderId, analyzerId = it) }
@@ -65,7 +65,7 @@ class FolderService(
 
     fun removeAnalyzersFromFolder(accountId: String, folderId: String, analyzerIds: Set<String>): Set<String> =
             analyzerValidationService.validateAnalyzersExistByIdsAndAccountId(analyzerIds, accountId) {
-                folderValidationService.validateFolderExistById(folderId, accountId) {
+                folderValidationService.validateFolderExistByIdAndAccountId(folderId, accountId) {
                     val existingAnalyzers = getAnalyzersByFolderId(folderId)
                     analyzerIds.filter { existingAnalyzers.contains(it) }.let { folderAnalyzerRepository.deleteByAnalyzerIdIn(analyzerIds) }
                     (existingAnalyzers - analyzerIds).toMutableSet()
