@@ -1,4 +1,4 @@
-package space.dawdawich.services
+package space.dawdawich.service
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

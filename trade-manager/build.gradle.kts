@@ -1,8 +1,3 @@
-plugins {
-    id("java")
-    kotlin("plugin.serialization") version "1.9.20"
-}
-
 group = "space.dawdawich"
 version = "0.0.1-SNAPSHOT"
 
@@ -14,26 +9,20 @@ dependencies {
     implementation(project(":domain-service"))
     implementation(project(":commons"))
     implementation(project(":integration-service"))
+    implementation(project(":strategy-lib"))
 
-    implementation("org.java-websocket:Java-WebSocket")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-    implementation(group = "com.jayway.jsonpath", name = "json-path", version = "2.8.0")
-    implementation("org.json:json:20231013")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+    implementation(libs.spring.boot.mongo)
+    implementation(libs.spring.kafka)
 
-    implementation("io.ktor:ktor-client-core:2.3.5")
-    implementation("io.ktor:ktor-client-cio:2.3.5")
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.kotlinx.coroutines)
 
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    implementation(libs.websocket)
+    implementation(libs.bundles.spring.boot.web)
+
+    implementation(libs.json.path)
+    implementation(libs.json)
+    implementation(libs.jackson.kotlin.module)
 }
 
 tasks.test {

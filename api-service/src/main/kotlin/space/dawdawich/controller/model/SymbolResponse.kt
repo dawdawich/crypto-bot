@@ -7,7 +7,6 @@ data class SymbolResponse(
     val symbol: String,
     val partition: Int,
     val testServer: Boolean,
-    val isOneWayMode: Boolean,
     val minPrice: Double,
     val maxPrice: Double,
     val tickSize: Double,

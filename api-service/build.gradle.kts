@@ -1,11 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-plugins {
-    id("java")
-    id("org.springframework.boot") version "3.1.5"
-    kotlin("plugin.serialization") version "1.9.20"
-}
-
 group = "space.dawdawich"
 version = "0.0.1-SNAPSHOT"
 
@@ -14,23 +8,20 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation(project(":domain-service"))
     implementation(project(":commons"))
     implementation(project(":integration-service"))
 
-    implementation("org.java-websocket:Java-WebSocket")
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-    implementation("org.springframework:spring-websocket:6.1.2")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+    implementation(libs.bundles.spring.boot.web)
+    implementation(libs.spring.boot.security)
+    implementation(libs.spring.boot.mongo)
+    implementation(libs.spring.kafka)
+    implementation(libs.spring.websocket)
+
+    implementation(libs.websocket)
+    implementation(libs.jackson.kotlin.module)
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.kotlinx.coroutines)
 
 }
 
