@@ -12,18 +12,16 @@ class FolderValidationService(
 ) {
 
     @Throws(FolderNotFoundException::class)
-    fun <T> validateFolderExistById(folderId: String, accountId: String, action: () -> T): T {
+    fun validateFolderExistByIdAndAccountId(folderId: String, accountId: String) {
         if (!folderRepository.existsByIdAndAccountId(folderId, accountId)) {
             throw FolderNotFoundException("Folder with id: '$folderId' is not found")
         }
-        return action()
     }
 
     @Throws(RecordAlreadyExistsException::class)
-    fun <T> validateFolderNotExistByName(name: String, accountId: String, action: () -> T): T {
+    fun validateFolderNotExistByNameAndAccountId(name: String, accountId: String) {
         if (folderRepository.existsByNameAndAccountId(name, accountId)) {
             throw RecordAlreadyExistsException("Folder with name: '$name' is already exist")
         }
-        return action()
     }
 }

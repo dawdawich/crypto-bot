@@ -30,7 +30,7 @@ class FolderController(private val folderService: FolderService) {
 
 
     @PutMapping("/{id}/analyzers")
-    fun analyzersToAdd(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Set<String>> =
+    fun analyzersToAdd(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: MutableSet<String>): ResponseEntity<Set<String>> =
             try {
                 val analyzers = folderService.addAnalyzersToFolder(authentication.name, id, analyzersToAdd)
                 ResponseEntity(analyzers, HttpStatus.OK)
@@ -41,9 +41,9 @@ class FolderController(private val folderService: FolderService) {
             }
 
     @DeleteMapping("/{id}/analyzers")
-    fun analyzersToRemove(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: Set<String>): ResponseEntity<Set<String>> =
+    fun analyzersToRemove(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToRemove: MutableSet<String>): ResponseEntity<Set<String>> =
             try {
-                val analyzers = folderService.removeAnalyzersFromFolder(authentication.name, id, analyzersToAdd)
+                val analyzers = folderService.removeAnalyzersFromFolder(authentication.name, id, analyzersToRemove)
                 ResponseEntity(analyzers, HttpStatus.OK)
             } catch (ex: FolderNotFoundException) {
                 ResponseEntity(HttpStatus.NOT_FOUND)
@@ -54,8 +54,7 @@ class FolderController(private val folderService: FolderService) {
     @GetMapping("/{id}/analyzers")
     fun getAnalyzersInFolder(authentication: Authentication, @PathVariable id: String): ResponseEntity<Set<String>> =
             try {
-                val analyzers = folderService.getFolderByIdAndAccountId(id, authentication.name).analyzers
-                ResponseEntity(analyzers, HttpStatus.OK)
+                ResponseEntity(folderService.getAnalyzersByFolderIdAndAccountId(authentication.name, id), HttpStatus.OK)
             } catch (ex: FolderNotFoundException) {
                 ResponseEntity(HttpStatus.NOT_FOUND)
             }
