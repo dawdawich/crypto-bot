@@ -7,14 +7,14 @@ import mu.KotlinLogging.logger
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.json.JSONObject
+import space.dawdawich.client.model.FillOrderCallback
+import space.dawdawich.client.model.PositionUpdateCallback
+import space.dawdawich.exceptions.UnsupportedConfigurationException
 import space.dawdawich.strategy.model.Position
 import space.dawdawich.strategy.model.Trend
 import java.net.URI
 import javax.crypto.Mac
 import kotlin.time.Duration.Companion.hours
-
-typealias PositionUpdateCallback = (Position) -> Unit
-typealias FillOrderCallback = (orderId: String) -> Unit
 
 class ByBitWebSocketClient(
     isTest: Boolean,
@@ -65,7 +65,7 @@ class ByBitWebSocketClient(
                     ).toString()
                     send(operationRequest)
                 } else if (operation == "subscribe") {
-                    // can be logged this event
+                    logger.info { "Successfully subscribed to the topic." }
                 }
             }
 
@@ -75,7 +75,7 @@ class ByBitWebSocketClient(
                         val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
                             .let { list ->
                                 if (list.size > 1) {
-                                    throw Exception() // TODO
+                                    throw UnsupportedConfigurationException("User's account enabled in hedge mode.")
                                 }
                                 list[0]
                             }
@@ -96,7 +96,7 @@ class ByBitWebSocketClient(
                             }
                             .filter { order ->
                                 order.first.isNotBlank() && when (order.second.lowercase()) {
-                                    "filled", "deactivated", "Rejected" -> true
+                                    "filled", "deactivated", "rejected" -> true
                                     else -> false
                                 }
                             }

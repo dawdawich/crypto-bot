@@ -49,7 +49,9 @@ class GridTableStrategyRunner(
     private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
 
     fun fillOrder(orderId: String) {
-        orderPriceGrid.values.filterNotNull().find { order -> order.id == orderId }?.isFilled = true
+        if (!simulateTradeOperations) {
+            orderPriceGrid.values.filterNotNull().find { order -> order.id == orderId }?.isFilled = true
+        }
     }
 
     fun setDiapasonConfigs(minPrice: Double, maxPrice: Double, step: Double) {
@@ -73,7 +75,7 @@ class GridTableStrategyRunner(
         this.currentPrice = currentPrice
 
         if (simulateTradeOperations) {
-            if (minPrice <= 0.0) {
+            if (minPrice <= 0.0 && maxPrice <= 0.0) {
                 setUpPrices(currentPrice)
             }
 
@@ -136,7 +138,7 @@ class GridTableStrategyRunner(
     }
 
     private fun processOrders(currentPrice: Double, previousPrice: Double) {
-        val moneyPerPosition = money / gridSize
+        val moneyPerOrder = money / gridSize
 
         orderPriceGrid.entries
             .asSequence()
@@ -145,10 +147,9 @@ class GridTableStrategyRunner(
             .take(2)
             .filter { it.value == null }
             .map { it.key }
-            .toList()
             .forEach { inPrice ->
                 val isLong = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
-                val qty = moneyPerPosition * multiplier / inPrice
+                val qty = moneyPerOrder * multiplier / inPrice
 
                 if (position?.let { pos ->
                         val prof = if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
