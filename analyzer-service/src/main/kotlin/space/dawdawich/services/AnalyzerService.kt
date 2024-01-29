@@ -11,30 +11,32 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.TopicPartitionOffset
+import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import space.dawdawich.analyzers.GridTableAnalyzer
+import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.constants.*
-import space.dawdawich.model.analyzer.GridTableDetailInfoModel
+import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 @Service
-open class AnalyzerService(
-    private val listenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+class AnalyzerService(
+    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
     private val symbolRepository: SymbolRepository,
     private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
     private val mongoTemplate: MongoTemplate,
-    private val analyzerInfoDocumentKafkaTemplate: KafkaTemplate<String, GridTableDetailInfoModel>
+    private val analyzerInfoDocumentKafkaTemplate: KafkaTemplate<String, StrategyRuntimeInfoModel>
 ) {
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
         mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
-    private val analyzers: MutableList<GridTableAnalyzer> = mutableListOf()
+    private val analyzers: MutableList<Analyzer<*>> = mutableListOf()
     private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
     private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
 
@@ -75,9 +77,14 @@ open class AnalyzerService(
     @KafkaListener(topics = [REQUEST_ANALYZER_TOPIC])
     fun requestAnalyzerData(analyzerId: String) {
         analyzers.find { analyzerId == it.id }?.let { activeAnalyzer ->
-            analyzerInfoDocumentKafkaTemplate.send(RESPONSE_ANALYZER_TOPIC, activeAnalyzer.getInfo())
+            analyzerInfoDocumentKafkaTemplate.send(RESPONSE_ANALYZER_TOPIC, activeAnalyzer.getRuntimeInfo())
         }
     }
+
+    @KafkaListener(topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC], containerFactory = "kafkaListenerReplayingContainerFactory")
+    @SendTo(RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+    fun requestAnalyzerStrategyConfig(analyzerId: String) =
+        analyzers.find { analyzer -> analyzerId == analyzer.id }?.getStrategyConfig()
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
@@ -105,7 +112,7 @@ open class AnalyzerService(
         ops.execute()
     }
 
-    private fun addAnalyzer(analyzer: GridTableAnalyzer) {
+    private fun addAnalyzer(analyzer: Analyzer<*>) {
         val partition = partitionMap.getOrPut(analyzer.symbol) {
             symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
                 ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
@@ -113,7 +120,7 @@ open class AnalyzerService(
 
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
-                listenerContainerFactory.createContainer(
+                kafkaListenerContainerFactory.createContainer(
                     TopicPartitionOffset(
                         BYBIT_TEST_TICKER_TOPIC,
                         partition,
@@ -121,7 +128,7 @@ open class AnalyzerService(
                     )
                 )
             )
-        }.addObserver { previousPrice, currentPrice -> analyzer.acceptPriceChange(previousPrice, currentPrice) }
+        }.addObserver(analyzer::acceptPriceChange)
 
         analyzers += analyzer
     }
@@ -135,18 +142,21 @@ open class AnalyzerService(
         analyzers.removeIf { it.id == analyzerId }
     }
 
-    private fun GridTableAnalyzerDocument.convert(): GridTableAnalyzer = GridTableAnalyzer(
-        diapason,
-        gridSize,
-        money,
-        multiplayer,
-        positionStopLoss,
-        positionTakeProfit,
-        symbolInfo.symbol,
-        symbolInfo.isOneWayMode,
-        symbolInfo.tickSize,
-        id,
-        { _, _, newValue -> moneyUpdateQueue += id to newValue },
-        { middlePrice -> middlePriceUpdateQueue += id to middlePrice }
+    private fun GridTableAnalyzerDocument.convert(): Analyzer<GridTableStrategyRunner> = Analyzer(
+        GridTableStrategyRunner(
+            symbolInfo.symbol,
+            diapason,
+            gridSize,
+            positionStopLoss,
+            positionTakeProfit,
+            multiplayer,
+            money,
+            symbolInfo.tickSize,
+            true,
+            moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
+            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice }
+        ),
+        0.0,
+        symbolInfo.symbol
     )
 }

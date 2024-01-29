@@ -1,12 +1,12 @@
-package space.dawdawich.model.analyzer
+package space.dawdawich.model.strategy
 
 import kotlinx.serialization.Serializable
+import space.dawdawich.model.analyzer.PositionModel
 
 @Serializable
-data class GridTableDetailInfoModel(
+open class StrategyRuntimeInfoModel(
     val id: String,
-    val orders: List<String>,
     val currentPrice: Double,
-    val middlePrice: Double,
     val position: PositionModel?
-)
+) {
+}

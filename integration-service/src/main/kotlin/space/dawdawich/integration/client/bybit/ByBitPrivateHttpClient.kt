@@ -169,7 +169,7 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int, repeatCount: Int = 2) {
+    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int = 0, repeatCount: Int = 2) {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)

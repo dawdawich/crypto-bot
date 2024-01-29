@@ -1,4 +1,4 @@
-group = "space.dawdawich"
+group = "dawdawich.space"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
@@ -6,7 +6,7 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.spring.boot.mongo)
+    implementation(project(":commons"))
 }
 
 tasks.bootJar {

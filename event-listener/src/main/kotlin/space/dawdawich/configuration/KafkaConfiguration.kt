@@ -10,15 +10,15 @@ import org.springframework.kafka.core.ProducerFactory
 
 @EnableKafka
 @Configuration
-open class KafkaConfiguration {
+class KafkaConfiguration {
 
     @Bean
-    open fun kafkaTemplate(factory: ProducerFactory<String, String>): KafkaTemplate<String, String> {
+    fun kafkaTemplate(factory: ProducerFactory<String, String>): KafkaTemplate<String, String> {
         return KafkaTemplate(factory)
     }
 
     @Bean
-    open fun adminClient(@Value("\${spring.kafka.bootstrap-servers}") hostAddress: String): AdminClient = AdminClient.create(
+    fun adminClient(@Value("\${spring.kafka.bootstrap-servers}") hostAddress: String): AdminClient = AdminClient.create(
         mapOf("bootstrap.servers" to hostAddress)
     )
 }
