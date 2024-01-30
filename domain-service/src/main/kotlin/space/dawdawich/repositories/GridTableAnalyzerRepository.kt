@@ -1,7 +1,5 @@
 package space.dawdawich.repositories
 
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
@@ -20,13 +18,13 @@ interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocumen
 
     fun deleteByAccountId(accountId: String)
 
+    fun deleteByIdAndAccountId(id: String, accountId: String)
+
     fun countByAccountId(accountId: String): Int
 
     fun findByIdAndAccountId(id: String, accountId: String): GridTableAnalyzerDocument?
 
     fun existsByIdAndAccountId(id: String, accountId: String): Boolean
-
-    fun findAllByIsActiveIsTrueOrderByMoneyDesc(pageable: Pageable = PageRequest.of(0, 20)): Page<GridTableAnalyzerDocument>
 
     fun findAllByAccountId(accountId: String, pageable: Pageable): List<GridTableAnalyzerDocument>
 

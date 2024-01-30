@@ -35,7 +35,7 @@ abstract class StrategyRunner(
         position = null
     }
 
-    abstract fun acceptPriceChange(previousPrise: Double, currentPrice: Double)
+    abstract fun acceptPriceChange(previousPrice: Double, currentPrice: Double)
 
     abstract fun getRuntimeInfo(): StrategyRuntimeInfoModel
 

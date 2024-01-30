@@ -10,6 +10,7 @@ import space.dawdawich.controller.model.AnalyzerBulkCreateRequest
 import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
 import space.dawdawich.exception.model.AnalyzerNotFoundException
+import space.dawdawich.repositories.FolderAnalyzerRepository
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -18,10 +19,11 @@ import java.util.*
 
 @Service
 class AnalyzerService(
-    private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val analyzerValidationService: AnalyzerValidationService,
-    private val symbolRepository: SymbolRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>
+        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
+        private val folderAnalyzerRepository: FolderAnalyzerRepository,
+        private val analyzerValidationService: AnalyzerValidationService,
+        private val symbolRepository: SymbolRepository,
+        private val kafkaTemplate: KafkaTemplate<String, String>
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -47,6 +49,8 @@ class AnalyzerService(
     fun deleteAnalyzer(accountId: String, id: String): Unit =
             analyzerValidationService
                     .validateAnalyzerExistByIdAndAccountId(id, accountId)
+                    .let { gridTableAnalyzerRepository.deleteByIdAndAccountId(id, accountId) }
+                    .let { folderAnalyzerRepository.deleteAllByAnalyzerId(id) }
                     .let { kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
 
     fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =

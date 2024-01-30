@@ -7,4 +7,5 @@ interface FolderAnalyzerRepository : MongoRepository<FolderAnalyzerDocument, Str
 
     fun findAllByFolderId(folderId: String): List<FolderAnalyzerDocument>
     fun deleteByAnalyzerIdIn(analyzerIds: Set<String>): Long
+    fun deleteAllByAnalyzerId(analyzerId: String): Long
 }

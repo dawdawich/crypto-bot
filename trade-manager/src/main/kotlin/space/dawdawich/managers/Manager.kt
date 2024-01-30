@@ -21,9 +21,7 @@ import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.service.factory.PriceTickerListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner
-import space.dawdawich.strategy.model.CreateOrderFunction
-import space.dawdawich.strategy.model.Order
-import space.dawdawich.strategy.model.Trend
+import space.dawdawich.strategy.model.*
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.trimToStep
 import java.util.*
@@ -71,7 +69,7 @@ class Manager(
 
         val money = runBlocking { bybitService.getAccountBalance() }
         runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
-        val createOrderFunction: CreateOrderFunction = { inPrice: Double,
+        val createGridTableOrderFunction: CreateGridTableOrderFunction = { inPrice: Double,
                                                          orderSymbol: String,
                                                          qty: Double,
                                                          refreshTokenUpperBorder: Double,
@@ -89,7 +87,7 @@ class Manager(
                     )
                 }
             if (isSuccess) {
-                Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend, id = orderId)
+                GridTableOrder(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend, id = orderId)
             } else {
                 null
             }
@@ -110,7 +108,7 @@ class Manager(
                     strategyConfig.priceMinStep,
                     strategyConfig.minQtyStep,
                     false,
-                    createOrderFunction = createOrderFunction,
+                    createGridTableOrderFunction = createGridTableOrderFunction,
                 ).apply {
                     setDiapasonConfigs(
                         strategyConfig.middlePrice,

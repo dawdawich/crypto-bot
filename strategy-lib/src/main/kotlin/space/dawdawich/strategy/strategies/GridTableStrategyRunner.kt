@@ -2,13 +2,8 @@ package space.dawdawich.strategy.strategies
 
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
-import space.dawdawich.strategy.model.CreateOrderFunction
-import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.StrategyRunner
-import space.dawdawich.strategy.model.UpdateMiddlePricePostProcessFunction
-import space.dawdawich.strategy.model.Order
-import space.dawdawich.strategy.model.Position
-import space.dawdawich.strategy.model.Trend
+import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent
 import java.util.UUID
 import kotlin.math.absoluteValue
@@ -27,8 +22,8 @@ class GridTableStrategyRunner(
     simulateTradeOperations: Boolean,
     moneyChangePostProcessFunction: MoneyChangePostProcessFunction = { _, _ -> },
     updateMiddlePrice: UpdateMiddlePricePostProcessFunction = { _ -> },
-    private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
-        Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
+    private val createGridTableOrderFunction: CreateGridTableOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
+        GridTableOrder(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
     id: String = UUID.randomUUID().toString()
 ) : StrategyRunner(
@@ -41,7 +36,7 @@ class GridTableStrategyRunner(
     simulateTradeOperations,
     id
 ) {
-    private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
+    private val orderPriceGrid: MutableMap<Double, GridTableOrder?> = mutableMapOf()
     private var minPrice: Double = -1.0
     private var maxPrice: Double = -1.0
     private var step: Double = 0.0
@@ -104,7 +99,7 @@ class GridTableStrategyRunner(
         )
 
     @Synchronized
-    override fun acceptPriceChange(previousPrise: Double, currentPrice: Double) {
+    override fun acceptPriceChange(previousPrice: Double, currentPrice: Double) {
         this.currentPrice = currentPrice
 
         if (simulateTradeOperations) {
@@ -115,7 +110,7 @@ class GridTableStrategyRunner(
             checkPriceForSetupBounds(currentPrice)
         }
 
-        processOrders(currentPrice, previousPrise)
+        processOrders(currentPrice, previousPrice)
 
         position?.let { position ->
             if (position.size > 0.0) {
@@ -192,14 +187,14 @@ class GridTableStrategyRunner(
                     return@forEach
                 }
 
-                val order = createOrderFunction(
+                val order = createGridTableOrderFunction(
                     inPrice,
                     symbol,
                     qty,
                     inPrice - step * isLong.direction,
                     inPrice + step * isLong.direction,
                     isLong
-                )
+                ) as GridTableOrder
                 orderPriceGrid[inPrice] = order
             }
 
