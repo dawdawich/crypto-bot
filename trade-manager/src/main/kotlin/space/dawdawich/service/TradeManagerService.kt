@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.REQUEST_MANAGER_TOPIC
-import space.dawdawich.constants.RESPONSE_MANAGER_TOPIC
 import space.dawdawich.managers.Manager
 import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.repositories.TradeManagerRepository
@@ -24,8 +23,7 @@ class TradeManagerService(
     private val managerInfoKafkaTemplate: KafkaTemplate<String, ManagerInfoModel>
 ) {
 
-    private val tradeManagers: MutableList<Manager<*>> = Collections.synchronizedList(mutableListOf())
-    private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
+    private val tradeManagers: MutableList<Manager> = Collections.synchronizedList(mutableListOf())
 
     init {
         // TODO: reimplement with kafka
@@ -51,10 +49,13 @@ class TradeManagerService(
         })
     }
 
-    @KafkaListener(topics = [ACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group", containerFactory = "managerDocumentKafkaListenerContainerFactory")
-    fun activateManager(manager: TradeManagerDocument) {
-        val newTradeManager = tradeManagerFactory.createTradeManager(manager, this)
-        tradeManagers.add(newTradeManager)
+    @KafkaListener(topics = [ACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group", containerFactory = "jsonKafkaListenerContainerFactory")
+    fun activateManager(managerConfig: TradeManagerDocument) {
+        try {
+            tradeManagers.add(tradeManagerFactory.createTradeManager(managerConfig))
+        } catch (e: Exception) {
+
+        }
     }
 
     @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
@@ -65,7 +66,7 @@ class TradeManagerService(
     @KafkaListener(topics = [REQUEST_MANAGER_TOPIC])
     fun requestManagerInfo(managerId: String) {
         tradeManagers.find { manager -> managerId == manager.getId() }?.let { manager ->
-//            managerInfoKafkaTemplate.send(RESPONSE_MANAGER_TOPIC, manager.getManagerInfo())
+//            managerInfoKafkaTemplate.send(RESPONSE_MANAGER_TOPIC, manager.getRuntimeInfo())
         }
     }
 

@@ -21,10 +21,11 @@ export const fetchTopAnalyzersData = async () => {
     throw new Error('Failed to fetch data');
 }
 
-export const fetchAnalyzerData = async (analyzerId: string) => {
+export const fetchAnalyzerData = async (analyzerId: string, authToken: string) => {
     try {
         const response = await fetch(`${API_URL}/${analyzerId}`, {
             headers: {
+                Authorization: `Bearer ${authToken}`,
                 'Access-Control-Allow-Origin': '*'
             }
         });

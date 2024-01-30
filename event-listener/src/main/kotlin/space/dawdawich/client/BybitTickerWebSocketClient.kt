@@ -41,6 +41,7 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connect
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
+        logger.warn { "Ticker connection closed. Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
         if (remote) {
             GlobalScope.launch { reconnect() }
         }

@@ -5,4 +5,6 @@ open class StrategyConfigModel(
     val symbol: String,
     var money: Double,
     val multiplier: Int,
+    val priceMinStep: Double,
+    val minQtyStep: Double
 )

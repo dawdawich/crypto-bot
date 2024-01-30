@@ -12,10 +12,9 @@ import java.util.*
 @Service
 class TradeManagerService(
     private val tradeManagerRepository: TradeManagerRepository,
-    private val stringKafkaTemplate: KafkaTemplate<String, String>,
-    private val documentKafkaTemplate: KafkaTemplate<String, TradeManagerDocument>,
-
-) {
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val jsonKafkaTemplate: KafkaTemplate<String, TradeManagerDocument>,
+    ) {
 
     fun createNewTraderManager(
         apiTokenId: String,
@@ -47,9 +46,9 @@ class TradeManagerService(
             tradeManagerRepository.updateTradeManagerStatus(it.id, status)
             it.status = status
             if (status == ManagerStatus.ACTIVE) {
-                documentKafkaTemplate.send(ACTIVATE_MANAGER_TOPIC, it)
+                jsonKafkaTemplate.send(ACTIVATE_MANAGER_TOPIC, it)
             } else if (status == ManagerStatus.INACTIVE) {
-                stringKafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, it.id)
+                kafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, it.id)
             }
             it
         }
@@ -65,7 +64,7 @@ class TradeManagerService(
 
     fun deleteTradeManager(managerId: String, accountId: String) {
         if (tradeManagerRepository.deleteByIdAndAccountId(managerId, accountId) > 0) {
-            stringKafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, managerId)
+            kafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, managerId)
         }
     }
 

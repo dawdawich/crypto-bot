@@ -3,6 +3,8 @@ package space.dawdawich.strategy
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.model.analyzer.PositionModel
 import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.strategy.model.ClosePositionFunction
+import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.model.Position
 import space.dawdawich.strategy.model.Trend
 import kotlin.math.absoluteValue
@@ -10,17 +12,29 @@ import kotlin.properties.Delegates
 
 
 abstract class StrategyRunner(
-    protected var money: Double,
+    money: Double,
     protected val multiplier: Int,
-    protected val moneyChangeFunction: (Double, Double) -> Unit,
+    protected val moneyChangeFunction: MoneyChangePostProcessFunction,
+    protected val priceMinStep: Double,
+    protected val minQtyStep: Double,
     val symbol: String,
     val simulateTradeOperations: Boolean,
     val id: String,
 ) {
     protected var currentPrice = 0.0
     var position: Position? = null
+    var money: Double = money
+        protected set
+
+    protected var closePositionFunction: ClosePositionFunction = {
+        position = null
+    }
 
     abstract fun acceptPriceChange(previousPrise: Double, currentPrice: Double)
+
+    fun setClosePosition(function: ClosePositionFunction) {
+        closePositionFunction = function
+    }
 
     fun updatePosition(position: Position) {
         if (!simulateTradeOperations) {
@@ -41,7 +55,7 @@ abstract class StrategyRunner(
         currentPrice,
         position?.convertToInfo())
 
-    open fun getStrategyConfig() = StrategyConfigModel(id, symbol, money, multiplier)
+    open fun getStrategyConfig() = StrategyConfigModel(id, symbol, money, multiplier, priceMinStep, minQtyStep)
 
     protected var moneyWithProfit: Double by Delegates.observable(money) { _, _, newValue ->
         if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {

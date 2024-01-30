@@ -1,6 +1,5 @@
 package space.dawdawich.services
 
-import kotlinx.serialization.json.Json
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -36,22 +35,13 @@ class AnalyzerService(
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
         mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
-    private val analyzers: MutableList<Analyzer<*>> = mutableListOf()
+    private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
     private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
 
     init {
         gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }
             .toMutableList().forEach { addAnalyzer(it) }
-    }
-
-    @KafkaListener(topics = [ADD_ANALYZER_TOPIC])
-    fun addAnalyzer(analyzerPayload: String) {
-        val analyzer = Json.decodeFromString<GridTableAnalyzerDocument>(analyzerPayload)
-        gridTableAnalyzerRepository.insert(analyzer)
-        if (analyzer.isActive) {
-            addAnalyzer(analyzer.convert())
-        }
     }
 
     @KafkaListener(topics = [DEACTIVATE_ANALYZER_TOPIC])
@@ -74,17 +64,25 @@ class AnalyzerService(
         removeAnalyzer(analyzerId)
     }
 
-    @KafkaListener(topics = [REQUEST_ANALYZER_TOPIC])
+    @KafkaListener(
+        topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
+        containerFactory = "kafkaListenerReplayingContainerFactory"
+    )
+    @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
     fun requestAnalyzerData(analyzerId: String) {
-        analyzers.find { analyzerId == it.id }?.let { activeAnalyzer ->
-            analyzerInfoDocumentKafkaTemplate.send(RESPONSE_ANALYZER_TOPIC, activeAnalyzer.getRuntimeInfo())
-        }
+        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
     }
 
-    @KafkaListener(topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC], containerFactory = "kafkaListenerReplayingContainerFactory")
+    @KafkaListener(
+        topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC],
+        containerFactory = "kafkaListenerReplayingContainerFactory"
+    )
     @SendTo(RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC)
-    fun requestAnalyzerStrategyConfig(analyzerId: String) =
-        analyzers.find { analyzer -> analyzerId == analyzer.id }?.getStrategyConfig()
+    fun requestAnalyzerStrategyConfig(accountId: String) =
+        analyzers
+            .filter { analyzer -> analyzer.accountId == accountId }
+            .maxByOrNull(Analyzer::getMoney)
+            ?.getStrategyConfig()
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
@@ -112,7 +110,7 @@ class AnalyzerService(
         ops.execute()
     }
 
-    private fun addAnalyzer(analyzer: Analyzer<*>) {
+    private fun addAnalyzer(analyzer: Analyzer) {
         val partition = partitionMap.getOrPut(analyzer.symbol) {
             symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
                 ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
@@ -124,7 +122,7 @@ class AnalyzerService(
                     TopicPartitionOffset(
                         BYBIT_TEST_TICKER_TOPIC,
                         partition,
-                        TopicPartitionOffset.SeekPosition.TIMESTAMP
+                        TopicPartitionOffset.SeekPosition.END
                     )
                 )
             )
@@ -142,7 +140,7 @@ class AnalyzerService(
         analyzers.removeIf { it.id == analyzerId }
     }
 
-    private fun GridTableAnalyzerDocument.convert(): Analyzer<GridTableStrategyRunner> = Analyzer(
+    private fun GridTableAnalyzerDocument.convert(): Analyzer = Analyzer(
         GridTableStrategyRunner(
             symbolInfo.symbol,
             diapason,
@@ -152,11 +150,13 @@ class AnalyzerService(
             multiplayer,
             money,
             symbolInfo.tickSize,
+            symbolInfo.minOrderQty,
             true,
             moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
             updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice }
         ),
         0.0,
-        symbolInfo.symbol
+        symbolInfo.symbol,
+        accountId
     )
 }

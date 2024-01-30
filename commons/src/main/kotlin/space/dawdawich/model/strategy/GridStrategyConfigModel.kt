@@ -9,10 +9,11 @@ class GridStrategyConfigModel(
     val gridSize: Int,
     val stopLoss: Int,
     val takeProfit: Int,
-    val priceMinStep: Double,
+    priceMinStep: Double,
+    minQtyStep: Double,
     val middlePrice: Double,
     val minPrice: Double,
     val maxPrice: Double,
     val step: Double,
     val pricesGrid: Set<Double>
-) : StrategyConfigModel(id, symbol, money, multiplier)
+) : StrategyConfigModel(id, symbol, money, multiplier, priceMinStep, minQtyStep)

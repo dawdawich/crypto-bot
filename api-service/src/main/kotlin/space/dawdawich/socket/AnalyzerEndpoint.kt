@@ -7,76 +7,54 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.configuration.WebSocketConfigurator
+import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_ANALYZER_TOPIC
 import space.dawdawich.constants.RESPONSE_ANALYZER_TOPIC
 import space.dawdawich.model.analyzer.GridTableDetailInfoModel
+import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 @Service
 @ServerEndpoint(value = "/ws/analyzer", configurator = WebSocketConfigurator::class)
 class AnalyzerEndpoint(
-    private val kafkaTemplate: KafkaTemplate<String, String>
+    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel>
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private val connections: MutableMap<Session, MutableSet<String>> = mutableMapOf()
-
     @OnOpen
     fun onOpen(session: Session?, config: EndpointConfig?) {
-        session?.let { checkedSession ->
-            connections[checkedSession] = mutableSetOf()
-        }
+
     }
 
     @OnMessage
     fun onMessage(session: Session, message: String) {
-        val body = Json.parseToJsonElement(message)
-        if (body.jsonObject.contains("id")) {
-            val analyzerId = body.jsonObject["id"]!!.jsonPrimitive.content
-            connections[session]?.let { ids ->
-                ids += analyzerId
+        Json.parseToJsonElement(message).jsonObject["id"]?.let { record ->
+            val runtimeInfo = try { strategyRuntimeDataReplyingTemplate.sendAndReceive(
+                ProducerRecord(
+                    REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, record.jsonPrimitive.content
+                )
+            ).get(1, TimeUnit.SECONDS).value() } catch (ex: TimeoutException) { null }
+            runtimeInfo?.let { checkedInfo ->
+                val runtimeInfoJson = Json.encodeToString(checkedInfo)
+                session.asyncRemote.sendText(runtimeInfoJson)
             }
-            kafkaTemplate.send(REQUEST_ANALYZER_TOPIC, analyzerId)
         }
     }
 
     @OnClose
     fun onClose(session: Session?, closeReason: CloseReason?) {
-        session.let { checkedSession ->
-            connections.remove(checkedSession)
-        }
     }
 
     @OnError
     fun onError(session: Session, throwable: Throwable) {
         logger.error(throwable) { "Attempt error on web socket connection." }
-        connections.remove(session)
-    }
-
-    @KafkaListener(
-        topics = [RESPONSE_ANALYZER_TOPIC],
-        groupId = "analyzer_info_group",
-        containerFactory = "analyzerInfoDocumentKafkaListenerContainerFactory"
-    )
-    fun getAnalyzerInfo(analyzerInfo: GridTableDetailInfoModel) {
-        connections.filter { it.value.contains(analyzerInfo.id) }.keys.forEach { session ->
-            try {
-                if (session.isOpen) {
-                    session.asyncRemote.sendText(Json.encodeToString(analyzerInfo))
-                } else {
-                    connections -= session
-                }
-            } catch (e: IllegalStateException) {
-                logger.warn(e) { "Failed to send message via endpoint" }
-                if (session.isOpen) {
-                    session.close()
-                }
-                connections -= session
-            }
-        }
     }
 }

@@ -4,10 +4,11 @@ import space.dawdawich.strategy.StrategyRunner
 import java.util.*
 import kotlin.properties.Delegates
 
-class Analyzer<T : StrategyRunner>(
-    private val strategyRunner: T,
+class Analyzer(
+    private val strategyRunner: StrategyRunner,
     currentPrice: Double,
     val symbol: String,
+    val accountId: String,
     val id: String = UUID.randomUUID().toString()
 ) {
     private var currentPrice: Double by Delegates.observable(currentPrice) { _, oldPrice, newPrice ->
@@ -23,4 +24,6 @@ class Analyzer<T : StrategyRunner>(
     fun getRuntimeInfo() = strategyRunner.getRuntimeInfo()
 
     fun getStrategyConfig() = strategyRunner.getStrategyConfig()
+
+    fun getMoney() = strategyRunner.money
 }
