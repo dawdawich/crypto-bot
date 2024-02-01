@@ -23,7 +23,12 @@ abstract class StrategyRunner(
 ) {
     protected var currentPrice = 0.0
     var position: Position? = null
-    var money: Double = money
+
+    var money: Double  by Delegates.observable(money) { _, _, newValue ->
+        if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {
+            moneyHandler = newValue
+        }
+    }
         protected set
 
     protected var closePositionFunction: ClosePositionFunction = {
@@ -32,11 +37,15 @@ abstract class StrategyRunner(
 
     abstract fun acceptPriceChange(previousPrise: Double, currentPrice: Double)
 
+    abstract fun getRuntimeInfo(): StrategyRuntimeInfoModel
+
+    abstract fun getStrategyConfig(): StrategyConfigModel
+
     fun setClosePosition(function: ClosePositionFunction) {
         closePositionFunction = function
     }
 
-    fun updatePosition(position: Position) {
+    fun updatePosition(position: Position?) {
         if (!simulateTradeOperations) {
             this.position = position
         }
@@ -50,18 +59,7 @@ abstract class StrategyRunner(
 
     fun getActivePositionTrend() = position?.trend
 
-    open fun getRuntimeInfo() = StrategyRuntimeInfoModel(
-        id,
-        currentPrice,
-        position?.convertToInfo())
-
-    open fun getStrategyConfig() = StrategyConfigModel(id, symbol, money, multiplier, priceMinStep, minQtyStep)
-
-    protected var moneyWithProfit: Double by Delegates.observable(money) { _, _, newValue ->
-        if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {
-            moneyHandler = newValue
-        }
-    }
+    protected var moneyWithProfit: Double = money
 
     protected fun Position.convertToInfo() = this.let { PositionModel(it.trend == Trend.LONG, it.size, it.entryPrice) }
 

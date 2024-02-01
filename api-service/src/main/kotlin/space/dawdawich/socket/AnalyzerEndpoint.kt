@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException
 @Service
 @ServerEndpoint(value = "/ws/analyzer", configurator = WebSocketConfigurator::class)
 class AnalyzerEndpoint(
-    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel>
+    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -41,7 +41,7 @@ class AnalyzerEndpoint(
                 ProducerRecord(
                     REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, record.jsonPrimitive.content
                 )
-            ).get(1, TimeUnit.SECONDS).value() } catch (ex: TimeoutException) { null }
+            ).get(5, TimeUnit.SECONDS).value() } catch (ex: TimeoutException) { null }
             runtimeInfo?.let { checkedInfo ->
                 val runtimeInfoJson = Json.encodeToString(checkedInfo)
                 session.asyncRemote.sendText(runtimeInfoJson)

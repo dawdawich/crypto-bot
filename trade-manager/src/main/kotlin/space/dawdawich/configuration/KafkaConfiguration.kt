@@ -28,7 +28,7 @@ class KafkaConfiguration {
     fun kafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, String>) =
         ConcurrentKafkaListenerContainerFactory<String, String>().apply {
             this.consumerFactory = consumerFactory
-            this.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
+            this.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
         }
 
     @Bean
@@ -101,6 +101,6 @@ class KafkaConfiguration {
             jsonKafkaListenerContainerFactory.createContainer(topic).apply {
                 isAutoStartup = false
             }
-        return ReplyingKafkaTemplate(producerFactory, replyContainer)
+        return ReplyingKafkaTemplate(producerFactory, replyContainer).apply { setSharedReplyTopic(true) }
     }
 }

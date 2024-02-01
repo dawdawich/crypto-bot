@@ -84,7 +84,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
                 <PropertyCard title={'Position Entry Price'} value={'' + roundToNearest(position.entryPrice, 0.1).toFixed(1)}/>
             </Grid>,
             <Grid key={'direction'}>
-                <PropertyCard title={position.long ? 'Position Direction' : ''}
+                <PropertyCard title={'Position Direction'}
                               value={position.long ? 'Buy' : 'Sell'}/>
             </Grid>,
             <Grid key={'pnl'}>

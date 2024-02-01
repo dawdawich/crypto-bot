@@ -9,7 +9,6 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.MDC
 import org.springframework.kafka.listener.AcknowledgingMessageListener
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
-import org.springframework.kafka.listener.MessageListener
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC
@@ -58,6 +57,8 @@ class Manager(
     private var active: Boolean = true
     private var strategyRunner: StrategyRunner
 
+    private lateinit var crashPostAction: (ex: Exception?) -> Unit
+
     init {
         var strategyConfig: StrategyConfigModel? = null
 
@@ -68,6 +69,7 @@ class Manager(
         }
 
         val money = runBlocking { bybitService.getAccountBalance() }
+        runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
         val createOrderFunction: CreateOrderFunction = { inPrice: Double,
                                                          orderSymbol: String,
                                                          qty: Double,
@@ -79,7 +81,7 @@ class Manager(
                 runBlocking {
                     bybitService.createOrder(
                         orderSymbol,
-                        inPrice.trimToStep(strategyConfig.priceMinStep),
+                        inPrice,
                         qty.trimToStep(strategyConfig.minQtyStep),
                         trend.directionBoolean,
                         orderId
@@ -92,7 +94,7 @@ class Manager(
             }
         }
 
-        var messageListener: MessageListener<String, String>
+        var messageListener: AcknowledgingMessageListener<String, String>
 
         strategyRunner = when (strategyConfig) {
             is GridStrategyConfigModel -> {
@@ -114,7 +116,7 @@ class Manager(
                         strategyConfig.minPrice,
                         strategyConfig.maxPrice,
                         strategyConfig.step,
-                        strategyConfig.pricesGrid
+                        strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
                     setClosePosition {
                         position?.let { pos ->
@@ -130,6 +132,7 @@ class Manager(
                     webSocket.fillOrderCallback = { orderId ->
                         this.fillOrder(orderId)
                     }
+                    webSocket.connect()
                     messageListener = AcknowledgingMessageListener { message, acknowledgment ->
                         acknowledgment?.acknowledge()
                         try {
@@ -141,19 +144,18 @@ class Manager(
                                     )
                                 ).get(5, TimeUnit.SECONDS).value()
 
-                                runBlocking {
-                                    bybitService.cancelAllOrder(strategyConfig.symbol)
-                                    position?.let { pos ->
-                                        bybitService.closePosition(
-                                            strategyConfig.symbol,
-                                            pos.trend.directionBoolean,
-                                            pos.size
-                                        )
-                                    }
-                                }
-
                                 runtimeData?.let { data ->
                                     if (data is GridTableStrategyRuntimeInfoModel && this.middlePrice != data.middlePrice) {
+                                        runBlocking {
+                                            bybitService.cancelAllOrder(strategyConfig.symbol)
+                                            position?.let { pos ->
+                                                bybitService.closePosition(
+                                                    strategyConfig.symbol,
+                                                    pos.trend.directionBoolean,
+                                                    pos.size
+                                                )
+                                            }
+                                        }
                                         this.setDiapasonConfigs(
                                             data.middlePrice,
                                             data.minPrice,
@@ -163,21 +165,25 @@ class Manager(
                                         )
                                     }
                                 }
+                            } else {
+                                currentPrice = price
                             }
-                            currentPrice = price
                         } catch (ex: Exception) {
                             deactivate()
+                            crashPostAction.invoke(ex)
                         }
                     }
                 }
             }
-
-            else -> throw Exception()
         }
         listener = priceListenerFactory.getPriceListener(strategyRunner.symbol, true).apply {
             setupMessageListener(messageListener)
             start()
         }
+    }
+
+    fun setupCrashPostAction(action: (ex: Exception?) -> Unit) {
+        crashPostAction = action
     }
 
     fun deactivate() {
@@ -198,11 +204,13 @@ class Manager(
                     delay(5.seconds)
                 }
                 if (strategyRunner.position != null) {
-                    throw Exception() // Failed to deactivate manager
+                    crashPostAction.invoke(null)
                 }
             }
         } finally {
-            webSocket.close()
+            if (webSocket.isOpen) {
+                webSocket.close()
+            }
             if (listener?.isRunning == true) {
                 listener?.stop()
             }

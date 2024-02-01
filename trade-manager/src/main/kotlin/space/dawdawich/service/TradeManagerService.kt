@@ -2,14 +2,12 @@ package space.dawdawich.service
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
-import space.dawdawich.constants.REQUEST_MANAGER_TOPIC
 import space.dawdawich.managers.Manager
-import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.repositories.TradeManagerRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.repositories.entity.constants.ManagerStatus
@@ -19,26 +17,13 @@ import java.util.*
 @Service
 class TradeManagerService(
     private val tradeManagerRepository: TradeManagerRepository,
-    private val tradeManagerFactory: TradeManagerFactory,
-    private val managerInfoKafkaTemplate: KafkaTemplate<String, ManagerInfoModel>
+    private val tradeManagerFactory: TradeManagerFactory
 ) {
+    private val logger = KotlinLogging.logger {}
 
     private val tradeManagers: MutableList<Manager> = Collections.synchronizedList(mutableListOf())
 
     init {
-        // TODO: reimplement with kafka
-//        mongoTemplate.changeStream<GridTableAnalyzerDocument>()
-//            .watchCollection("grid_table_analyzer")
-//            .listen()
-//            .filter { changeStream -> changeStream.operationType == OperationType.UPDATE && tradeManagers.any { it.analyzer?.id == changeStream.body?.id } }
-//            .subscribe {
-//                val document = it.body
-//                val manager = tradeManagers.first { analyzer -> analyzer.analyzer?.id == document?.id }
-//                if (manager.middlePrice != document?.middlePrice) {
-//                    manager.updateMiddlePrice(document?.middlePrice ?: -1.0)
-//                }
-//            }
-
         Runtime.getRuntime().addShutdownHook(Thread {
             runBlocking {
                 tradeManagers.forEach {
@@ -52,22 +37,17 @@ class TradeManagerService(
     @KafkaListener(topics = [ACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group", containerFactory = "jsonKafkaListenerContainerFactory")
     fun activateManager(managerConfig: TradeManagerDocument) {
         try {
-            tradeManagers.add(tradeManagerFactory.createTradeManager(managerConfig))
+            tradeManagers.add(tradeManagerFactory.createTradeManager(managerConfig).apply {
+                setupCrashPostAction { ex -> deactivateTradeManager(getId(), ex = ex) }
+            })
         } catch (e: Exception) {
-
+            logger.error(e) { "Failed to create manager" }
         }
     }
 
     @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
     fun deactivateManager(managerId: String) {
         deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
-    }
-
-    @KafkaListener(topics = [REQUEST_MANAGER_TOPIC])
-    fun requestManagerInfo(managerId: String) {
-        tradeManagers.find { manager -> managerId == manager.getId() }?.let { manager ->
-//            managerInfoKafkaTemplate.send(RESPONSE_MANAGER_TOPIC, manager.getRuntimeInfo())
-        }
     }
 
     fun deactivateTradeManager(managerId: String, status: ManagerStatus = ManagerStatus.CRASHED, stopDescription: String? = null, ex: Exception? = null) {

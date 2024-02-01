@@ -53,8 +53,12 @@ class KafkaConfiguration {
     @Bean
     fun strategyRuntimeDataReplyingTemplate(
         producerFactory: ProducerFactory<String, String>,
-        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyRuntimeInfoModel>
-    ) = replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
+        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyRuntimeInfoModel?>
+    ) = replyingTemplate(
+        producerFactory,
+        jsonKafkaListenerContainerFactory,
+        RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
+    ).apply { setSharedReplyTopic(true) }
 
     private fun <T> producerFactory(bootstrapServer: String, serializerClass: Class<*>): ProducerFactory<String, T> {
         val configProps: MutableMap<String, Any> = HashMap()

@@ -192,7 +192,7 @@ class GridTableStrategyRunner(
                     return@forEach
                 }
 
-                orderPriceGrid[inPrice] = createOrderFunction(
+                val order = createOrderFunction(
                     inPrice,
                     symbol,
                     qty,
@@ -200,18 +200,21 @@ class GridTableStrategyRunner(
                     inPrice + step * isLong.direction,
                     isLong
                 )
+                orderPriceGrid[inPrice] = order
             }
 
         orderPriceGrid.values.filterNotNull().forEach { order ->
-            if (!order.isFilled && simulateTradeOperations) {
-                order.isFilled =
-                    (order.inPrice > previousPrice && order.inPrice <= currentPrice) ||
-                            (order.inPrice < previousPrice && order.inPrice >= currentPrice)
-                if (order.isFilled) {
-                    position?.updateSizeAndEntryPrice(order) ?: run {
-                        position = Position(order.inPrice, order.count, order.trend)
+            if (!order.isFilled) {
+                if (simulateTradeOperations) {
+                    order.isFilled =
+                        (order.inPrice > previousPrice && order.inPrice <= currentPrice) ||
+                                (order.inPrice < previousPrice && order.inPrice >= currentPrice)
+                    if (order.isFilled) {
+                        position?.updateSizeAndEntryPrice(order) ?: run {
+                            position = Position(order.inPrice, order.count, order.trend)
+                        }
+                        position?.let { if (it.size <= 0) position = null }
                     }
-                    position?.let { if (it.size <= 0) position = null }
                 }
             } else if (order.isPriceOutOfRefreshBorder(currentPrice)) {
                 order.isFilled = false

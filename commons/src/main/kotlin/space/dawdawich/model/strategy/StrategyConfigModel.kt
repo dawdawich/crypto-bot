@@ -1,10 +1,10 @@
 package space.dawdawich.model.strategy
 
-open class StrategyConfigModel(
-    val id: String,
-    val symbol: String,
-    var money: Double,
-    val multiplier: Int,
-    val priceMinStep: Double,
-    val minQtyStep: Double
-)
+sealed class StrategyConfigModel {
+    abstract val id: String
+    abstract val symbol: String
+    abstract val money: Double
+    abstract val multiplier: Int
+    abstract val priceMinStep: Double
+    abstract val minQtyStep: Double
+}

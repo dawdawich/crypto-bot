@@ -3,9 +3,17 @@ package space.dawdawich.strategy.model
 class Position(
     var entryPrice: Double,
     var size: Double,
-    val trend: Trend
+    val trend: Trend,
+    realizedPnL: Double? = null
 ) {
     private var realizedPnL = -(entryPrice * 0.00055 * size)
+
+    init {
+        realizedPnL?.let {
+            this.realizedPnL = it
+        }
+    }
+
 
     fun updateSizeAndEntryPrice(order: Order) {
         if (order.trend == trend) {

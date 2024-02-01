@@ -7,15 +7,16 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.annotation.KafkaListener
+import org.springframework.kafka.annotation.PartitionOffset
+import org.springframework.kafka.annotation.TopicPartition
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.listener.ConsumerSeekAware
 import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.constants.*
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -28,9 +29,8 @@ class AnalyzerService(
     private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
     private val symbolRepository: SymbolRepository,
     private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val analyzerInfoDocumentKafkaTemplate: KafkaTemplate<String, StrategyRuntimeInfoModel>
-) {
+    private val mongoTemplate: MongoTemplate
+) : ConsumerSeekAware {
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
@@ -40,8 +40,14 @@ class AnalyzerService(
     private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
 
     init {
-        gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }
-            .toMutableList().forEach { addAnalyzer(it) }
+        gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
+    }
+
+    override fun onPartitionsAssigned(
+        assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
+        callback: ConsumerSeekAware.ConsumerSeekCallback
+    ) {
+        callback.seekToEnd(assignments.keys)
     }
 
     @KafkaListener(topics = [DEACTIVATE_ANALYZER_TOPIC])
@@ -69,9 +75,8 @@ class AnalyzerService(
         containerFactory = "kafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
-    fun requestAnalyzerData(analyzerId: String) {
+    fun requestAnalyzerData(analyzerId: String) =
         analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
-    }
 
     @KafkaListener(
         topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC],
@@ -153,10 +158,12 @@ class AnalyzerService(
             symbolInfo.minOrderQty,
             true,
             moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
-            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice }
+            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
+            id = id
         ),
         0.0,
         symbolInfo.symbol,
-        accountId
+        accountId,
+        id
     )
 }

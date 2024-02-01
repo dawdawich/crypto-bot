@@ -19,6 +19,7 @@ class PriceTickerListener(private val kafkaContainer: ConcurrentMessageListenerC
                 observers.forEach { execute -> launch { execute(newPrice) } }
             }
         })
+        kafkaContainer.start()
         Runtime.getRuntime().addShutdownHook(Thread {
             if (kafkaContainer.isRunning) {
                 kafkaContainer.stop()

@@ -1,14 +1,16 @@
 package space.dawdawich.model.strategy
 
+import kotlinx.serialization.Serializable
 import space.dawdawich.model.analyzer.PositionModel
 
+@Serializable
 class GridTableStrategyRuntimeInfoModel(
-    id: String,
+    override val id: String,
     val prices: Set<Double>,
-    currentPrice: Double,
+    override val currentPrice: Double,
     val middlePrice: Double,
     val minPrice: Double,
     val maxPrice: Double,
     val step: Double,
-    position: PositionModel?
-) : StrategyRuntimeInfoModel(id, currentPrice, position)
+    override val position: PositionModel?
+) : StrategyRuntimeInfoModel()
