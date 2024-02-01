@@ -26,7 +26,7 @@ import space.dawdawich.strategy.model.Order
 import space.dawdawich.strategy.model.Trend
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.trimToStep
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 import kotlin.time.Duration.Companion.seconds
@@ -34,10 +34,10 @@ import kotlin.time.Duration.Companion.seconds
 class Manager(
     private val tradeManagerData: TradeManagerDocument,
     private val bybitService: ByBitPrivateHttpClient,
-    private val replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
     private val replayingStrategyDataKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val webSocket: ByBitWebSocketClient,
-    private val priceListenerFactory: PriceTickerListenerFactoryService
+    priceListenerFactory: PriceTickerListenerFactoryService
 ) {
 
     private val synchronizationObject = Any()
@@ -223,8 +223,6 @@ class Manager(
             }
         }
     }
-
-    fun getRuntimeInfo() = strategyRunner.getRuntimeInfo()
 
     fun getId() = tradeManagerData.id
 }
