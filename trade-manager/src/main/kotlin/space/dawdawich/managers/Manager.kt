@@ -40,6 +40,7 @@ class Manager(
     private val priceListenerFactory: PriceTickerListenerFactoryService
 ) {
 
+    private val synchronizationObject = Any()
     private val _logger = KotlinLogging.logger {}
     private infix fun logger(action: (KLogger) -> Unit) {
         MDC.put("manager-id", tradeManagerData.id)
@@ -166,7 +167,11 @@ class Manager(
                                     }
                                 }
                             } else {
-                                currentPrice = price
+                                synchronized(synchronizationObject) {
+                                    if (active) {
+                                        currentPrice = price
+                                    }
+                                }
                             }
                         } catch (ex: Exception) {
                             deactivate()
@@ -188,23 +193,25 @@ class Manager(
 
     fun deactivate() {
         try {
-            active = false
-            strategyRunner.position?.let { position ->
-                runBlocking {
-                    launch {
-                        bybitService.closePosition(
-                            strategyRunner.symbol,
-                            position.trend.direction == 1,
-                            position.size
-                        )
+            synchronized(synchronizationObject) {
+                active = false
+                strategyRunner.position?.let { position ->
+                    runBlocking {
+                        launch {
+                            bybitService.closePosition(
+                                strategyRunner.symbol,
+                                position.trend.direction == 1,
+                                position.size
+                            )
+                        }
+                        launch {
+                            bybitService.cancelAllOrder(strategyRunner.symbol)
+                        }
+                        delay(5.seconds)
                     }
-                    launch {
-                        bybitService.cancelAllOrder(strategyRunner.symbol)
+                    if (strategyRunner.position != null) {
+                        crashPostAction.invoke(null)
                     }
-                    delay(5.seconds)
-                }
-                if (strategyRunner.position != null) {
-                    crashPostAction.invoke(null)
                 }
             }
         } finally {
