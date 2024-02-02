@@ -22,48 +22,19 @@ class ManagerEndpoint(
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private val connections: MutableMap<Session, MutableSet<String>> = mutableMapOf()
-
     @OnOpen
     fun onOpen(session: Session?, config: EndpointConfig?) {
-        session?.let { checkedSession ->
-            connections[checkedSession] = mutableSetOf()
-        }
     }
 
     @OnMessage
     fun onMessage(session: Session, message: String) {
-        val body = Json.parseToJsonElement(message)
-        if (body.jsonObject.contains("id")) {
-            val managerId = body.jsonObject["id"]!!.jsonPrimitive.content
-            connections[session]?.let { ids ->
-                ids += managerId
-            }
-            kafkaTemplate.send(REQUEST_MANAGER_TOPIC, managerId)
-        }
     }
 
     @OnClose
     fun onClose(session: Session?, closeReason: CloseReason?) {
-        session.let { checkedSession ->
-            connections.remove(checkedSession)
-        }
     }
 
     @OnError
     fun onError(session: Session, throwable: Throwable) {
-        logger.error(throwable) { "Attempt error on web socket connection." }
-        connections.remove(session)
-    }
-
-    @KafkaListener(
-        topics = [RESPONSE_MANAGER_TOPIC],
-        groupId = "manager_info_group",
-        containerFactory = "managerInfoDocumentKafkaListenerContainerFactory"
-    )
-    fun getManagerInfo(managerInfo: ManagerInfoModel) {
-        connections.filter { entry -> entry.value.contains(managerInfo.id) }.keys.forEach { session ->
-            session.asyncRemote.sendText(Json.encodeToString(managerInfo))
-        }
     }
 }

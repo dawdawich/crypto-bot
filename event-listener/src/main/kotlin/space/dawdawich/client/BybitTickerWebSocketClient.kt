@@ -32,7 +32,7 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connect
     override fun onMessage(message: String?) {
         message?.let {
             val parsedMessage = jsonPath.parse(it)
-            parsedMessage.read<String?>("\$.data.markPrice")?.let { checkedPrice ->
+            parsedMessage.read<String?>("\$.data.lastPrice")?.let { checkedPrice ->
                 parsedMessage.read<String?>("\$.data.symbol")?.let { symbol ->
                     kafkaManager.sendTickerEvent(topicName, symbol, mapSymbolsToPartition[symbol]!!, checkedPrice)
                 }
@@ -41,6 +41,7 @@ class BybitTickerWebSocketClient(private val kafkaManager: KafkaManager, connect
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
+        logger.warn { "Ticker connection closed. Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
         if (remote) {
             GlobalScope.launch { reconnect() }
         }

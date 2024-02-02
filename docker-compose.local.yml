@@ -2,7 +2,7 @@ version: "3"
 
 services:
   zookeeper:
-    image: docker.io/bitnami/zookeeper:3.9
+    image: docker.io/bitnami/zookeeper:latest
     ports:
       - "2181:2181"
     volumes:
@@ -12,7 +12,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka:
-    image: docker.io/bitnami/kafka:3.4
+    image: docker.io/bitnami/kafka:latest
     ports:
       - "9092:9092"
     volumes:

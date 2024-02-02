@@ -7,11 +7,9 @@ import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.managers.Manager
 import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.ApiAccessTokenRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.service.PriceTickerListenerFactoryService
-import space.dawdawich.service.TradeManagerService
-import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -20,14 +18,12 @@ class TradeManagerFactory(
     private val apiAccessTokenRepository: ApiAccessTokenRepository,
     private val jsonPath: ParseContext,
     private val serviceFactory: PrivateHttpClientFactory,
-    private val replyingKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    private val strategyConfigReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val priceListenerFactoryService: PriceTickerListenerFactoryService
 ) {
 
-    fun createTradeManager(
-        tradeManagerData: TradeManagerDocument,
-        managerService: TradeManagerService
-    ): Manager<GridTableStrategyRunner> {
+    fun createTradeManager(tradeManagerData: TradeManagerDocument): Manager {
         val apiTokens = apiAccessTokenRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
@@ -41,7 +37,8 @@ class TradeManagerFactory(
         return Manager(
             tradeManagerData,
             serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor),
-            replyingKafkaTemplate,
+            strategyConfigReplyingTemplate,
+            strategyRuntimeDataReplyingTemplate,
             ByBitWebSocketClient(
                 apiTokens.test,
                 apiTokens.apiKey,

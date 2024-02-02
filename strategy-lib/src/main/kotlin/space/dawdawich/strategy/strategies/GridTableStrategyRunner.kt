@@ -22,31 +22,34 @@ class GridTableStrategyRunner(
     private val takeProfit: Int,
     multiplier: Int,
     money: Double,
-    private val priceMinStep: Double,
+    priceMinStep: Double,
+    minQtyStep: Double,
     simulateTradeOperations: Boolean,
-    middlePrice: Double = 0.0,
-    moneyChangePostProcessFunction: MoneyChangePostProcessFunction,
+    moneyChangePostProcessFunction: MoneyChangePostProcessFunction = { _, _ -> },
     updateMiddlePrice: UpdateMiddlePricePostProcessFunction = { _ -> },
     private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
-    private var minPrice: Double = -1.0,
-    private var maxPrice: Double = -1.0,
-    private var step: Double = 0.0,
     id: String = UUID.randomUUID().toString()
 ) : StrategyRunner(
     money,
     multiplier,
     moneyChangePostProcessFunction,
+    priceMinStep,
+    minQtyStep,
     symbol,
     simulateTradeOperations,
     id
 ) {
+    private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
+    private var minPrice: Double = -1.0
+    private var maxPrice: Double = -1.0
+    private var step: Double = 0.0
     private var priceOutOfDiapasonCounter = 0
-    private var middlePrice: Double by Delegates.observable(middlePrice) { _, _, newValue ->
+    var middlePrice: Double by Delegates.observable(0.0) { _, _, newValue ->
         updateMiddlePrice(newValue)
     }
-    private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
+        private set
 
     fun fillOrder(orderId: String) {
         if (!simulateTradeOperations) {
@@ -54,23 +57,53 @@ class GridTableStrategyRunner(
         }
     }
 
-    fun setDiapasonConfigs(minPrice: Double, maxPrice: Double, step: Double) {
+    fun setDiapasonConfigs(
+        middlePrice: Double,
+        minPrice: Double,
+        maxPrice: Double,
+        step: Double,
+        orderPrices: Set<Double>
+    ) {
+        this.middlePrice = middlePrice
         this.minPrice = minPrice
         this.maxPrice = maxPrice
         this.step = step
+        this.orderPriceGrid += orderPrices.map { it to null }
     }
+
+    fun isPriceInBounds(price: Double) = price in minPrice..maxPrice
 
     override fun getRuntimeInfo() = GridTableStrategyRuntimeInfoModel(
         id,
-        orderPriceGrid.entries.map { "${it.key}=${if (it.value != null) "true" else "false"}" },
+        orderPriceGrid.keys,
         currentPrice,
         middlePrice,
+        minPrice,
+        maxPrice,
+        step,
         position?.convertToInfo()
     )
 
     override fun getStrategyConfig() =
-        GridStrategyConfigModel(id, symbol, money, multiplier, diapason, gridSize, stopLoss, takeProfit, priceMinStep, middlePrice, minPrice, maxPrice, step, orderPriceGrid.keys)
+        GridStrategyConfigModel(
+            id,
+            symbol,
+            money,
+            multiplier,
+            diapason,
+            gridSize,
+            stopLoss,
+            takeProfit,
+            priceMinStep,
+            minQtyStep,
+            middlePrice,
+            minPrice,
+            maxPrice,
+            step,
+            orderPriceGrid.keys
+        )
 
+    @Synchronized
     override fun acceptPriceChange(previousPrise: Double, currentPrice: Double) {
         this.currentPrice = currentPrice
 
@@ -84,15 +117,13 @@ class GridTableStrategyRunner(
 
         processOrders(currentPrice, previousPrise)
 
-        if (simulateTradeOperations) {
-            position?.let { position ->
-                if (position.size > 0.0) {
-                    moneyWithProfit =
-                        money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
-                    if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
-                        money = moneyWithProfit
-                        this.position = null
-                    }
+        position?.let { position ->
+            if (position.size > 0.0) {
+                moneyWithProfit =
+                    money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
+                if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
+                    money = moneyWithProfit
+                    closePositionFunction.invoke()
                 }
             }
         }
@@ -118,9 +149,7 @@ class GridTableStrategyRunner(
         this.maxPrice = maxPrice
 
         orderPriceGrid.clear()
-        orderPriceGrid.putAll(gridPrices.map {
-            it to null
-        })
+        orderPriceGrid += gridPrices.map { it to null }
         middlePrice = currentPrice
         this.step = step
     }
@@ -152,7 +181,8 @@ class GridTableStrategyRunner(
                 val qty = moneyPerOrder * multiplier / inPrice
 
                 if (position?.let { pos ->
-                        val prof = if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
+                        val prof =
+                            if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
                         (prof - pos.entryPrice * 0.00055 - inPrice * 0.00055) * qty > 0
                     } == false) {
                     return@forEach
@@ -162,7 +192,7 @@ class GridTableStrategyRunner(
                     return@forEach
                 }
 
-                orderPriceGrid[inPrice] = createOrderFunction(
+                val order = createOrderFunction(
                     inPrice,
                     symbol,
                     qty,
@@ -170,18 +200,21 @@ class GridTableStrategyRunner(
                     inPrice + step * isLong.direction,
                     isLong
                 )
+                orderPriceGrid[inPrice] = order
             }
 
         orderPriceGrid.values.filterNotNull().forEach { order ->
-            if (!order.isFilled && simulateTradeOperations) {
-                order.isFilled =
-                    (order.inPrice > previousPrice && order.inPrice <= currentPrice) ||
-                            (order.inPrice < previousPrice && order.inPrice >= currentPrice)
-                if (order.isFilled) {
-                    position?.updateSizeAndEntryPrice(order) ?: run {
-                        position = Position(order.inPrice, order.count, order.trend)
+            if (!order.isFilled) {
+                if (simulateTradeOperations) {
+                    order.isFilled =
+                        (order.inPrice > previousPrice && order.inPrice <= currentPrice) ||
+                                (order.inPrice < previousPrice && order.inPrice >= currentPrice)
+                    if (order.isFilled) {
+                        position?.updateSizeAndEntryPrice(order) ?: run {
+                            position = Position(order.inPrice, order.count, order.trend)
+                        }
+                        position?.let { if (it.size <= 0) position = null }
                     }
-                    position?.let { if (it.size <= 0) position = null }
                 }
             } else if (order.isPriceOutOfRefreshBorder(currentPrice)) {
                 order.isFilled = false

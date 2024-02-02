@@ -25,6 +25,8 @@ class ByBitWebSocketClient(
 
     var positionUpdateCallback: PositionUpdateCallback? = null
     var fillOrderCallback: FillOrderCallback? = null
+    var previousCumRealizedPnL: Double = 0.0
+    var currentCumRealizedPnL: Double = 0.0
 
     companion object {
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
@@ -80,11 +82,22 @@ class ByBitWebSocketClient(
                                 list[0]
                             }
                             .let { position ->
+                                val side = position["side"].toString()
+                                val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
+                                if (previousCumRealizedPnL == 0.0) {
+                                    previousCumRealizedPnL = cumRealizedPnL
+                                    currentCumRealizedPnL = cumRealizedPnL
+                                } else {
+                                    previousCumRealizedPnL = currentCumRealizedPnL
+                                    currentCumRealizedPnL = cumRealizedPnL
+                                }
+                                if (side.isNotBlank())
                                 Position(
                                     position["entryPrice"].toString().toDouble(),
                                     position["size"].toString().toDouble(),
-                                    Trend.fromDirection(position["side"].toString())
-                                )
+                                    Trend.fromDirection(side),
+                                    currentCumRealizedPnL - previousCumRealizedPnL
+                                ) else null
                             }
                         positionUpdateCallback?.invoke(positionsToUpdate)
                     } else if (topic == "order.linear") {
@@ -100,7 +113,9 @@ class ByBitWebSocketClient(
                                     else -> false
                                 }
                             }
-                            .forEach { order -> fillOrderCallback?.invoke(order.first) }
+                            .forEach { order ->
+                                fillOrderCallback?.invoke(order.first)
+                            }
                     }
                     response
                 }
@@ -109,8 +124,10 @@ class ByBitWebSocketClient(
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        signatureWithExpiration = getAuthData()
-        GlobalScope.launch { reconnect() }
+        if (remote) {
+            signatureWithExpiration = getAuthData()
+            GlobalScope.launch { reconnect() }
+        }
     }
 
     override fun onError(ex: Exception?) {

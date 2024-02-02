@@ -7,6 +7,8 @@ repositories {
 
 dependencies {
     implementation(project(":commons"))
+
+    implementation(libs.kotlinx.coroutines)
 }
 
 tasks.bootJar {

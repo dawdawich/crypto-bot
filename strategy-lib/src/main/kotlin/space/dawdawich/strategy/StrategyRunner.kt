@@ -3,6 +3,8 @@ package space.dawdawich.strategy
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.model.analyzer.PositionModel
 import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.strategy.model.ClosePositionFunction
+import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.model.Position
 import space.dawdawich.strategy.model.Trend
 import kotlin.math.absoluteValue
@@ -10,9 +12,11 @@ import kotlin.properties.Delegates
 
 
 abstract class StrategyRunner(
-    protected var money: Double,
+    money: Double,
     protected val multiplier: Int,
-    protected val moneyChangeFunction: (Double, Double) -> Unit,
+    protected val moneyChangeFunction: MoneyChangePostProcessFunction,
+    protected val priceMinStep: Double,
+    protected val minQtyStep: Double,
     val symbol: String,
     val simulateTradeOperations: Boolean,
     val id: String,
@@ -20,9 +24,28 @@ abstract class StrategyRunner(
     protected var currentPrice = 0.0
     var position: Position? = null
 
+    var money: Double  by Delegates.observable(money) { _, _, newValue ->
+        if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {
+            moneyHandler = newValue
+        }
+    }
+        protected set
+
+    protected var closePositionFunction: ClosePositionFunction = {
+        position = null
+    }
+
     abstract fun acceptPriceChange(previousPrise: Double, currentPrice: Double)
 
-    fun updatePosition(position: Position) {
+    abstract fun getRuntimeInfo(): StrategyRuntimeInfoModel
+
+    abstract fun getStrategyConfig(): StrategyConfigModel
+
+    fun setClosePosition(function: ClosePositionFunction) {
+        closePositionFunction = function
+    }
+
+    fun updatePosition(position: Position?) {
         if (!simulateTradeOperations) {
             this.position = position
         }
@@ -36,18 +59,7 @@ abstract class StrategyRunner(
 
     fun getActivePositionTrend() = position?.trend
 
-    open fun getRuntimeInfo() = StrategyRuntimeInfoModel(
-        id,
-        currentPrice,
-        position?.convertToInfo())
-
-    open fun getStrategyConfig() = StrategyConfigModel(id, symbol, money, multiplier)
-
-    protected var moneyWithProfit: Double by Delegates.observable(money) { _, _, newValue ->
-        if ((newValue - moneyHandler).absoluteValue > moneyHandler * 0.01) {
-            moneyHandler = newValue
-        }
-    }
+    protected var moneyWithProfit: Double = money
 
     protected fun Position.convertToInfo() = this.let { PositionModel(it.trend == Trend.LONG, it.size, it.entryPrice) }
 

@@ -12,22 +12,22 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-open class ServiceConfiguration {
+class ServiceConfiguration {
 
     @Bean
-    open fun jsonPath(): ParseContext = JsonPath.using(
+    fun jsonPath(): ParseContext = JsonPath.using(
         com.jayway.jsonpath.Configuration.defaultConfiguration().addOptions(
             Option.SUPPRESS_EXCEPTIONS))!!
 
     @Bean
-    open fun httpClient() = HttpClient(CIO) {
+    fun httpClient() = HttpClient(CIO) {
         install(HttpTimeout) {
-            requestTimeoutMillis = 5000
+            requestTimeoutMillis = 3000
         }
     }
 
     @Bean
-    open fun publicBybitClient() = ByBitPublicHttpClient(BYBIT_SERVER_URL, httpClient(), jsonPath())
+    fun publicBybitClient() = ByBitPublicHttpClient(BYBIT_SERVER_URL, httpClient(), jsonPath())
 
 //    @Bean
 //    open fun publicBybitTestClient() = ByBitPublicHttpClient(BYBIT_TEST_SERVER_URL, httpClient(), jsonPath())

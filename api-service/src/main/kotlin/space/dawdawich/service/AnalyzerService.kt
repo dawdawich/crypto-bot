@@ -1,13 +1,10 @@
 package space.dawdawich.service
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
-import space.dawdawich.constants.ADD_ANALYZER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.controller.model.AnalyzerBulkCreateRequest
 import space.dawdawich.controller.model.CreateAnalyzerRequest
@@ -21,10 +18,10 @@ import java.util.*
 
 @Service
 class AnalyzerService(
-        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-        private val analyzerValidationService: AnalyzerValidationService,
-        private val symbolRepository: SymbolRepository,
-        private val kafkaTemplate: KafkaTemplate<String, String>
+    private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
+    private val analyzerValidationService: AnalyzerValidationService,
+    private val symbolRepository: SymbolRepository,
+    private val kafkaTemplate: KafkaTemplate<String, String>
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -36,7 +33,8 @@ class AnalyzerService(
         }.map { GridTableAnalyzerResponse(it) }.take(20)
 
     fun getAnalyzers(accountId: String, page: Int, size: Int): List<GridTableAnalyzerResponse> =
-        gridTableAnalyzerRepository.findAllByAccountId(accountId, PageRequest.of(page, size)).map { GridTableAnalyzerResponse(it) }.toList()
+        gridTableAnalyzerRepository.findAllByAccountId(accountId, PageRequest.of(page, size))
+            .map { GridTableAnalyzerResponse(it) }.toList()
 
     fun getAnalyzersCount(accountId: String) = gridTableAnalyzerRepository.countByAccountId(accountId)
 
@@ -52,8 +50,10 @@ class AnalyzerService(
                     .let { kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
 
     fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
-            GridTableAnalyzerResponse(gridTableAnalyzerRepository.findByIdAndAccountId(id, accountId)
-                    ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found"))
+        GridTableAnalyzerResponse(
+            gridTableAnalyzerRepository.findByIdAndAccountId(id, accountId)
+                ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found")
+        )
 
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
         analyzerData.apply {
@@ -70,7 +70,10 @@ class AnalyzerService(
                 startCapital,
                 active
             )
-            kafkaTemplate.send(ADD_ANALYZER_TOPIC, Json.encodeToString(gridTableAnalyzerDocument))
+            gridTableAnalyzerRepository.insert(gridTableAnalyzerDocument)
+            if (public) {
+                kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
+            }
         }
 
     fun bulkCreate(accountId: String, request: AnalyzerBulkCreateRequest) {
@@ -108,7 +111,8 @@ class AnalyzerService(
         gridTableAnalyzerRepository.insert(analyzersToInsert)
     }
 
-    fun changeAllAnalyzersStatus(accountId: String, status: Boolean) = gridTableAnalyzerRepository.setAllAnalyzersActiveStatus(accountId, status)
+    fun changeAllAnalyzersStatus(accountId: String, status: Boolean) =
+        gridTableAnalyzerRepository.setAllAnalyzersActiveStatus(accountId, status)
 
     fun deleteAnalyzers(accountId: String) = gridTableAnalyzerRepository.deleteByAccountId(accountId)
 }
