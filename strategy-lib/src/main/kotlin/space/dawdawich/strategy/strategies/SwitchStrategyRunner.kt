@@ -53,10 +53,7 @@ class SwitchStrategyRunner(
         } else if (counter <= -switchCounterValue) {
             counter = -switchCounterValue
             direction = Trend.SHORT
-        } else {
-            direction = null
         }
-
     }
 
     private fun updatePosition(previousPrise: Double, currentPrice: Double) {
@@ -75,13 +72,11 @@ class SwitchStrategyRunner(
             (order.inPrice > previousPrise && order.inPrice <= currentPrice) || (order.inPrice < previousPrise && order.inPrice >= currentPrice)
 
     private fun createOrder(currentPrice: Double) {
-        direction?.let { trend ->
-            if (previousOrder == null) {
-                createSwitchOrderFunction(currentPrice, symbol, multiplier * capitalOrderPerPercent * money / 100, trend)
-                        ?.let { order -> previousOrder = order }
-            } else {
+        if (comparePositionPriceAndCurrentPriceDependOnTrend(currentPrice)) {
+            direction?.let { trend ->
+                val inPrice = previousOrder?.let { it.inPrice * (1 + coefficientBetweenOrders / 100) } ?: currentPrice
                 createSwitchOrderFunction(
-                        previousOrder!!.inPrice * (1 + coefficientBetweenOrders / 100),
+                        inPrice,
                         symbol,
                         multiplier * money * capitalOrderPerPercent / 100,
                         trend
@@ -90,5 +85,17 @@ class SwitchStrategyRunner(
         }
     }
 
+    private fun comparePositionPriceAndCurrentPriceDependOnTrend(currentPrice: Double): Boolean {
+        position?.let {
+            if (it.trend != direction) {
+                if (direction == Trend.SHORT) {
+                    return currentPrice > it.entryPrice
+                } else if (direction == Trend.LONG) {
+                    return currentPrice < it.entryPrice
+                }
+            }
+        }
+        return true
+    }
 
 }
