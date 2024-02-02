@@ -1,7 +1,7 @@
 package space.dawdawich.strategy.strategies
 
-import space.dawdawich.model.strategy.GridStrategyConfigModel
-import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.configModel.GridStrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent

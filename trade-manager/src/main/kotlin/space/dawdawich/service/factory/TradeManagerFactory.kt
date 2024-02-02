@@ -6,8 +6,8 @@ import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.managers.Manager
-import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.configModel.StrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.ApiAccessTokenRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import javax.crypto.Mac

@@ -16,9 +16,8 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.model.manager.ManagerInfoModel
-import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.model.strategy.configModel.StrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 
 
 @Configuration

@@ -14,10 +14,10 @@ import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
-import space.dawdawich.model.strategy.GridStrategyConfigModel
-import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
-import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.configModel.GridStrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.GridTableStrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.configModel.StrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.service.factory.PriceTickerListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner

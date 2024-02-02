@@ -1,4 +1,4 @@
-package space.dawdawich.model.strategy
+package space.dawdawich.model.strategy.configModel
 
 sealed class StrategyConfigModel {
     abstract val id: String

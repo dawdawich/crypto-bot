@@ -1,4 +1,4 @@
-package space.dawdawich.model.strategy
+package space.dawdawich.model.strategy.runtimeModel
 
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.analyzer.PositionModel

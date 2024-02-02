@@ -1,0 +1,14 @@
+package space.dawdawich.model.strategy.runtimeModel
+
+import kotlinx.serialization.Serializable
+import space.dawdawich.model.analyzer.PositionModel
+import space.dawdawich.model.analyzer.Trend
+
+@Serializable
+class SwitchStrategyRuntimeInfoModel(
+    override val id: String,
+    override val currentPrice: Double,
+    override val position: PositionModel?,
+    var direction: Trend? = null,
+    var counter: Int = 0
+) : StrategyRuntimeInfoModel()

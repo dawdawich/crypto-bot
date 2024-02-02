@@ -1,4 +1,4 @@
-package space.dawdawich.model.strategy
+package space.dawdawich.model.strategy.configModel
 
 class GridStrategyConfigModel(
     override val id: String,

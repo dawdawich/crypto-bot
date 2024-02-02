@@ -1,5 +1,8 @@
 package space.dawdawich.strategy.strategies
 
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.configModel.SwitchStrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.SwitchStrategyRuntimeInfoModel
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.*
 import java.util.*
@@ -39,6 +42,28 @@ class SwitchStrategyRunner(
                 .run { updatePosition(previousPrice, currentPrice) }
                 .run { createOrder(currentPrice) }
     }
+
+    override fun getRuntimeInfo(): StrategyRuntimeInfoModel =
+            SwitchStrategyRuntimeInfoModel(
+                    id,
+                    currentPrice,
+                    position?.convertToInfo(),
+                    direction, // TODO
+                    counter
+            )
+
+    override fun getStrategyConfig() =
+            SwitchStrategyConfigModel(
+                    id,
+                    symbol,
+                    money,
+                    multiplier,
+                    priceMinStep,
+                    minQtyStep,
+                    capitalOrderPerPercent,
+                    switchCounterValue,
+                    coefficientBetweenOrders
+            )
 
     private fun defineTrendDependOnPrices(previousPrise: Double, currentPrice: Double) {
         if (currentPrice > previousPrise) {

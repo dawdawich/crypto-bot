@@ -13,7 +13,7 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
 @Configuration
