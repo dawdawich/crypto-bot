@@ -48,8 +48,6 @@ class SwitchStrategyRunner(
                     id,
                     currentPrice,
                     position?.convertToInfo(),
-                    direction, // TODO
-                    counter
             )
 
     override fun getStrategyConfig() =

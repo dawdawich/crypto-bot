@@ -178,6 +178,8 @@ class Manager(
                     }
                 }
             }
+
+            else -> throw Exception()
         }
         listener = priceListenerFactory.getPriceListener(strategyRunner.symbol, true).apply {
             setupMessageListener(messageListener)
