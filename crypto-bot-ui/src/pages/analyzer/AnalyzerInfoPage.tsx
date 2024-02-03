@@ -30,7 +30,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     const [analyzerPositionInfo, setAnalyzerPositionInfo] = useState<JSX.Element[]>([]);
 
     useEffect(() => {
-        fetchAnalyzerData(props.params.analyzerId)
+        fetchAnalyzerData({analyzerId:props.params.analyzerId})
             .then(data => setAnalyzer(data))
             .catch(error => setAnalyzerFetchError(error))
     }, [props.params.analyzerId]);

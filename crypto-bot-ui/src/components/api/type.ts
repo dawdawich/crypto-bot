@@ -2,7 +2,6 @@ export enum FetchMethods {
   GET = 'get',
   POST = 'post',
   PUT = 'put',
-  PATCH = 'patch',
   DELETE = 'delete',
 }
 
@@ -13,3 +12,12 @@ export interface FetchWrapper {
   token?: string | undefined,
   body?: any
 }
+
+export type CreateAPIMethod = <
+  TInput extends Record<string, string|number|any>,
+  TOutput
+>(opts: {
+  url: string;
+  method: FetchMethods;
+  headers?: object,
+}) => (input: TInput) => Promise<TOutput>;
