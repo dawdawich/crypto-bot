@@ -4,4 +4,4 @@ typealias MoneyChangePostProcessFunction = (old: Double, new: Double) -> Unit
 typealias UpdateMiddlePricePostProcessFunction = (Double) -> Unit
 typealias CreateSwitchOrderFunction = (inPrice: Double, symbol: String, qty: Double, trend: Trend) -> Order?
 typealias CreateGridTableOrderFunction = (inPrice: Double, symbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend) -> Order?
-typealias ClosePositionFunction = () -> Unit
+typealias ClosePositionFunction = (position: Position) -> Unit

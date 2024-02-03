@@ -17,15 +17,18 @@ import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.model.strategy.configModel.GridStrategyConfigModel
 import space.dawdawich.model.strategy.runtimeModel.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.configModel.StrategyConfigModel
+import space.dawdawich.model.strategy.configModel.SwitchStrategyConfigModel
 import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.service.factory.PriceTickerListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.*
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import space.dawdawich.strategy.strategies.SwitchStrategyRunner
 import space.dawdawich.utils.trimToStep
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.NoSuchElementException
 import kotlin.properties.Delegates
 import kotlin.time.Duration.Companion.seconds
 
@@ -93,6 +96,28 @@ class Manager(
             }
         }
 
+        val createSwitchOrderFunction: CreateSwitchOrderFunction = { inPrice: Double,
+                                                         orderSymbol: String,
+                                                         qty: Double,
+                                                         trend: Trend ->
+            val orderId = UUID.randomUUID().toString()
+            val isSuccess =
+                runBlocking {
+                    bybitService.createOrder(
+                        orderSymbol,
+                        inPrice,
+                        qty.trimToStep(strategyConfig.minQtyStep),
+                        trend.directionBoolean,
+                        orderId
+                    )
+                }
+            if (isSuccess) {
+                Order(inPrice, orderSymbol, qty, trend, id = orderId)
+            } else {
+                null
+            }
+        }
+
         var messageListener: AcknowledgingMessageListener<String, String>
 
         strategyRunner = when (strategyConfig) {
@@ -110,17 +135,9 @@ class Manager(
                     false,
                     createGridTableOrderFunction = createGridTableOrderFunction,
                 ).apply {
-                    setDiapasonConfigs(
-                        strategyConfig.middlePrice,
-                        strategyConfig.minPrice,
-                        strategyConfig.maxPrice,
-                        strategyConfig.step,
-                        strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
-                    )
+                    setDiapasonConfigs(strategyConfig)
                     setClosePosition {
-                        position?.let { pos ->
-                            runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
-                        }
+                        runBlocking { bybitService.closePosition(symbol, it.trend.directionBoolean, it.size) }
                     }
                     webSocket.positionUpdateCallback = { position ->
                         this.updatePosition(position)
@@ -128,8 +145,8 @@ class Manager(
                             bybitService.getAccountBalance()
                         })
                     }
-                    webSocket.fillOrderCallback = { orderId ->
-                        this.fillOrder(orderId)
+                    webSocket.fillOrderCallback = {
+                        this.fillOrder(it)
                     }
                     webSocket.connect()
                     messageListener = AcknowledgingMessageListener { message, acknowledgment ->
@@ -155,13 +172,7 @@ class Manager(
                                                 )
                                             }
                                         }
-                                        this.setDiapasonConfigs(
-                                            data.middlePrice,
-                                            data.minPrice,
-                                            data.maxPrice,
-                                            data.step,
-                                            data.prices
-                                        )
+                                        this.setDiapasonConfigs(data)
                                     }
                                 }
                             } else {
@@ -179,7 +190,22 @@ class Manager(
                 }
             }
 
-            else -> throw Exception()
+            is SwitchStrategyConfigModel -> {
+                SwitchStrategyRunner(
+                        strategyConfig.symbol,
+                        strategyConfig.multiplier,
+                        strategyConfig.money,
+                        false,
+                        strategyConfig.priceMinStep,
+                        strategyConfig.minQtyStep,
+                        strategyConfig.capitalOrderPerPercent,
+                        strategyConfig.switchCounterValue,
+                        strategyConfig.coefficientBetweenOrders,
+                        createSwitchOrderFunction = createSwitchOrderFunction
+                )
+            }
+
+            else -> throw NoSuchElementException("No such strategy config")
         }
         listener = priceListenerFactory.getPriceListener(strategyRunner.symbol, true).apply {
             setupMessageListener(messageListener)

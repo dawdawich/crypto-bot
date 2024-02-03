@@ -6,7 +6,6 @@ import space.dawdawich.model.strategy.configModel.StrategyConfigModel
 import space.dawdawich.strategy.model.ClosePositionFunction
 import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.model.Position
-import space.dawdawich.strategy.model.Trend
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 
@@ -61,7 +60,7 @@ abstract class StrategyRunner(
 
     protected var moneyWithProfit: Double = money
 
-    protected fun Position.convertToInfo() = this.let { PositionModel(it.trend == Trend.LONG, it.size, it.entryPrice) }
+    protected fun Position.convertToInfo() = this.let { PositionModel(it.trend.directionBoolean, it.size, it.entryPrice) }
 
     private var moneyHandler: Double by Delegates.observable(money) { _, old, new ->
         moneyChangeFunction(old, new)

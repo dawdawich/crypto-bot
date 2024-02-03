@@ -12,8 +12,6 @@ class SwitchStrategyRunner(
         multiplier: Int,
         money: Double,
         simulateTradeOperations: Boolean,
-        moneyChangePostProcessFunction: MoneyChangePostProcessFunction,
-        id: String = UUID.randomUUID().toString(),
         priceMinStep: Double,
         minQtyStep: Double,
         private val capitalOrderPerPercent: Int,
@@ -22,6 +20,8 @@ class SwitchStrategyRunner(
         private val createSwitchOrderFunction: CreateSwitchOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, trend: Trend ->
             Order(inPrice, orderSymbol, qty, trend)
         },
+        moneyChangePostProcessFunction: MoneyChangePostProcessFunction = { _, _ -> },
+        id: String = UUID.randomUUID().toString(),
 ) : StrategyRunner(
         money,
         multiplier,
@@ -43,6 +43,7 @@ class SwitchStrategyRunner(
                 .run { createOrder(currentPrice) }
     }
 
+    // TODO direction, counter
     override fun getRuntimeInfo(): StrategyRuntimeInfoModel =
             SwitchStrategyRuntimeInfoModel(
                     id,
@@ -108,11 +109,13 @@ class SwitchStrategyRunner(
         }
     }
 
+    // TODO directionl boolean
     private fun comparePositionPriceAndCurrentPriceDependOnTrend(currentPrice: Double): Boolean {
         position?.let {
             if (it.trend != direction) {
                 if (direction == Trend.SHORT) {
-                    return currentPrice > it.entryPrice
+                    val prof = it.calculateProfit(currentPrice) // TODO ASK HERE
+                    return prof > it.entryPrice
                 } else if (direction == Trend.LONG) {
                     return currentPrice < it.entryPrice
                 }

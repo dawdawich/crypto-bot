@@ -5,7 +5,8 @@ import space.dawdawich.model.strategy.runtimeModel.GridTableStrategyRuntimeInfoM
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent
-import java.util.UUID
+import space.dawdawich.utils.trimToStep
+import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 
@@ -52,18 +53,20 @@ class GridTableStrategyRunner(
         }
     }
 
-    fun setDiapasonConfigs(
-        middlePrice: Double,
-        minPrice: Double,
-        maxPrice: Double,
-        step: Double,
-        orderPrices: Set<Double>
-    ) {
-        this.middlePrice = middlePrice
-        this.minPrice = minPrice
-        this.maxPrice = maxPrice
-        this.step = step
-        this.orderPriceGrid += orderPrices.map { it to null }
+    fun setDiapasonConfigs(strategyConfig : GridStrategyConfigModel) {
+        this.middlePrice = strategyConfig.middlePrice
+        this.minPrice = strategyConfig.minPrice
+        this.maxPrice = strategyConfig.maxPrice
+        this.step = strategyConfig.step
+        this.orderPriceGrid += strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) to null }.toSet()
+    }
+
+    fun setDiapasonConfigs(runTimeInfoModel : GridTableStrategyRuntimeInfoModel) {
+        this.middlePrice = runTimeInfoModel.middlePrice
+        this.minPrice = runTimeInfoModel.minPrice
+        this.maxPrice = runTimeInfoModel.maxPrice
+        this.step = runTimeInfoModel.step
+        this.orderPriceGrid += runTimeInfoModel.prices.map { it to null }
     }
 
     fun isPriceInBounds(price: Double) = price in minPrice..maxPrice
@@ -118,7 +121,7 @@ class GridTableStrategyRunner(
                     money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
                 if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
                     money = moneyWithProfit
-                    closePositionFunction.invoke()
+                    closePositionFunction.invoke(position)
                 }
             }
         }
@@ -171,14 +174,13 @@ class GridTableStrategyRunner(
             .take(2)
             .filter { it.value == null }
             .map { it.key }
-            .forEach { inPrice ->
-                val isLong = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
-                val qty = moneyPerOrder * multiplier / inPrice
+            .forEach { orderPrice ->
+                val isLong = if (orderPrice < middlePrice) Trend.LONG else Trend.SHORT
+                val qty = moneyPerOrder * multiplier / orderPrice
 
                 if (position?.let { pos ->
-                        val prof =
-                            if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
-                        (prof - pos.entryPrice * 0.00055 - inPrice * 0.00055) * qty > 0
+                        val prof = pos.calculateProfit(currentPrice)
+                        (prof - pos.entryPrice * 0.00055 - orderPrice * 0.00055) * qty > 0
                     } == false) {
                     return@forEach
                 }
@@ -188,14 +190,14 @@ class GridTableStrategyRunner(
                 }
 
                 val order = createGridTableOrderFunction(
-                    inPrice,
+                    orderPrice,
                     symbol,
                     qty,
-                    inPrice - step * isLong.direction,
-                    inPrice + step * isLong.direction,
+                    orderPrice - step * isLong.direction,
+                    orderPrice + step * isLong.direction,
                     isLong
                 ) as GridTableOrder
-                orderPriceGrid[inPrice] = order
+                orderPriceGrid[orderPrice] = order
             }
 
         orderPriceGrid.values.filterNotNull().forEach { order ->
