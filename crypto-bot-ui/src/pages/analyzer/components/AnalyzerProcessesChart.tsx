@@ -2,13 +2,12 @@ import React, {createRef, JSX, useEffect, useMemo, useState} from "react";
 import {Box, FormControl, InputLabel, MenuItem, Select, styled} from "@mui/material";
 import Draggable from "./Draggable";
 import "../../../css/PriceIndicator.css";
-import {ActiveAnalyzerInfo} from "../AnalyzerInfoPage";
+import {AnalyzerRuntimeInfo} from "../AnalyzerInfoPage";
 import {ArrowBack} from "@mui/icons-material";
-import {toast} from "react-toastify";
 import {roundToNearest} from "../../../utils/number-utils";
 
 interface AnalyzerBarData {
-    info: ActiveAnalyzerInfo | undefined;
+    info: AnalyzerRuntimeInfo | undefined;
 }
 
 const stepsValues = [0.01, 0.1, 1, 10, 100, 500];

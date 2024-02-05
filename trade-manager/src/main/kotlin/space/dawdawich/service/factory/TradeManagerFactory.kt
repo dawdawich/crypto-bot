@@ -1,28 +1,29 @@
 package space.dawdawich.service.factory
 
 import com.jayway.jsonpath.ParseContext
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
+import space.dawdawich.managers.Manager
+import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.ApiAccessTokenRepository
-import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.service.PriceTickerListenerFactoryService
-import space.dawdawich.service.TradeManager
-import space.dawdawich.service.TradeManagerService
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 @Service
 class TradeManagerFactory(
-    private val priceListener: PriceTickerListenerFactoryService,
-    private val analyzerRepository: GridTableAnalyzerRepository,
     private val apiAccessTokenRepository: ApiAccessTokenRepository,
     private val jsonPath: ParseContext,
-    private val serviceFactory: PrivateHttpClientFactory
+    private val serviceFactory: PrivateHttpClientFactory,
+    private val strategyConfigReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
+    private val priceListenerFactoryService: PriceTickerListenerFactoryService
 ) {
 
-    fun createTradeManager(tradeManagerData: TradeManagerDocument, managerService: TradeManagerService): TradeManager {
+    fun createTradeManager(tradeManagerData: TradeManagerDocument): Manager {
         val apiTokens = apiAccessTokenRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
@@ -33,14 +34,18 @@ class TradeManagerFactory(
             )
         }
 
-        val tradeManager = TradeManager(tradeManagerData, priceListener, analyzerRepository, serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor), managerService)
-        tradeManager.webSocketClient = ByBitWebSocketClient(
-            apiTokens.test,
-            apiTokens.apiKey,
-            encryptor,
-            jsonPath,
-            tradeManager
-        ).apply { connect() }
-        return tradeManager
+        return Manager(
+            tradeManagerData,
+            serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor),
+            strategyConfigReplyingTemplate,
+            strategyRuntimeDataReplyingTemplate,
+            ByBitWebSocketClient(
+                apiTokens.test,
+                apiTokens.apiKey,
+                encryptor,
+                jsonPath
+            ),
+            priceListenerFactoryService
+        )
     }
 }

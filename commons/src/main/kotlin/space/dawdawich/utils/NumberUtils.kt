@@ -3,6 +3,8 @@ package space.dawdawich.utils
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
+import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 fun Double.calculatePercentageChange(value: Double): Double {
     return ((value - this) / abs(this)) * 100.0
@@ -18,6 +20,14 @@ fun Double.plusPercent(value: Number): Double {
 
 fun Double.leaveTail(length: Int): Double {
     return BigDecimal(this).setScale(length, RoundingMode.HALF_UP).toDouble()
+}
+
+fun Double.trimToStep(step: Double): Double {
+    return if (step < 1.0) {
+        (this / step).roundToInt()  * step
+    } else {
+        ((this * step).roundToInt() / step).roundToInt().toDouble()
+    }
 }
 
 fun ByteArray.bytesToHex(): String {

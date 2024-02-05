@@ -9,56 +9,56 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
-import space.dawdawich.model.analyzer.GridTableDetailInfoModel
-import space.dawdawich.model.manager.ManagerInfoModel
+import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
+import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
 @Configuration
-open class KafkaConfiguration {
+class KafkaConfiguration {
 
     @Bean
-    open fun analyzerInfoDocumentKafkaListenerContainerFactory(analyzerInfoConsumerFactory: ConsumerFactory<String, GridTableDetailInfoModel>) =
-        ConcurrentKafkaListenerContainerFactory<String, GridTableDetailInfoModel>().apply { this.consumerFactory = analyzerInfoConsumerFactory }
+    fun <T> jsonKafkaListenerContainerFactory(managerInfoConsumerFactory: ConsumerFactory<String, T>) =
+        ConcurrentKafkaListenerContainerFactory<String, T>().apply { this.consumerFactory = managerInfoConsumerFactory }
 
     @Bean
-    open fun managerInfoDocumentKafkaListenerContainerFactory(managerInfoConsumerFactory: ConsumerFactory<String, ManagerInfoModel>) =
-        ConcurrentKafkaListenerContainerFactory<String, ManagerInfoModel>().apply { this.consumerFactory = managerInfoConsumerFactory }
-
-    @Bean
-    open fun analyzerInfoConsumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
-        consumerFactory<GridTableDetailInfoModel>(bootstrapServer)
-
-    @Bean
-    open fun managerInfoConsumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
-        consumerFactory<ManagerInfoModel>(bootstrapServer)
-
-    @Bean
-    open fun kafkaTemplate(factory: ProducerFactory<String, String>): KafkaTemplate<String, String> =
-        KafkaTemplate(factory)
-
-    @Bean
-    open fun managerDocumentKafkaTemplate(factory: ProducerFactory<String, TradeManagerDocument>): KafkaTemplate<String, TradeManagerDocument> =
-        KafkaTemplate(factory)
-
-    @Bean
-    open fun producerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
-        producerFactory<String>(bootstrapServer, StringSerializer::class.java)
-
-    @Bean
-    open fun managerProducerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
-        producerFactory<TradeManagerDocument>(bootstrapServer, JsonSerializer::class.java)
-
-    private fun <T> consumerFactory(bootstrapServer: String): ConsumerFactory<String, T> {
+    fun <T> jsonConsumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ConsumerFactory<String, T> {
         val configProps: MutableMap<String, Any> = HashMap()
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = JsonDeserializer::class.java
-        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "ticker_group"
+        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "api-service-group"
         configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
         return DefaultKafkaConsumerFactory(configProps)
     }
+
+    @Bean
+    fun kafkaTemplate(factory: ProducerFactory<String, String>): KafkaTemplate<String, String> =
+        KafkaTemplate(factory)
+
+    @Bean
+    fun <T> jsonKafkaTemplate(jsonProducerFactory: ProducerFactory<String, T>): KafkaTemplate<String, T> =
+        KafkaTemplate(jsonProducerFactory)
+
+    @Bean
+    fun producerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
+        producerFactory<String>(bootstrapServer, StringSerializer::class.java)
+
+    @Bean
+    fun jsonProducerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
+        producerFactory<TradeManagerDocument>(bootstrapServer, JsonSerializer::class.java)
+
+    @Bean
+    fun strategyRuntimeDataReplyingTemplate(
+        producerFactory: ProducerFactory<String, String>,
+        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyRuntimeInfoModel?>
+    ) = replyingTemplate(
+        producerFactory,
+        jsonKafkaListenerContainerFactory,
+        RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
+    ).apply { setSharedReplyTopic(true) }
 
     private fun <T> producerFactory(bootstrapServer: String, serializerClass: Class<*>): ProducerFactory<String, T> {
         val configProps: MutableMap<String, Any> = HashMap()
@@ -66,5 +66,17 @@ open class KafkaConfiguration {
         configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
         configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = serializerClass
         return DefaultKafkaProducerFactory(configProps)
+    }
+
+    private fun <T> replyingTemplate(
+        producerFactory: ProducerFactory<String, String>,
+        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, T>,
+        topic: String
+    ): ReplyingKafkaTemplate<String, String, T> {
+        val replyContainer =
+            jsonKafkaListenerContainerFactory.createContainer(topic).apply {
+                isAutoStartup = false
+            }
+        return ReplyingKafkaTemplate(producerFactory, replyContainer)
     }
 }

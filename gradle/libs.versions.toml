@@ -1,0 +1,46 @@
+[versions]
+spring-boot = "3.1.5"
+spring = "6.1.2"
+spring-version-managment = "1.1.4"
+kotlinx = "1.6.0"
+kotlinx-plugin = "1.9.22"
+kotlin-jdk = "1.9.20"
+websocket = "1.5.4"
+jackson-kotlin-module = "2.13.0"
+json-path = "2.8.0"
+json = "20231013"
+ktor = "2.3.5"
+logstash = "7.4"
+kotlin-logging = "2.0.11"
+
+[libraries]
+spring-boot-mongo = { group = "org.springframework.boot", name = "spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
+spring-boot-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "spring-boot" }
+spring-boot-starter = { group = "org.springframework.boot", name = "spring-boot-starter", version.ref = "spring-boot" }
+spring-kafka = { group = "org.springframework.kafka", name = "spring-kafka" }
+websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "websocket" }
+kotlin-jdk = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin-jdk" }
+kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx" }
+spring-websocket = { group = "org.springframework", name = "spring-websocket", version.ref = "spring" }
+jackson-kotlin-module = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson-kotlin-module" }
+json-path = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "json-path" }
+json = { group = "org.json", name = "json", version.ref = "json" }
+ktor-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+logstash = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
+kotlin-logging = { group = "io.github.microutils", name = "kotlin-logging-jvm", version.ref = "kotlin-logging" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
+
+[bundles]
+spring-boot-web = ["spring-boot-actuator", "spring-boot-web"]
+ktor = ["ktor-core", "ktor-cio"]
+
+[plugins]
+spring-dependency-plugin = { id = "io.spring.dependency-management", version.ref = "spring-version-managment" }
+spring-boot-plugin = { id = "org.springframework.boot", version.ref = "spring-boot" }
+kotlinx-serialization-plugin = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinx-plugin" }
+spring-plugin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlinx-plugin" }
+jvm-plugin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinx-plugin" }

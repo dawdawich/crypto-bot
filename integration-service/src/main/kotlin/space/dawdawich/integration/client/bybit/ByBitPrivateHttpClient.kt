@@ -13,6 +13,7 @@ import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
 import javax.crypto.Mac
+import kotlin.jvm.Throws
 
 class ByBitPrivateHttpClient(
     serverUrl: String,
@@ -32,31 +33,27 @@ class ByBitPrivateHttpClient(
 
     private val logger = KotlinLogging.logger {}
 
+    @Throws(HttpRequestTimeoutException::class)
     suspend fun createOrder(
         symbol:
         String,
         entryPrice: Double,
         qty: Double,
         isLong: Boolean,
-        positionIdx: Int,
         orderId: String,
-        triggerDirection: Int,
-        repeatCount: Int = 2
+        positionIdx: Int = 0,
+        repeatCount: Int = 0
     ): Boolean {
         val request = buildJsonObject {
             put("symbol", symbol)
             put("side", if (isLong) "Buy" else "Sell")
-            put("orderType", "Market")
+            put("orderType", "Limit")
             put("qty", qty.toString())
-            put("triggerPrice", entryPrice.toString())
-            put("triggerDirection", if (isLong) 2 else 1)
-            put("timeInForce", "IOC")
-            put("triggerBy", "MarkPrice")
+            put("price", entryPrice.toString())
+            put("timeInForce", "GTC")
             put("category", "linear")
-            put("isLeverage", 1)
             put("positionIdx", positionIdx)
             put("orderLinkId", orderId)
-            put("triggerDirection", triggerDirection)
         }.toString()
 
         try {
@@ -68,7 +65,7 @@ class ByBitPrivateHttpClient(
                 10001, 10002 -> return false
                 110009 -> {
                     cancelAllOrder(symbol)
-                    return createOrder(symbol, entryPrice, qty, isLong, positionIdx, orderId, triggerDirection)
+                    return createOrder(symbol, entryPrice, qty, isLong, orderId)
                 }
 
                 else -> {
@@ -107,7 +104,10 @@ class ByBitPrivateHttpClient(
 
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read<String>("$.result.list[0].totalEquity").toDouble()
+                return parsedJson.read<String>("$.result.list[0].coin[0].equity").toDouble()
+            }
+            10002 -> {
+                return getAccountBalance(repeatCount)
             }
 
             else -> {
@@ -169,7 +169,7 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int, repeatCount: Int = 2) {
+    suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int = 0, repeatCount: Int = 2) {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
@@ -201,7 +201,7 @@ class ByBitPrivateHttpClient(
 
     private suspend infix fun <T> Int.repeatTry(block: suspend () -> T) : T {
         return try {
-            block()
+            runBlocking { block() }
         } catch (timeoutEx: HttpRequestTimeoutException) {
             if (this > 0) {
                 (this - 1).repeatTry(block)
@@ -216,10 +216,10 @@ class ByBitPrivateHttpClient(
         val timestamp = System.currentTimeMillis().toString()
         return arrayOf(
             "X-BAPI-API-KEY" to apiKey,
-            "X-BAPI-SIGN" to encryptor.doFinal("$timestamp${apiKey}5000$body".toByteArray()).bytesToHex(),
+            "X-BAPI-SIGN" to encryptor.doFinal("$timestamp${apiKey}3000$body".toByteArray()).bytesToHex(),
             "X-BAPI-SIGN-TYPE" to "2",
             "X-BAPI-TIMESTAMP" to timestamp,
-            "X-BAPI-RECV-WINDOW" to "5000",
+            "X-BAPI-RECV-WINDOW" to "3000",
             "Content-Type" to "application/json"
         )
     }

@@ -1,33 +1,39 @@
 import React, {JSX, useEffect, useState} from "react";
 import {Analyzer} from "./model/Analyzer";
 import {fetchAnalyzerData} from "../../service/AnalyzerService";
-import {RouteComponentProps} from "wouter";
+import {RouteComponentProps, useLocation} from "wouter";
 import {webSocketAnalyzerService} from "../../service/WebSocketService";
 import {Box, Card, CardContent, Grid, Typography} from "@mui/material";
 import PropertyCard from "./components/PropertyCard";
-import AnalyzerProcessesChart from "./components/AnalyzerProcessesChart";
 import {roundToNearest} from "../../utils/number-utils";
 
 interface AnalyzerInfoPageProps extends RouteComponentProps<{ readonly analyzerId: string }> {
 }
 
-export interface ActiveAnalyzerInfo {
+export interface AnalyzerRuntimeInfo {
     id: string;
     orders: string[];
     currentPrice: number;
     middlePrice: number;
-    positions: {
+    position: {
         long: boolean;
         size: number;
         entryPrice: number;
-    }[];
+    } | null;
 }
 
 const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPageProps) => {
     const [analyzer, setAnalyzer] = useState<Analyzer>();
-    const [analyzerInfo, setAnalyzerInfo] = useState<ActiveAnalyzerInfo>();
+    const [analyzerInfo, setAnalyzerInfo] = useState<AnalyzerRuntimeInfo>();
     const [analyzerFetchError, setAnalyzerFetchError] = useState<Error>();
     const [analyzerPositionInfo, setAnalyzerPositionInfo] = useState<JSX.Element[]>([]);
+    const [, navigate] = useLocation();
+    const authToken = localStorage.getItem('auth.token');
+
+    if (!authToken) {
+        navigate('/');
+        window.location.reload();
+    }
 
     useEffect(() => {
         fetchAnalyzerData({analyzerId:props.params.analyzerId})
@@ -36,7 +42,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     }, [props.params.analyzerId]);
 
     useEffect(() => {
-        let intervalId: NodeJS.Timer;
+        let intervalId: NodeJS.Timeout;
         if (!!analyzer && analyzer.isActive) {
             if (!webSocketAnalyzerService.isOpen()) {
                 webSocketAnalyzerService.connect((analyzer) => {
@@ -58,9 +64,8 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
 
     useEffect(() => {
         if (!!analyzerInfo) {
-            const position = analyzerInfo.positions.find((pos) => pos.size > 0);
-            if (!!position) {
-                updatePositionInfoCard(position, analyzerInfo.currentPrice);
+            if (!!analyzerInfo.position) {
+                updatePositionInfoCard(analyzerInfo.position, analyzerInfo.currentPrice);
             }
         }
     }, [analyzerInfo]);
@@ -79,7 +84,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
                 <PropertyCard title={'Position Entry Price'} value={'' + roundToNearest(position.entryPrice, 0.1).toFixed(1)}/>
             </Grid>,
             <Grid key={'direction'}>
-                <PropertyCard title={position.long ? 'Position Direction' : ''}
+                <PropertyCard title={'Position Direction'}
                               value={position.long ? 'Buy' : 'Sell'}/>
             </Grid>,
             <Grid key={'pnl'}>
@@ -130,7 +135,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
             {analyzer.isActive &&
                 <Card>
                     <CardContent style={{display: 'flex'}}>
-                        <AnalyzerProcessesChart info={analyzerInfo}/>
+                        {/*<AnalyzerProcessesChart info={analyzerInfo}/>*/}
                         {analyzerPositionInfo}
                     </CardContent>
                 </Card>

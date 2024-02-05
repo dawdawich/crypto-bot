@@ -3,14 +3,15 @@ package space.dawdawich.client
 import com.jayway.jsonpath.ParseContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import mu.KotlinLogging.logger
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.json.JSONObject
-import space.dawdawich.service.TradeManager
-import space.dawdawich.service.model.Order
-import space.dawdawich.service.model.Position
+import space.dawdawich.client.model.FillOrderCallback
+import space.dawdawich.client.model.PositionUpdateCallback
+import space.dawdawich.exceptions.UnsupportedConfigurationException
+import space.dawdawich.strategy.model.Position
+import space.dawdawich.strategy.model.Trend
 import java.net.URI
 import javax.crypto.Mac
 import kotlin.time.Duration.Companion.hours
@@ -20,14 +21,19 @@ class ByBitWebSocketClient(
     private val apiKey: String,
     private val encryptor: Mac,
     private val jsonPath: ParseContext,
-    private val tradeManager: TradeManager
 ) : WebSocketClient(URI(if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL)) {
+
+    var positionUpdateCallback: PositionUpdateCallback? = null
+    var fillOrderCallback: FillOrderCallback? = null
+    var previousCumRealizedPnL: Double = 0.0
+    var currentCumRealizedPnL: Double = 0.0
+
     companion object {
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
         const val BYBIT_TEST_SERVER_URL = "wss://stream-testnet.bybit.com/v5/private"
     }
 
-    private val logger = KotlinLogging.logger {}
+    private val logger = logger {}
 
     private var signatureWithExpiration: Pair<String, Long>
 
@@ -61,68 +67,67 @@ class ByBitWebSocketClient(
                     ).toString()
                     send(operationRequest)
                 } else if (operation == "subscribe") {
-                    // can be logged this event
+                    logger.info { "Successfully subscribed to the topic." }
                 }
             }
-            response.read<String?>("\$.topic")?.let { topic ->
-                if (topic == "position.linear") {
-                    val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
-                    positionsToUpdate.forEach { position ->
-                        val toUpdate = if (position["side"].toString().equals("none", true)) {
-                            listOf(
+
+            if (positionUpdateCallback != null && fillOrderCallback != null) {
+                response.read<String?>("\$.topic")?.let { topic ->
+                    if (topic == "position.linear") {
+                        val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
+                            .let { list ->
+                                if (list.size > 1) {
+                                    throw UnsupportedConfigurationException("User's account enabled in hedge mode.")
+                                }
+                                list[0]
+                            }
+                            .let { position ->
+                                val side = position["side"].toString()
+                                val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
+                                if (previousCumRealizedPnL == 0.0) {
+                                    previousCumRealizedPnL = cumRealizedPnL
+                                    currentCumRealizedPnL = cumRealizedPnL
+                                } else {
+                                    previousCumRealizedPnL = currentCumRealizedPnL
+                                    currentCumRealizedPnL = cumRealizedPnL
+                                }
+                                if (side.isNotBlank())
                                 Position(
-                                    position["symbol"].toString(),
-                                    true,
-                                    position["size"].toString().toDouble(),
                                     position["entryPrice"].toString().toDouble(),
-                                    position["positionIdx"].toString().toInt(),
-                                    position["updatedTime"].toString().toLong()
-                                ),
-                                Position(
-                                    position["symbol"].toString(),
-                                    false,
                                     position["size"].toString().toDouble(),
-                                    position["entryPrice"].toString().toDouble(),
-                                    position["positionIdx"].toString().toInt(),
-                                    position["updatedTime"].toString().toLong()
-                                )
-                            )
-                        } else {
-                            listOf(
-                                Position(
-                                    position["symbol"].toString(),
-                                    position["side"].toString().equals("buy", true),
-                                    position["size"].toString().toDouble(),
-                                    position["entryPrice"].toString().toDouble(),
-                                    position["positionIdx"].toString().toInt(),
-                                    position["updatedTime"].toString().toLong()
-                                )
-                            )
-                        }
-                        tradeManager.updatePosition(toUpdate)
+                                    Trend.fromDirection(side),
+                                    currentCumRealizedPnL - previousCumRealizedPnL
+                                ) else null
+                            }
+                        positionUpdateCallback?.invoke(positionsToUpdate)
+                    } else if (topic == "order.linear") {
+                        response.read<List<Map<String, Any>>>("\$.data")
+                            .map { orderResponse ->
+                                val id = orderResponse["orderLinkId"].toString()
+                                val status = orderResponse["orderStatus"].toString()
+                                id to status
+                            }
+                            .filter { order ->
+                                order.first.isNotBlank() && when (order.second.lowercase()) {
+                                    "filled", "deactivated", "rejected" -> true
+                                    else -> false
+                                }
+                            }
+                            .forEach { order ->
+                                fillOrderCallback?.invoke(order.first)
+                            }
                     }
-                } else if (topic == "order.linear") {
-                    val ordersToUpdate = response.read<List<Map<String, Any>>>("\$.data")
-                    ordersToUpdate.forEach { orderResponse ->
-                        tradeManager.updateOrder(
-                            Order(
-                                orderResponse["symbol"].toString(),
-                                orderResponse["side"].toString().equals("buy", true),
-                                orderResponse["price"].toString().toDouble(),
-                                orderResponse["qty"].toString().toDouble(),
-                                orderResponse["orderStatus"].toString(),
-                                orderResponse["orderLinkId"].toString()
-                            )
-                        )
-                    }
+                    response
                 }
             }
         }
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        signatureWithExpiration = getAuthData()
-        GlobalScope.launch { reconnect() }
+        if (remote) {
+            signatureWithExpiration = getAuthData()
+            GlobalScope.launch { reconnect() }
+        }
     }
 
     override fun onError(ex: Exception?) {

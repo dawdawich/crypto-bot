@@ -1,12 +1,10 @@
 package space.dawdawich.repositories.entity
 
-import kotlinx.serialization.Serializable
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document("grid_table_analyzer")
-@Serializable
 data class GridTableAnalyzerDocument(
     @Id
     val id: String,

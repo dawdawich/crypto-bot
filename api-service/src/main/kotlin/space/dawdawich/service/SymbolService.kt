@@ -28,17 +28,12 @@ class SymbolService(
         val symbolInfo = runBlocking {
             httpClient.getPairInstructions(symbol)
         }
-        val isOneWayMode = runBlocking {
-            val positionInfo = httpClient.getPositionInfo(symbol)
-            positionInfo.size == 1
-        }
 
         symbolRepository.insert(
             SymbolInfoDocument(
                 symbol,
                 symbolRepository.count().toInt(),
                 apiToken.test,
-                isOneWayMode,
                 symbolInfo.tickSize,
                 symbolInfo.minPrice,
                 symbolInfo.maxPrice,
@@ -52,5 +47,5 @@ class SymbolService(
     }
 
     private fun SymbolInfoDocument.toModel() =
-        SymbolResponse(symbol, partition, testServer, isOneWayMode, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
+        SymbolResponse(symbol, partition, testServer, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
 }

@@ -8,5 +8,5 @@ data class GridTableDetailInfoModel(
     val orders: List<String>,
     val currentPrice: Double,
     val middlePrice: Double,
-    val positions: List<PositionModel>
+    val position: PositionModel?
 )
