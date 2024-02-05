@@ -37,7 +37,7 @@ class ActionListener(
         postInit()
     }
 
-    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
     fun checkSocketsConnection() {
         if (byBitClient.isClosed) {
             byBitClient.reconnect()
