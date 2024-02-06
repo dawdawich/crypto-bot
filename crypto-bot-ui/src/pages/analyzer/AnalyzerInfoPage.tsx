@@ -36,7 +36,7 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     }
 
     useEffect(() => {
-        fetchAnalyzerData(props.params.analyzerId, authToken as string)
+        fetchAnalyzerData({analyzerId:props.params.analyzerId})
             .then(data => setAnalyzer(data))
             .catch(error => setAnalyzerFetchError(error))
     }, [props.params.analyzerId]);
