@@ -4,7 +4,7 @@ import {AuthInfo} from "../model/AuthInfo";
 const API_URL = `${SERVER_HOST}/account`;
 
 export const requestSalt = async (accountId: string) => {
-    const response = await fetch(`${API_URL}/nonce`, {
+    const response = await fetch(`${API_URL}/salt`, {
         method: 'GET',
         headers: {
             'Account-Address': btoa(accountId)
