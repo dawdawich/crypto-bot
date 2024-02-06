@@ -52,7 +52,7 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({open, authTo
     };
 
     const handleSubmit = () => {
-        createAnalyzer({analyzer:analyzerData, authToken:authToken})
+        createAnalyzer(analyzerData, authToken)
             .then(() => {
                 onClose(true)
             })

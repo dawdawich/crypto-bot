@@ -93,3 +93,20 @@ export const deleteManager = async (managerId: string, authToken: string) => {
     throw new Error('Failed to delete manager data');
 }
 
+export const updateManagerData = async (manager: Manager, authToken: string) => {
+    try {
+        const response = await fetchWrapper({
+            url: `${API_URL}`,
+            method: FetchMethods.PUT,
+            token: authToken,
+        });
+        //TODO: Handling response and errors in next steps
+        if (response.ok) {
+            return true;
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+    throw new Error('Failed to update manager data');
+}
