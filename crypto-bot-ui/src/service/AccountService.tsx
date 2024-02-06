@@ -1,6 +1,22 @@
 import {SERVER_HOST} from "./Constants";
+import {AuthInfo} from "../model/AuthInfo";
 
 const API_URL = `${SERVER_HOST}/account`;
+
+export const requestSalt = async (accountId: string) => {
+    const response = await fetch(`${API_URL}/nonce`, {
+        method: 'GET',
+        headers: {
+            'Account-Address': btoa(accountId)
+        }
+    });
+
+    if (response.ok) {
+        return await response.text() as string;
+    }
+
+    throw Error('Failed to fetch salt for account');
+}
 
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
@@ -26,13 +42,13 @@ export const fetchAuthToken = async (email: string, password: string) => {
     return await response.text() as string
 }
 
-export const fetchAccountInfo = async (authToken: string) => {
+export const fetchAccountInfo = async (auth: AuthInfo) => {
     try {
         const options = {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Access-Control-Allow-Origin': '*'
+                'Account-Address': btoa(auth.accountId),
+                'Account-Address-Signature': btoa(auth.signature)
             }
         };
         const response = await fetch(`${API_URL}`, options)
@@ -70,12 +86,12 @@ export const createAccount = async (username: string, name: string, surname: str
     return response;
 }
 
-export const getApiTokens = async (authToken: string) => {
+export const getApiTokens = async (auth: AuthInfo) => {
     const response = await fetch(`${API_URL}/api-token`, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Access-Control-Allow-Origin': '*'
+            'Account-Address': btoa(auth.accountId),
+            'Account-Address-Signature': btoa(auth.signature)
         }
     });
     if (response.ok) {

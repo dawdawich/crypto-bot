@@ -12,6 +12,7 @@ json = "20231013"
 ktor = "2.3.5"
 logstash = "7.4"
 kotlin-logging = "2.0.11"
+web3 = "5.0.0"
 
 [libraries]
 spring-boot-mongo = { group = "org.springframework.boot", name = "spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
@@ -33,6 +34,7 @@ ktor-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
 logstash = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
 kotlin-logging = { group = "io.github.microutils", name = "kotlin-logging-jvm", version.ref = "kotlin-logging" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
+web3 = { group = "org.web3j", name = "core", version.ref = "web3" }
 
 [bundles]
 spring-boot-web = ["spring-boot-actuator", "spring-boot-web"]

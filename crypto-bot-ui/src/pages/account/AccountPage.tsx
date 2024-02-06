@@ -13,6 +13,8 @@ const AccountPage: React.FC = () => {
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
+    let address = localStorage.getItem('auth.address');
+    let signature = localStorage.getItem('auth.signature');
 
     if (!authToken) {
         navigate('/');
@@ -20,7 +22,7 @@ const AccountPage: React.FC = () => {
     }
 
     useEffect(() => {
-        fetchAccountInfo(authToken as string)
+        fetchAccountInfo({accountId: address as string, signature: signature as string})
             .then(res => setData(res))
             .catch(ex => setError(ex))
     }, [authToken])

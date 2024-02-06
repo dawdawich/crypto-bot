@@ -2,30 +2,52 @@ import {useLocation} from "wouter";
 import {Button, Divider} from "@mui/material";
 import "../css/HeaderStyles.css";
 import {useState} from "react";
-import RegLoginDialog from "./account/dialog/RegLoginDialog";
+import { useSDK } from '@metamask/sdk-react';
+import {requestSalt} from "../service/AccountService";
 
 const MainHeader = () => {
-    const [isRegistrationDialogOpen, setRegistrationDialogOpen] = useState(false)
-    const [isRegistrationDialog, setRegistrationDialog] = useState(false)
+    const [address, setAddress] = useState<string | null>(null);
+    const [signature, setSignature] = useState<string | null>(null);
     const [location, navigate] = useLocation();
-    let userData = localStorage.getItem('auth.token');
+    const { sdk, connected, connecting, provider, chainId } = useSDK();
 
-    let loginPlace: any;
+    const connect = async () => {
+        try {
+            const accounts = await sdk?.connect();
+            setAddress((accounts as string[])?.[0]);
+            const salt = await requestSalt(address!);
+            const message = `Signature will be valid until:\n${formatDate(parseInt(salt))}`;
+            const sign = await provider?.request({
+                method: 'personal_sign',
+                params: [message, address]
+            });
+            localStorage.setItem('auth.address', accounts as string)
+            localStorage.setItem('auth.signature', sign as string)
+        } catch(err) {
+            console.warn(`failed to connect..`, err);
+        }
+    };
 
-    if (userData == null) {
-        loginPlace = (<div><Button color="inherit" onClick={() => openRegLoginDialog(false)}>Login</Button>
-            <Button color="inherit" onClick={() => openRegLoginDialog(true)}>Sign Up</Button></div>);
-    } else {
-        const username = JSON.parse(atob(userData.split('.')[1])).username;
-        loginPlace = (<strong>{username}</strong>);
+    const disconnect = () => {
+        setAddress(null);
+        setSignature(null);
+    };
+
+    const formatDate = (seconds: number) => {
+        const date = new Date(seconds * 1000); // Convert seconds to milliseconds
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const secondsFormatted = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${secondsFormatted}`;
     }
+
 
     const role = localStorage.getItem('auth.role')
-
-    const openRegLoginDialog = (registration: boolean) => {
-        setRegistrationDialog(registration);
-        setRegistrationDialogOpen(true);
-    }
 
     return (
         <div>
@@ -35,20 +57,20 @@ const MainHeader = () => {
                 </div>
                 <nav className="navigation">
                     {
-                        userData != null &&
+                        signature != null &&
                         <Button color="inherit" onClick={() => navigate("/analyzer")}
-                             variant={location === "/analyzer" ? 'contained' : undefined}>Analyzers</Button>
+                                variant={location === "/analyzer" ? 'contained' : undefined}>Analyzers</Button>
                     }
                     <Button color="inherit" onClick={() => navigate("/top-analyzers")}
                             variant={location === "/top-analyzers" ? 'contained' : undefined}>Public Top
                         Analyzers</Button>
                     {
-                        userData != null &&
+                        signature != null &&
                         <Button color="inherit" onClick={() => navigate("/manager")}
-                             variant={location === "/manager" ? 'contained' : undefined}>Managers</Button>
+                                variant={location === "/manager" ? 'contained' : undefined}>Managers</Button>
                     }
                     {
-                        userData != null &&
+                        signature != null &&
                         <Button color="inherit" onClick={() => navigate("/account")}
                                 variant={location === "/account" ? 'contained' : undefined}>Account</Button>
                     }
@@ -63,11 +85,15 @@ const MainHeader = () => {
                                 variant={location === "/monitoring" ? 'contained' : undefined}>Monitoring</Button>
                     }
                 </nav>
-                {loginPlace}
+                {address ? (
+                    <div className="user-info">
+                        <button onClick={disconnect}><span>{address}</span></button>
+                    </div>
+                ) : (
+                    <button onClick={connect}>Connect</button>
+                )}
             </header>
-            <Divider light/>
-            <RegLoginDialog open={isRegistrationDialogOpen} isRegistration={isRegistrationDialog} setRegistrationDialog={setRegistrationDialog}
-                            onClose={() => setRegistrationDialogOpen(false)}/>
+            <Divider sx={{bgcolor: 'eee'}}/>
         </div>
     );
 }

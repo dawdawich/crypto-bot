@@ -6,14 +6,10 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document("account")
 class AccountDocument(
     @Id
-    val id: String,
-    val username: String,
-    val name: String,
-    val surname: String,
-    val email: String,
-    val role: String,
-    val password: String,
-    val createTime: Long,
-    val updateTime: Long
-) {
-}
+    val walletId: String,
+    var saltValidUntil: Long,
+    val role: String = "USER",
+    val createTime: Long = System.currentTimeMillis(),
+    val updateTime: Long = createTime,
+    val accepted: Boolean = false
+)

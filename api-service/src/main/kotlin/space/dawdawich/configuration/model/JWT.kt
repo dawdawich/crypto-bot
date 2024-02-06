@@ -1,4 +1,4 @@
-package space.dawdawich.configuration.provider.model
+package space.dawdawich.configuration.model
 
 class JWT(val headers: String, val payload: String, val signature: String) {
     companion object {

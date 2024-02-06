@@ -1,4 +1,4 @@
-package space.dawdawich.configuration.provider.model
+package space.dawdawich.configuration.model
 
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority

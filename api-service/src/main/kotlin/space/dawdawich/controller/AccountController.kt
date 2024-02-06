@@ -1,5 +1,6 @@
 package space.dawdawich.controller
 
+import okio.ByteString.Companion.decodeBase64
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NOT_FOUND
@@ -7,7 +8,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.configuration.provider.model.AccountDetails
+import space.dawdawich.configuration.model.AccountDetails
 import space.dawdawich.controller.model.AccountResponse
 import space.dawdawich.controller.model.ApiTokenResponse
 import space.dawdawich.controller.model.CreateAccountRequest
@@ -17,43 +18,6 @@ import space.dawdawich.service.AccountService
 @RestController
 @RequestMapping("/account")
 class AccountController(private val accountService: AccountService) {
-
-    @PostMapping
-    fun createAccount(@RequestBody accRequest: CreateAccountRequest): ResponseEntity<Unit> {
-        if (!accountService.isEmailAllowedToRegistration(accRequest.email.lowercase())) {
-            return ResponseEntity(HttpStatus.PRECONDITION_FAILED)
-        }
-        if (accountService.isAccountAlreadyRegistered(accRequest.email.lowercase(), accRequest.username)) {
-            return ResponseEntity(HttpStatus.CONFLICT)
-        }
-        accountService.fillAccountInfo(
-                accRequest.email.lowercase(),
-                accRequest.username,
-                accRequest.name,
-                accRequest.surname,
-                accRequest.password)
-
-        return ResponseEntity(HttpStatus.OK)
-    }
-
-    @GetMapping
-    fun getAccount(authentication: Authentication): ResponseEntity<AccountResponse> {
-        val accountDetails = authentication.principal as AccountDetails
-        val account = accountService.getAccountById(accountDetails.accountId)
-        val tokens =
-            accountService.getTokens(account.id).map { ApiTokenResponse(it.id, it.apiKey, it.market.name, it.test) }
-        return ResponseEntity.ok(
-            AccountResponse(
-                account.id,
-                account.username,
-                account.name,
-                account.surname,
-                account.email.lowercase(),
-                account.createTime,
-                tokens
-            )
-        )
-    }
 
     @GetMapping("/api-token")
     fun getApiTokens(user: Authentication): ResponseEntity<List<ApiTokenResponse>> = ResponseEntity.ok(
@@ -79,16 +43,10 @@ class AccountController(private val accountService: AccountService) {
         return ResponseEntity(NOT_FOUND)
     }
 
-    @GetMapping("/token")
-    fun getJwtToken(
-        @RequestHeader(
-            HttpHeaders.AUTHORIZATION,
-            required = true
-        ) authorization: String
-    ): ResponseEntity<String> {
+    @GetMapping("/nonce")
+    fun requestNonce(@RequestHeader("Account-Address") address: String): ResponseEntity<String> {
         return try {
-            val jwt = accountService.requestAccessToken(authorization)
-            ResponseEntity.ok(jwt.toString())
+            ResponseEntity.ok(accountService.requestNonce(address.decodeBase64()!!.utf8()).toString())
         } catch (ex : BadCredentialsException){
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }

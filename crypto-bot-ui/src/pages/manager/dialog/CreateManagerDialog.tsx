@@ -15,6 +15,7 @@ import {
     Switch, TextField
 } from "@mui/material";
 import {createManager} from "../../../service/ManagerService";
+import {AuthInfo} from "../../../model/AuthInfo";
 
 interface AddApiTokenDialogProps {
     open: boolean;
@@ -39,6 +40,8 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
     })
     const [, navigate] = useLocation();
     const authToken = localStorage.getItem('auth.token');
+    let address = localStorage.getItem('auth.address');
+    let signature = localStorage.getItem('auth.signature');
 
     if (!authToken) {
         navigate('/');
@@ -47,7 +50,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
 
     useEffect(() => {
         if (open) {
-            getApiTokens(authToken as string)
+            getApiTokens({accountId: address as string, signature: signature as string})
                 .then(res => setTokens(res))
                 .catch(ex => {
                     console.error('Failed to fetch user\'s tokens.');
