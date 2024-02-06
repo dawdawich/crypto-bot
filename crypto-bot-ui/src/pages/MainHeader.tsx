@@ -4,44 +4,37 @@ import "../css/HeaderStyles.css";
 import {useState} from "react";
 import { useSDK } from '@metamask/sdk-react';
 import {requestSalt} from "../service/AccountService";
+import {useAuth} from "../context/AuthContext";
 
 const MainHeader = () => {
-    const [address, setAddress] = useState<string | null>(null);
-    const [signature, setSignature] = useState<string | null>(null);
+    const { authInfo, login, logout } = useAuth();
     const [location, navigate] = useLocation();
     const { sdk, connected, connecting, provider, chainId } = useSDK();
 
     const connect = async () => {
         try {
-            const accounts = await sdk?.connect();
-            setAddress((accounts as string[])?.[0]);
+            const address = (await sdk?.connect() as string[])?.[0];
             const salt = await requestSalt(address!);
             const message = `Signature will be valid until:\n${formatDate(parseInt(salt))}`;
-            const sign = await provider?.request({
+            const signature = await provider?.request({
                 method: 'personal_sign',
                 params: [message, address]
-            });
-            localStorage.setItem('auth.address', accounts as string)
-            localStorage.setItem('auth.signature', sign as string)
+            }) as string;
+            login({address, signature});
         } catch(err) {
-            console.warn(`failed to connect..`, err);
+            console.warn(`failed to connect to wallet`, err);
         }
     };
-
-    const disconnect = () => {
-        setAddress(null);
-        setSignature(null);
-    };
-
     const formatDate = (seconds: number) => {
-        const date = new Date(seconds * 1000); // Convert seconds to milliseconds
+        const date = new Date(0);
+        date.setUTCSeconds(seconds);
 
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const secondsFormatted = String(date.getSeconds()).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const secondsFormatted = String(date.getUTCSeconds()).padStart(2, '0');
 
         return `${year}-${month}-${day} ${hours}:${minutes}:${secondsFormatted}`;
     }
@@ -57,7 +50,7 @@ const MainHeader = () => {
                 </div>
                 <nav className="navigation">
                     {
-                        signature != null &&
+                        authInfo &&
                         <Button color="inherit" onClick={() => navigate("/analyzer")}
                                 variant={location === "/analyzer" ? 'contained' : undefined}>Analyzers</Button>
                     }
@@ -65,12 +58,12 @@ const MainHeader = () => {
                             variant={location === "/top-analyzers" ? 'contained' : undefined}>Public Top
                         Analyzers</Button>
                     {
-                        signature != null &&
+                        authInfo &&
                         <Button color="inherit" onClick={() => navigate("/manager")}
                                 variant={location === "/manager" ? 'contained' : undefined}>Managers</Button>
                     }
                     {
-                        signature != null &&
+                        authInfo &&
                         <Button color="inherit" onClick={() => navigate("/account")}
                                 variant={location === "/account" ? 'contained' : undefined}>Account</Button>
                     }
@@ -85,12 +78,12 @@ const MainHeader = () => {
                                 variant={location === "/monitoring" ? 'contained' : undefined}>Monitoring</Button>
                     }
                 </nav>
-                {address ? (
+                {authInfo ? (
                     <div className="user-info">
-                        <button onClick={disconnect}><span>{address}</span></button>
+                        <Button onClick={logout}><span>{authInfo.address}</span></Button>
                     </div>
                 ) : (
-                    <button onClick={connect}>Connect</button>
+                    <Button onClick={connect}>Connect</Button>
                 )}
             </header>
             <Divider sx={{bgcolor: 'eee'}}/>

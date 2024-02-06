@@ -2,7 +2,6 @@ package space.dawdawich.configuration
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
@@ -13,11 +12,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFilter
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import org.springframework.web.cors.CorsConfiguration
-import space.dawdawich.configuration.filter.WalletAuthenticationFilter
-import space.dawdawich.configuration.model.JWT
-import space.dawdawich.configuration.model.JwtAuthenticationToken
 import space.dawdawich.configuration.model.WalletAuthenticationRequest
 import space.dawdawich.configuration.provider.WalletAuthenticationProvider
 import space.dawdawich.utils.baseDecode

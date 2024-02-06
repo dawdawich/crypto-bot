@@ -18,6 +18,7 @@ import PowerOffIcon from "@mui/icons-material/PowerOff"
 import PowerOnIcon from "@mui/icons-material/Power"
 import {Delete} from "@mui/icons-material";
 import {webSocketManagerService} from "../../service/WebSocketService";
+import {useAuth} from "../../context/AuthContext";
 
 interface ManagerEditorPageProps extends RouteComponentProps<{ readonly managerId: string }> {
 }
@@ -39,17 +40,17 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
         }[]
     }>();
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
     }
 
     useEffect(() => {
-        fetchManagerData(authToken as string, props.params.managerId)
+        fetchManagerData(authInfo!, props.params.managerId)
             .then(data => setManager(data))
             .catch(error => setManagerFetchError(error));
-    }, [props.params.managerId, authToken]);
+    }, [props.params.managerId, authInfo]);
 
     useEffect(() => {
         if (!!manager && manager.status === 'ACTIVE') {
@@ -71,10 +72,10 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
 
     const changeManagerStatus = () => {
         manager!.status = manager!.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        updateManagerStatus(manager!.id, manager!.status, authToken as string)
+        updateManagerStatus(authInfo!, manager!.id, manager!.status)
             .then(result => {
                 if (result) {
-                    fetchManagerData(authToken as string, props.params.managerId)
+                    fetchManagerData(authInfo!, props.params.managerId)
                         .then(data => setManager(data));
                 }
             })
@@ -82,7 +83,7 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
     }
 
     const handleDeleteManager = () => {
-        deleteManager(manager!.id, authToken as string)
+        deleteManager(authInfo!, manager!.id)
             .then(result => {
                 if (result) {
                     navigate('/manager');

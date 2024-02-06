@@ -1,14 +1,15 @@
-import {Manager} from "../model/Manager";
 import {SERVER_HOST} from "./Constants";
+import {AuthInfo} from "../model/AuthInfo";
 
 const API_URL = `${SERVER_HOST}/trade-manager`;
 
-export const fetchManagersData = async (authToken: string) => {
+export const fetchManagersData = async (auth: AuthInfo) => {
     try {
         const response = await fetch(`${API_URL}`, {
             method: "GET",
             headers: {
-                'Authorization': `Bearer ${authToken}`,
+                'Account-Address': btoa(auth.address),
+                'Account-Address-Signature': btoa(auth.signature),
                 'Access-Control-Allow-Origin': '*'
             }
         });
@@ -22,12 +23,13 @@ export const fetchManagersData = async (authToken: string) => {
     throw new Error('Failed to fetch managers data');
 }
 
-export const fetchManagerData = async (authToken: string, managerId: string) => {
+export const fetchManagerData = async (auth: AuthInfo, managerId: string) => {
     try {
         const response = await fetch(`${API_URL}/${managerId}`, {
             method: "GET",
             headers: {
-                'Authorization': `Bearer ${authToken}`,
+                'Account-Address': btoa(auth.address),
+                'Account-Address-Signature': btoa(auth.signature),
                 'Access-Control-Allow-Origin': '*'
             }
         });
@@ -41,12 +43,13 @@ export const fetchManagerData = async (authToken: string, managerId: string) => 
     throw new Error('Failed to fetch manager data');
 }
 
-export const createManager = async (manager: any, authToken: string) => {
+export const createManager = async (auth: AuthInfo, manager: any) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
+            'Account-Address': btoa(auth.address),
+            'Account-Address-Signature': btoa(auth.signature),
             'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify(manager)
@@ -57,13 +60,14 @@ export const createManager = async (manager: any, authToken: string) => {
     throw new Error('Failed to create manager data');
 }
 
-export const updateManagerStatus = async (managerId: string, status: string, authToken: string) => {
+export const updateManagerStatus = async (auth: AuthInfo, managerId: string, status: string) => {
     try {
         const response = await fetch(`${API_URL}/${managerId}/status`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`,
+                'Account-Address': btoa(auth.address),
+                'Account-Address-Signature': btoa(auth.signature),
                 'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify({status})
@@ -78,12 +82,13 @@ export const updateManagerStatus = async (managerId: string, status: string, aut
     throw new Error('Failed to update manager data');
 }
 
-export const deleteManager = async (managerId: string, authToken: string) => {
+export const deleteManager = async (auth: AuthInfo, managerId: string) => {
     try {
         const response = await fetch(`${API_URL}/${managerId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${authToken}`,
+                'Account-Address': btoa(auth.address),
+                'Account-Address-Signature': btoa(auth.signature),
                 'Access-Control-Allow-Origin': '*'
             }
         });
@@ -95,25 +100,4 @@ export const deleteManager = async (managerId: string, authToken: string) => {
         throw error;
     }
     throw new Error('Failed to delete manager data');
-}
-
-export const updateManagerData = async (manager: Manager, authToken: string) => {
-    try {
-        const response = await fetch(`${API_URL}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`,
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify(manager)
-        });
-        if (response.ok) {
-            return true;
-        }
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-    throw new Error('Failed to update manager data');
 }

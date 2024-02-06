@@ -16,15 +16,17 @@ import {
 import React, {useEffect, useState} from "react";
 import {fetchSymbolsNameList} from "../../../service/SymbolService";
 import {createAnalyzer} from "../../../service/AnalyzerService";
+import {AuthInfo} from "../../../model/AuthInfo";
 
 
 interface CreateAnalyzerDialogProps {
+    auth: AuthInfo,
     open: boolean;
-    authToken: string;
+    authInfo: AuthInfo;
     onClose: (result: boolean) => void;
 }
 
-const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({open, authToken, onClose}) => {
+const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({auth, open, authInfo, onClose}) => {
     const [symbols, setSymbols] = useState<string[]>([])
     const [analyzerData, setAnalyzerData] = useState<AnalyzerModel>({
         public: false,
@@ -52,7 +54,7 @@ const CreateAnalyzerDialog: React.FC<CreateAnalyzerDialogProps> = ({open, authTo
     };
 
     const handleSubmit = () => {
-        createAnalyzer(analyzerData, authToken)
+        createAnalyzer(auth, analyzerData)
             .then(() => {
                 onClose(true)
             })

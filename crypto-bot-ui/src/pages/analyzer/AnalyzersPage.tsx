@@ -14,30 +14,31 @@ import {
 import {Analyzer} from "./model/Analyzer";
 import {useLocation} from "wouter";
 import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
+import {useAuth} from "../../context/AuthContext";
 
 const AnalyzersPage: React.FC = () => {
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [data, setData] = useState<Analyzer[]>([]);
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [dataSize, setDataSize] = useState(0);
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     const updateAnalyzersList = useCallback(() => {
-        fetchAnalyzersList(authToken as string, page, rowsPerPage)
+        fetchAnalyzersList(authInfo!, page, rowsPerPage)
             .then(data => {
                 setData(data.analyzers);
                 setDataSize(data.totalSize);
             })
             .catch(error => setError(error))
-    }, [authToken, page, rowsPerPage]);
+    }, [authInfo, page, rowsPerPage]);
 
     useEffect(() => {
         updateAnalyzersList();
@@ -55,13 +56,13 @@ const AnalyzersPage: React.FC = () => {
     };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
+        changeAnalyzerStatus(authInfo!, analyzer.id, !analyzer.isActive)
             .then(() => updateAnalyzersList())
             .catch((error) => setError(error));
     }
 
     const deleteItem = (id: string) => {
-        deleteAnalyzer(id, authToken as string)
+        deleteAnalyzer(authInfo!, id)
             .then(() => updateAnalyzersList())
             .catch((error) => setError(error));
     }
@@ -75,8 +76,9 @@ const AnalyzersPage: React.FC = () => {
                 <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create
                     New Analyzer</Button>
                 <CreateAnalyzerDialog
+                    auth={authInfo!}
                     open={isCreateDialogOpen}
-                    authToken={authToken as string}
+                    authInfo={authInfo!}
                     onClose={(result: boolean) => {
                         if (result) {
                             updateAnalyzersList();
@@ -108,7 +110,8 @@ const AnalyzersPage: React.FC = () => {
                                 key={analyzer.id}
                                 sx={{'&:last-child td, &:last-child th': {border: 0}}}
                             >
-                                <TableCell component="th" scope="row" onClick={() => navigate(`/analyzer/${analyzer.id}`)}>{analyzer.id}</TableCell>
+                                <TableCell component="th" scope="row"
+                                           onClick={() => navigate(`/analyzer/${analyzer.id}`)}>{analyzer.id}</TableCell>
                                 <TableCell align="left">{analyzer.diapason}</TableCell>
                                 <TableCell align="left">{analyzer.gridSize}</TableCell>
                                 <TableCell align="left">{analyzer.multiplayer}</TableCell>
@@ -131,12 +134,12 @@ const AnalyzersPage: React.FC = () => {
                     </TableBody>
                 </Table>
                 <TablePagination
-                  component="div"
-                  count={dataSize}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
+                    component="div"
+                    count={dataSize}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </TableContainer>
         </div>

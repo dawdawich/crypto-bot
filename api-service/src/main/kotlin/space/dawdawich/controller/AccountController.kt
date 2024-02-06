@@ -1,17 +1,16 @@
 package space.dawdawich.controller
 
 import okio.ByteString.Companion.decodeBase64
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
+import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.configuration.model.AccountDetails
-import space.dawdawich.controller.model.AccountResponse
+import space.dawdawich.configuration.model.WalletAuthenticationRequest
 import space.dawdawich.controller.model.ApiTokenResponse
-import space.dawdawich.controller.model.CreateAccountRequest
 import space.dawdawich.controller.model.CreateApiTokenRequest
 import space.dawdawich.service.AccountService
 

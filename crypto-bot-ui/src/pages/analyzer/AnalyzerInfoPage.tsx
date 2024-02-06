@@ -6,6 +6,7 @@ import {webSocketAnalyzerService} from "../../service/WebSocketService";
 import {Box, Card, CardContent, Grid, Typography} from "@mui/material";
 import PropertyCard from "./components/PropertyCard";
 import {roundToNearest} from "../../utils/number-utils";
+import {useAuth} from "../../context/AuthContext";
 
 interface AnalyzerInfoPageProps extends RouteComponentProps<{ readonly analyzerId: string }> {
 }
@@ -28,15 +29,15 @@ const AnalyzerInfoPage: React.FC<AnalyzerInfoPageProps> = (props: AnalyzerInfoPa
     const [analyzerFetchError, setAnalyzerFetchError] = useState<Error>();
     const [analyzerPositionInfo, setAnalyzerPositionInfo] = useState<JSX.Element[]>([]);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     useEffect(() => {
-        fetchAnalyzerData(props.params.analyzerId)
+        fetchAnalyzerData(authInfo!, props.params.analyzerId)
             .then(data => setAnalyzer(data))
             .catch(error => setAnalyzerFetchError(error))
     }, [props.params.analyzerId]);

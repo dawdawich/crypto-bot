@@ -1,4 +1,4 @@
-export type AuthInfo = {
-    accountId: string;
+export interface AuthInfo {
+    address: string;
     signature: string;
 }

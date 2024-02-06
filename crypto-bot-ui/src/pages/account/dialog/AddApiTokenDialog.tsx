@@ -14,14 +14,16 @@ import {
 } from "@mui/material";
 import {addApiToken} from "../../../service/AccountService";
 import {useLocation} from "wouter";
+import {AuthInfo} from "../../../model/AuthInfo";
 
 interface AddApiTokenDialogProps {
+    authInfo: AuthInfo;
     open: boolean;
     onClose: () => void;
     onCreate: (apiToken: ApiToken) => void;
 }
 
-const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, onCreate }) => {
+const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ authInfo, open, onClose, onCreate }) => {
     const markets = ["ByBit"];
 
     const [apiTokenData, setData] = useState<{
@@ -35,13 +37,6 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, on
         secretKey: null,
         test: null
     });
-    const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
-
-    if (!authToken) {
-        navigate('/');
-        window.location.reload();
-    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
@@ -52,7 +47,7 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({ open, onClose, on
     };
 
     const handleSubmit = () => {
-        addApiToken(apiTokenData, authToken as string)
+        addApiToken(apiTokenData, authInfo)
             .then((id) => {
                 onCreate({
                     id: id as string,

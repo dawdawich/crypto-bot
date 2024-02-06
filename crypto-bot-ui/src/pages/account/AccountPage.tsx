@@ -1,44 +1,45 @@
 import React, {useEffect, useState} from "react";
-import {Account} from "../../model/Account";
-import {deleteApiToken, fetchAccountInfo} from "../../service/AccountService";
+import {deleteApiToken, getApiTokens} from "../../service/AccountService";
 import {useLocation} from "wouter";
 import "../../css/AccountInfo.css";
 import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
 import {ApiToken} from "../../model/ApiToken";
 import {Button} from "@mui/material";
+import {useAuth} from "../../context/AuthContext";
 
 const AccountPage: React.FC = () => {
     const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
-    const [data, setData] = useState<Account | null>(null)
+    const [data, setData] = useState<ApiToken[]>([])
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
-    let address = localStorage.getItem('auth.address');
-    let signature = localStorage.getItem('auth.signature');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    console.log(authInfo)
+
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     useEffect(() => {
-        fetchAccountInfo({accountId: address as string, signature: signature as string})
+        getApiTokens(authInfo!)
             .then(res => setData(res))
             .catch(ex => setError(ex))
-    }, [authToken])
+    }, [authInfo])
 
     const handleNewApiToken = (apiToken: ApiToken) => {
-        if (data) {
-            data.tokens.push(apiToken);
-            setData(data);
+        if (Array.isArray(data)) {
+            setData([...data, apiToken]);
+        } else {
+            setData([apiToken]);
         }
     }
 
     const handleDeleteApiToken = (id: string) => {
-        deleteApiToken(id, authToken as string)
+        deleteApiToken(id, authInfo!)
             .then(() => {
                 if (data) {
-                    setData({...data, tokens: data.tokens.filter((token: ApiToken) => token.id !== id)});
+                    setData({...data.filter((token: ApiToken) => token.id !== id)});
                     console.log(JSON.stringify(data))
                 }
             })
@@ -60,8 +61,7 @@ const AccountPage: React.FC = () => {
             </div>
         );
     }
-    let date = new Date(data.createTime);
-    let apiTokensTable = data.tokens.length > 0 ?
+    let apiTokensTable = data.length > 0 ?
         <table className="material-table">
             <thead>
             <tr>
@@ -73,7 +73,7 @@ const AccountPage: React.FC = () => {
             </tr>
             </thead>
             <tbody>
-            {data.tokens.map((token: ApiToken) => (
+            {data.map((token: ApiToken) => (
                 <tr key={token.id}>
                     <td>{token.id}</td>
                     <td>{token.apiKey}</td>
@@ -92,21 +92,10 @@ const AccountPage: React.FC = () => {
 
     return (
         <div>
-            <div id="account-info">
-                <h2>Your Account Info</h2>
-                <div id="user-info">
-                    <p><strong>Username:</strong> <span id="username">{data.username}</span></p>
-                    <p><strong>Name:</strong> <span id="name">{data.name}</span></p>
-                    <p><strong>Surname:</strong> <span id="surname">{data.surname}</span></p>
-                    <p><strong>Email:</strong> <span id="email">{data.email}</span></p>
-                    <p><strong>Account Creation Date:</strong> <span
-                        id="creation-date">{date.toLocaleDateString() + ' : ' + date.toLocaleTimeString()}</span></p>
-                </div>
-                <Button variant='contained' size={'medium'} color={'primary'}
-                        onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
-                <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
-                                   onCreate={handleNewApiToken}/>
-            </div>
+            <Button variant='contained' size={'medium'} color={'primary'}
+                    onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
+            <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
+                               onCreate={handleNewApiToken} authInfo={authInfo!}/>
             {apiTokensTable}
         </div>
     );
