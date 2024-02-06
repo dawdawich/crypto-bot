@@ -31,7 +31,7 @@ const AnalyzersPage: React.FC = () => {
     }
 
     const updateAnalyzersList = useCallback(() => {
-        fetchAnalyzersList(authToken as string, page, rowsPerPage)
+        fetchAnalyzersList({authToken:authToken as string, page:page, size:rowsPerPage})
             .then(data => {
                 setData(data.analyzers);
                 setDataSize(data.totalSize);
@@ -55,13 +55,13 @@ const AnalyzersPage: React.FC = () => {
     };
 
     const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(analyzer.id, !analyzer.isActive, authToken as string)
+        changeAnalyzerStatus({id:analyzer.id, status:!analyzer.isActive ? 'activate' : 'deactivate', authToken:authToken as string})
             .then(() => updateAnalyzersList())
             .catch((error) => setError(error));
     }
 
     const deleteItem = (id: string) => {
-        deleteAnalyzer(id, authToken as string)
+        deleteAnalyzer({id:id, authToken:authToken as string})
             .then(() => updateAnalyzersList())
             .catch((error) => setError(error));
     }
