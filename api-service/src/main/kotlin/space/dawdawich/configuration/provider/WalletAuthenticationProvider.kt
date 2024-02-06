@@ -44,7 +44,7 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
         }
 
     private fun isSignatureValid(address: String, signature: String, salt: Long): Boolean {
-        val formattedNonce =
+        val formattedSalt =
             "Signature will be valid until:\n${formatter.format(Instant.ofEpochSecond(salt))}"
 
         val signatureBytes = Numeric.hexStringToByteArray(signature)
@@ -58,7 +58,7 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
         val data = Sign.SignatureData(v, r, s)
 
         return try {
-            Sign.signedPrefixedMessageToKey(formattedNonce.toByteArray(), data)
+            Sign.signedPrefixedMessageToKey(formattedSalt.toByteArray(), data)
                 .let { publicKey -> "0x${Keys.getAddress(publicKey)}" }
                 .let { restoredAddress -> address.equals(restoredAddress, ignoreCase = true) }
         } catch (e: SignatureException) {

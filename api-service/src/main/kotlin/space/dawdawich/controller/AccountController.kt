@@ -40,7 +40,7 @@ class AccountController(private val accountService: AccountService) {
 
     @GetMapping("/salt")
     fun requestSalt(@RequestHeader("Account-Address") address: String): ResponseEntity<String> = try {
-        ResponseEntity.ok(accountService.requestNonce(address.baseDecode()).toString())
+        ResponseEntity.ok(accountService.requestSalt(address.baseDecode()).toString())
     } catch (ex : IllegalArgumentException){
         ResponseEntity(HttpStatus.BAD_REQUEST)
     }

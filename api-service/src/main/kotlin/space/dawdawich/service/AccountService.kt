@@ -15,7 +15,7 @@ class AccountService(
     private val apiAccessTokenRepository: ApiAccessTokenRepository
 ) {
 
-    fun requestNonce(address: String): Long {
+    fun requestSalt(address: String): Long {
         val salt = (System.currentTimeMillis() / 1000)
         return accountRepository.save(
             accountRepository.findByIdOrNull(address)?.apply { saltValidUntil = salt }
