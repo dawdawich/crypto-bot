@@ -1,13 +1,14 @@
 import {SERVER_HOST} from "./Constants";
-import {fetchWrapper} from "../components/api/fetchWrapper";
 
 const API_URL = `${SERVER_HOST}/health-check`
 
 export const fetchHealthcheckReport = async (authToken: string) => {
-    const path = ``;
-    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-    const response = await request.methodGET(path);
-    //TODO: Handling response and errors in next steps
+    const response = await fetch(`${API_URL}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${authToken}`
+        }
+    });
     if (response.ok) {
         return await response.json();
     }

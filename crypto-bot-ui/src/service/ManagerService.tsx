@@ -1,16 +1,17 @@
 import {Manager} from "../model/Manager";
 import {SERVER_HOST} from "./Constants";
-import {fetchWrapper} from "../components/api/fetchWrapper";
-
 
 const API_URL = `${SERVER_HOST}/trade-manager`;
 
 export const fetchManagersData = async (authToken: string) => {
     try {
-        const path = ``;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodGET(path);
-        //TODO: Handling response and errors in next steps
+        const response = await fetch(`${API_URL}`, {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -23,10 +24,13 @@ export const fetchManagersData = async (authToken: string) => {
 
 export const fetchManagerData = async (authToken: string, managerId: string) => {
     try {
-        const path = `${managerId}`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodGET(path);
-        //TODO: Handling response and errors in next steps
+        const response = await fetch(`${API_URL}/${managerId}`, {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.ok) {
             return await response.json();
         }
@@ -38,10 +42,15 @@ export const fetchManagerData = async (authToken: string, managerId: string) => 
 }
 
 export const createManager = async (manager: any, authToken: string) => {
-    const path = ``;
-    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-    const response = await request.methodPOST(path, manager);
-    //TODO: Handling response and errors in next steps
+    const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(manager)
+    });
     if (response.ok) {
         return await response.text();
     }
@@ -50,10 +59,15 @@ export const createManager = async (manager: any, authToken: string) => {
 
 export const updateManagerStatus = async (managerId: string, status: string, authToken: string) => {
     try {
-        const path = `${managerId}/status`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodPUT(path, {status});
-        //TODO: Handling response and errors in next steps
+        const response = await fetch(`${API_URL}/${managerId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({status})
+        });
         if (response.ok) {
             return true;
         }
@@ -66,10 +80,13 @@ export const updateManagerStatus = async (managerId: string, status: string, aut
 
 export const deleteManager = async (managerId: string, authToken: string) => {
     try {
-        const path = `${managerId}`;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodDELETE(path);
-        //TODO: Handling response and errors in next steps
+        const response = await fetch(`${API_URL}/${managerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
         if (response.status === 204) {
             return true;
         }
@@ -82,10 +99,15 @@ export const deleteManager = async (managerId: string, authToken: string) => {
 
 export const updateManagerData = async (manager: Manager, authToken: string) => {
     try {
-        const path = ``;
-        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
-        const response = await request.methodPUT(path, manager);
-        //TODO: Handling response and errors in next steps
+        const response = await fetch(`${API_URL}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify(manager)
+        });
         if (response.ok) {
             return true;
         }
