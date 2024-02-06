@@ -60,10 +60,8 @@ class SecurityConfiguration {
             .csrf { customizer -> customizer.disable() }
             .authorizeHttpRequests {
                 it.apply {
-                    requestMatchers(HttpMethod.POST, "/account").permitAll()
-                    requestMatchers(HttpMethod.GET, "/account/nonce").permitAll()
-                    requestMatchers(HttpMethod.GET, "/account").authenticated()
-                    requestMatchers(HttpMethod.GET, "/account/api-token").authenticated()
+                    requestMatchers(HttpMethod.GET, "/account/salt").permitAll()
+                    requestMatchers("/account/**").authenticated()
                     requestMatchers("/analyzer").authenticated()
                     requestMatchers("/analyzer/bulk").hasAuthority("ADMIN")
                     requestMatchers("/analyzer/top20").permitAll()
