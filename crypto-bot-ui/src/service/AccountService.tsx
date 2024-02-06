@@ -1,6 +1,4 @@
 import {SERVER_HOST} from "./Constants";
-import {fetchWrapper} from "../components/api/fetchWrapper";
-import {FetchMethods} from "../components/api/type";
 import {AuthInfo} from "../model/AuthInfo";
 
 const API_URL = `${SERVER_HOST}/account`;
@@ -23,13 +21,14 @@ export const requestSalt = async (accountId: string) => {
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
     const encodedCredentials = btoa(`${email}:${password}`);
-    const header = {'Authorization': `Basic ${encodedCredentials}`}
-    const response = await fetchWrapper({
-        url: `${API_URL}/token`,
-        method: FetchMethods.GET,
-        headers: header
-    });
-    //TODO: Handling response and errors in next steps
+    const options = {
+        method: 'GET',
+        headers: {
+            'Authorization': `Basic ${encodedCredentials}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+    };
+    const response = await fetch(`${API_URL}/token`, options)
     if (!response.ok) {
         switch (response.status) {
             case 401:
@@ -64,12 +63,14 @@ export const fetchAccountInfo = async (auth: AuthInfo) => {
 
 export const createAccount = async (username: string, name: string, surname: string, email: string, password: string) => {
     const body = {username: username, name: name, surname: surname, email: email, password: password};
-    const response = await fetchWrapper({
-        url: `${API_URL}`,
-        method: FetchMethods.POST,
-        body: body
+    const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(body)
     });
-    //TODO: Handling response and errors in next steps
     if (!response.ok) {
         switch (response.status) {
             case 412:
@@ -93,7 +94,6 @@ export const getApiTokens = async (auth: AuthInfo) => {
             'Account-Address-Signature': btoa(auth.signature)
         }
     });
-    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.json();
     }
@@ -101,12 +101,15 @@ export const getApiTokens = async (auth: AuthInfo) => {
 }
 
 export const addApiToken = async (body: any, authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/api-token`,
-        method: FetchMethods.POST,
-        token: authToken
+    const response = await fetch(`${API_URL}/api-token`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(body)
     });
-    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.text();
     }
@@ -114,12 +117,13 @@ export const addApiToken = async (body: any, authToken: string) => {
 }
 
 export const deleteApiToken = async (id: string, authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/api-token/${id}`,
-        method: FetchMethods.DELETE,
-        token: authToken
+    const response = await fetch(`${API_URL}/api-token/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
     });
-    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return;
     }

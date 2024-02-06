@@ -20,7 +20,7 @@ const MonitoringPage: React.FC = () => {
     }
 
     useEffect(() => {
-        fetchHealthcheckReport({authToken:authToken as string})
+        fetchHealthcheckReport(authToken as string)
             .then(report => setData(report))
             .catch((error) => setError(error));
     }, [authToken]);

@@ -1,18 +1,16 @@
 import {SymbolModel} from "../model/SymbolModel";
 import {SERVER_HOST} from "./Constants";
-import {fetchWrapper} from "../components/api/fetchWrapper";
-import {FetchMethods} from "../components/api/type";
-
 
 const API_URL = `${SERVER_HOST}/symbol`
 
 export const fetchSymbolsList = async (authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}`,
-        method: FetchMethods.GET,
-        token: authToken,
+    const response = await fetch(`${API_URL}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        }
     });
-    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.json();
     }
@@ -20,11 +18,11 @@ export const fetchSymbolsList = async (authToken: string) => {
 }
 
 export const fetchSymbolsNameList = async () => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/names`,
-        method: FetchMethods.GET,
+    const response = await fetch(`${API_URL}/names`, {
+        headers: {
+            'Access-Control-Allow-Origin': '*'
+        }
     });
-    //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.json();
     }
@@ -32,10 +30,14 @@ export const fetchSymbolsNameList = async () => {
 }
 
 export const createSymbol = async (symbol: SymbolModel, authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/names`,
-        method: FetchMethods.POST,
-        body: symbol
+    const response = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+            'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify(symbol)
     });
     if (response.ok) {
         return;

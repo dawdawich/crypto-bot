@@ -8,7 +8,7 @@ const TopAnalyzersPage: React.FC = () => {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        fetchTopAnalyzersData({token:'123', analyzerId: '12', page:'path'})
+        fetchTopAnalyzersData()
             .then(data => setData(data))
             .catch(error => setError(error))
     }, []);
