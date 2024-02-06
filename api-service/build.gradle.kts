@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.spring.kafka)
     implementation(libs.spring.websocket)
 
+    implementation(libs.web3)
     implementation(libs.websocket)
     implementation(libs.jackson.kotlin.module)
     implementation(libs.kotlinx.serialization)

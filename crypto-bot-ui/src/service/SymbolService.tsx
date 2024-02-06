@@ -1,13 +1,15 @@
 import {SymbolModel} from "../model/SymbolModel";
 import {SERVER_HOST} from "./Constants";
+import {AuthInfo} from "../model/AuthInfo";
 
 const API_URL = `${SERVER_HOST}/symbol`
 
-export const fetchSymbolsList = async (authToken: string) => {
+export const fetchSymbolsList = async (auth: AuthInfo) => {
     const response = await fetch(`${API_URL}`, {
         method: 'GET',
         headers: {
-            Authorization: `Bearer ${authToken}`,
+            'Account-Address': btoa(auth.address),
+            'Account-Address-Signature': btoa(auth.signature),
             'Access-Control-Allow-Origin': '*'
         }
     });
@@ -29,12 +31,13 @@ export const fetchSymbolsNameList = async () => {
     throw new Error('Failed to fetch symbols list');
 }
 
-export const createSymbol = async (symbol: SymbolModel, authToken: string) => {
+export const createSymbol = async (auth: AuthInfo, symbol: SymbolModel) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            'Account-Address': btoa(auth.address),
+            'Account-Address-Signature': btoa(auth.signature),
             'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify(symbol)

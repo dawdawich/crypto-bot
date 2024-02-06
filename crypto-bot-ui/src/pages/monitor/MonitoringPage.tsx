@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useLocation} from "wouter";
 import {fetchHealthcheckReport} from "../../service/HealthcheckService";
 import {Card, CardContent, Typography} from "@mui/material";
+import {useAuth} from "../../context/AuthContext";
 
 const MonitoringPage: React.FC = () => {
     const [data, setData] = useState<{
@@ -12,18 +13,18 @@ const MonitoringPage: React.FC = () => {
     }>();
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     useEffect(() => {
-        fetchHealthcheckReport(authToken as string)
+        fetchHealthcheckReport(authInfo!)
             .then(report => setData(report))
             .catch((error) => setError(error));
-    }, [authToken]);
+    }, [authInfo]);
 
     const getPricesUpdateList = () => {
         if (data) {

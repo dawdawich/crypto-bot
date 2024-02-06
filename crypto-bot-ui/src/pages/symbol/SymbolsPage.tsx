@@ -5,27 +5,28 @@ import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, T
 import {Symbol} from "../../model/Symbol";
 import {SymbolModel} from "../../model/SymbolModel";
 import CreateSymbolDialog from "./dialog/CreateSymbolDialog";
+import {useAuth} from "../../context/AuthContext";
 
 const SymbolsPage: React.FC = () => {
     const [data, setData] = useState<Symbol[]>([]);
     const [error, setError] = useState<Error | null>(null);
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     useEffect(() => {
-        fetchSymbolsList(authToken as string)
+        fetchSymbolsList(authInfo!)
             .then(data => setData(data))
             .catch(error => setError(error))
-    }, [authToken]);
+    }, [authInfo]);
 
     const handleCreateSymbol = (symbol: SymbolModel) => {
-        createSymbol(symbol, localStorage.getItem('auth.token') as string).then(() => window.location.reload()); // TODO: Add error handling
+        createSymbol(authInfo!, symbol).then(() => window.location.reload()); // TODO: Add error handling
     };
 
     if (error) return <div>Error: {error.message}</div>

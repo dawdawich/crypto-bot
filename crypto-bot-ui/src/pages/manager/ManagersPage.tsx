@@ -4,6 +4,7 @@ import {Manager} from "../../model/Manager";
 import {fetchManagersData} from "../../service/ManagerService";
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import CreateManagerDialog from "./dialog/CreateManagerDialog";
+import {useAuth} from "../../context/AuthContext";
 
 const ManagersPage: React.FC = () => {
     const [isCreateManagerDialogOpen, setIsCreateManagerDialogOpen] = useState(false);
@@ -11,20 +12,18 @@ const ManagersPage: React.FC = () => {
     const [data, setData] = useState<Manager[]>([]);
     const [error, setError] = useState<Error | null>(null);
     const [, navigate] = useLocation();
-    const authToken = localStorage.getItem('auth.token');
+    const {authInfo} = useAuth();
 
-    if (!authToken) {
+    if (!authInfo) {
         navigate('/');
         window.location.reload();
     }
 
     const fetchData = useCallback(() => {
-        if (authToken) {
-            fetchManagersData(authToken as string)
-                .then(data => setData(data))
-                .catch(error => setError(error));
-        }
-    }, [authToken]);
+        fetchManagersData(authInfo!)
+            .then(data => setData(data))
+            .catch(error => setError(error));
+    }, [authInfo]);
 
     useEffect(() => {
         fetchData();
@@ -67,8 +66,10 @@ const ManagersPage: React.FC = () => {
     return (
         <div>
             <h1>Managers Page</h1>
-            <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setIsCreateManagerDialogOpen(true)}>Add Manager</Button>
-            <CreateManagerDialog open={isCreateManagerDialogOpen} onClose={() => setIsCreateManagerDialogOpen(false)} onCreate={createManagerAndUpdate} />
+            <Button variant='contained' size={'medium'} color={'primary'}
+                    onClick={() => setIsCreateManagerDialogOpen(true)}>Add Manager</Button>
+            <CreateManagerDialog open={isCreateManagerDialogOpen} onClose={() => setIsCreateManagerDialogOpen(false)}
+                                 onCreate={createManagerAndUpdate}/>
             {data.length === 0 ? null : dataTable}
         </div>
     );
