@@ -43,12 +43,13 @@ class SwitchStrategyRunner(
                 .run { createOrder(currentPrice) }
     }
 
-    // TODO direction, counter
     override fun getRuntimeInfo(): StrategyRuntimeInfoModel =
             SwitchStrategyRuntimeInfoModel(
                     id,
                     currentPrice,
                     position?.convertToInfo(),
+                    direction?.directionBoolean,
+                    counter
             )
 
     override fun getStrategyConfig() =
@@ -109,15 +110,16 @@ class SwitchStrategyRunner(
         }
     }
 
-    // TODO directionl boolean
     private fun comparePositionPriceAndCurrentPriceDependOnTrend(currentPrice: Double): Boolean {
         position?.let {
-            if (it.trend != direction) {
-                if (direction == Trend.SHORT) {
-                    val prof = it.calculateProfit(currentPrice) // TODO ASK HERE
-                    return prof > it.entryPrice
-                } else if (direction == Trend.LONG) {
-                    return currentPrice < it.entryPrice
+            if (direction != null) {
+                if (it.trend != direction) {
+                    if (!direction!!.directionBoolean) {
+                        val prof = it.calculateProfit(currentPrice) // TODO ASK HERE
+                        return prof > it.entryPrice
+                    } else if (direction!!.directionBoolean) {
+                        return currentPrice < it.entryPrice
+                    }
                 }
             }
         }

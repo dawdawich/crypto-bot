@@ -202,7 +202,9 @@ class Manager(
                         strategyConfig.switchCounterValue,
                         strategyConfig.coefficientBetweenOrders,
                         createSwitchOrderFunction = createSwitchOrderFunction
-                )
+                ) .apply {
+
+                }
             }
 
             else -> throw NoSuchElementException("No such strategy config")

@@ -1,8 +1,8 @@
 package space.dawdawich.strategy
 
-import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.model.analyzer.PositionModel
 import space.dawdawich.model.strategy.configModel.StrategyConfigModel
+import space.dawdawich.model.strategy.runtimeModel.StrategyRuntimeInfoModel
 import space.dawdawich.strategy.model.ClosePositionFunction
 import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.model.Position

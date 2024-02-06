@@ -7,5 +7,7 @@ import space.dawdawich.model.analyzer.PositionModel
 class SwitchStrategyRuntimeInfoModel(
     override val id: String,
     override val currentPrice: Double,
-    override val position: PositionModel?
-) : StrategyRuntimeInfoModel()
+    override val position: PositionModel?,
+    var directionBoolean: Boolean?,
+    var counter: Int,
+    ) : StrategyRuntimeInfoModel()
