@@ -1,18 +1,15 @@
 import {SERVER_HOST} from "./Constants";
 import {fetchWrapper} from "../components/api/fetchWrapper";
-import {FetchMethods} from "../components/api/type";
 
 const API_URL = `${SERVER_HOST}/account`;
 
 export const fetchAuthToken = async (email: string, password: string) => {
     // Base64 encode the email and password
     const encodedCredentials = btoa(`${email}:${password}`);
+    const path = `token`;
     const header = {'Authorization': `Basic ${encodedCredentials}`}
-    const response = await fetchWrapper({
-        url: `${API_URL}/token`,
-        method: FetchMethods.GET,
-        headers: header
-    });
+    const request = fetchWrapper({baseUrl: API_URL, headers: header});
+    const response = await request.methodGET(path);
     //TODO: Handling response and errors in next steps
     if (!response.ok) {
         switch (response.status) {
@@ -29,11 +26,9 @@ export const fetchAuthToken = async (email: string, password: string) => {
 
 export const fetchAccountInfo = async (authToken: string) => {
     try {
-        const response = await fetchWrapper({
-            url: `${API_URL}`,
-            method: FetchMethods.GET,
-            token: authToken
-        });
+        const path = ``;
+        const request = fetchWrapper({baseUrl: API_URL, token: authToken});
+        const response = await request.methodGET(path);
         //TODO: Handling response and errors in next steps
         if (response.ok) {
             return await response.json();
@@ -46,11 +41,9 @@ export const fetchAccountInfo = async (authToken: string) => {
 
 export const createAccount = async (username: string, name: string, surname: string, email: string, password: string) => {
     const body = {username: username, name: name, surname: surname, email: email, password: password};
-    const response = await fetchWrapper({
-        url: `${API_URL}`,
-        method: FetchMethods.POST,
-        body: body
-    });
+    const path = ``;
+    const request = fetchWrapper({baseUrl: API_URL});
+    const response = await request.methodPOST(path, body);
     //TODO: Handling response and errors in next steps
     if (!response.ok) {
         switch (response.status) {
@@ -68,11 +61,9 @@ export const createAccount = async (username: string, name: string, surname: str
 }
 
 export const getApiTokens = async (authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/api-token`,
-        method: FetchMethods.GET,
-        token: authToken
-    });
+    const path = `api-token`;
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
+    const response = await request.methodGET(path);
     //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.json();
@@ -81,11 +72,9 @@ export const getApiTokens = async (authToken: string) => {
 }
 
 export const addApiToken = async (body: any, authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/api-token`,
-        method: FetchMethods.POST,
-        token: authToken
-    });
+    const path = `api-token`;
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
+    const response = await request.methodPOST(path, body);
     //TODO: Handling response and errors in next steps
     if (response.ok) {
         return await response.text();
@@ -94,11 +83,9 @@ export const addApiToken = async (body: any, authToken: string) => {
 }
 
 export const deleteApiToken = async (id: string, authToken: string) => {
-    const response = await fetchWrapper({
-        url: `${API_URL}/api-token/${id}`,
-        method: FetchMethods.DELETE,
-        token: authToken
-    });
+    const path = `api-token/${id}`;
+    const request = fetchWrapper({baseUrl: API_URL, token: authToken});
+    const response = await request.methodDELETE(path);
     //TODO: Handling response and errors in next steps
     if (response.ok) {
         return;
