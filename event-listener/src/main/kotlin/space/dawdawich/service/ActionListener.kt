@@ -29,7 +29,7 @@ class ActionListener(
         val symbols = allSymbols.filter { !it.testServer }
         val testSymbols = allSymbols.filter { it.testServer }
         initializeTickerTopics(BYBIT_TICKER_TOPIC, symbols, byBitClient)
-        initializeTickerTopics(BYBIT_TICKER_TOPIC, testSymbols, byBitTestClient)
+        initializeTickerTopics(BYBIT_TEST_TICKER_TOPIC, testSymbols, byBitTestClient)
     }
 
     @KafkaListener(topics = [SYMBOL_REINITIALIZE_TOPIC])
