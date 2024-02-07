@@ -133,7 +133,7 @@ class AnalyzerService(
             PriceTickerListener(
                 kafkaListenerContainerFactory.createContainer(
                     TopicPartitionOffset(
-                        BYBIT_TEST_TICKER_TOPIC,
+                        BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
                         partition,
                         TopicPartitionOffset.SeekPosition.END
                     )
