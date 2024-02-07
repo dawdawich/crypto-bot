@@ -11,7 +11,7 @@ import javax.crypto.spec.SecretKeySpec
 
 @Component
 @Primary
-open class PrivateHttpClientFactory(private val httpClient: HttpClient, private val jsonPath: ParseContext) {
+class PrivateHttpClientFactory(private val httpClient: HttpClient, private val jsonPath: ParseContext) {
     companion object {
         const val BYBIT_SERVER_URL = "https://api.bybit.com/v5"
         const val BYBIT_TEST_SERVER_URL = "https://api-testnet.bybit.com/v5"

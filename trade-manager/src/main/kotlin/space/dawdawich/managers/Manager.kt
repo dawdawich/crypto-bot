@@ -75,6 +75,7 @@ class Manager(
                 }
             }
 
+            logger { it.info { "Initialize Manager with analyzer '${strategyConfig!!.id}'" } }
             setupStrategyRunner(strategyConfig!!)
             lastRefreshTime = System.currentTimeMillis()
         }
@@ -139,10 +140,13 @@ class Manager(
 
     private fun refreshStrategyConfig() {
         if ((System.currentTimeMillis() - lastRefreshTime) > tradeManagerData.refreshAnalyzerMinutes.minutes.inWholeMilliseconds) {
+            logger { it.info { "Try to find more suitable analyzer" } }
             getAnalyzerConfig(strategyRunner.id)?.let { config ->
+                logger { it.info { "Found more suitable analyzer '${config.id}'" } }
                 deactivate(true)
                 setupStrategyRunner(config)
             }
+            lastRefreshTime = System.currentTimeMillis()
         }
     }
 
@@ -214,7 +218,9 @@ class Manager(
                         fillOrderCallback = { orderId ->
                             this@apply.fillOrder(orderId)
                         }
+                        logger { it.info { "Complete initializing websocket" } }
                         if (!isOpen) {
+                            logger { it.info { "Connecting to web socket" } }
                             connect()
                         }
                     }
