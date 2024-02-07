@@ -14,7 +14,7 @@ class TradeManagerService(
     private val tradeManagerRepository: TradeManagerRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val jsonKafkaTemplate: KafkaTemplate<String, TradeManagerDocument>,
-    ) {
+) {
 
     fun createNewTraderManager(
         apiTokenId: String,
@@ -22,24 +22,25 @@ class TradeManagerService(
         customAnalyzerId: String,
         stopLoss: Int?,
         takeProfit: Int?,
-        accountId: String
-    ): String {
-        return tradeManagerRepository.insert(
-            TradeManagerDocument(
-                UUID.randomUUID().toString(),
-                accountId,
-                apiTokenId,
-                customAnalyzerId = customAnalyzerId,
-                status = status,
-                stopLoss = stopLoss,
-                takeProfit = takeProfit
-            )
-        ).id
-    }
+        accountId: String,
+    ): String = tradeManagerRepository.insert(
+        TradeManagerDocument(
+            UUID.randomUUID().toString(),
+            accountId,
+            apiTokenId,
+            customAnalyzerId = customAnalyzerId,
+            status = status,
+            stopLoss = stopLoss,
+            takeProfit = takeProfit
+        )
+    ).apply {
+        if (status == ManagerStatus.ACTIVE) {
+            jsonKafkaTemplate.send(ACTIVATE_MANAGER_TOPIC, this)
+        }
+    }.id
 
-    fun findAllByAccountId(accountId: String): List<TradeManagerDocument> {
-        return tradeManagerRepository.findAllByAccountId(accountId)
-    }
+    fun findAllByAccountId(accountId: String): List<TradeManagerDocument> =
+        tradeManagerRepository.findAllByAccountId(accountId)
 
     fun updateTradeManagerStatus(managerId: String, accountId: String, status: ManagerStatus) {
         tradeManagerRepository.findByIdAndAccountId(managerId, accountId)?.let {
@@ -54,9 +55,8 @@ class TradeManagerService(
         }
     }
 
-    fun findManager(managerId: String, accountId: String): TradeManagerDocument? {
-        return tradeManagerRepository.findByIdAndAccountId(managerId, accountId)
-    }
+    fun findManager(managerId: String, accountId: String): TradeManagerDocument? =
+        tradeManagerRepository.findByIdAndAccountId(managerId, accountId)
 
     fun updateTradeManger(manager: TradeManagerDocument) {
         tradeManagerRepository.save(manager.apply { updateTime = System.currentTimeMillis() })

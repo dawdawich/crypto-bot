@@ -13,6 +13,7 @@ data class TradeManagerDocument(
     var apiTokensId: String,
     var money: Double = 0.0,
     var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
+    var refreshAnalyzerMinutes: Int = 30,
     var customAnalyzerId: String = "",
     var status: ManagerStatus = ManagerStatus.INACTIVE,
     val stopLoss: Int? = null,

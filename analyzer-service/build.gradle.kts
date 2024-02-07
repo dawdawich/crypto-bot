@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.spring.kafka)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.jackson.kotlin.module)
 }
 
 tasks.test {

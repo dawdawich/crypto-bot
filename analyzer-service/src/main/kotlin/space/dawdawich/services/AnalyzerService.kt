@@ -7,8 +7,6 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.annotation.PartitionOffset
-import org.springframework.kafka.annotation.TopicPartition
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.listener.ConsumerSeekAware
 import org.springframework.kafka.support.TopicPartitionOffset
@@ -17,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.constants.*
+import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
@@ -29,7 +28,7 @@ class AnalyzerService(
     private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
     private val symbolRepository: SymbolRepository,
     private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val mongoTemplate: MongoTemplate
+    private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
@@ -45,7 +44,7 @@ class AnalyzerService(
 
     override fun onPartitionsAssigned(
         assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
-        callback: ConsumerSeekAware.ConsumerSeekCallback
+        callback: ConsumerSeekAware.ConsumerSeekCallback,
     ) {
         callback.seekToEnd(assignments.keys)
     }
@@ -79,15 +78,24 @@ class AnalyzerService(
         analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
 
     @KafkaListener(
-        topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC],
+        topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
         containerFactory = "kafkaListenerReplayingContainerFactory"
     )
-    @SendTo(RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC)
-    fun requestAnalyzerStrategyConfig(accountId: String) =
-        analyzers
-            .filter { analyzer -> analyzer.accountId == accountId }
-            .maxByOrNull(Analyzer::getMoney)
-            ?.getStrategyConfig()
+    @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+    fun requestMostProfitableAnalyzer(request: String): StrategyConfigModel? {
+        val splitRequest = request.split(":").toTypedArray()
+        var accountAnalyzers = analyzers.filter { it.accountId == splitRequest[0] }.toList()
+        val maxMoney = accountAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
+        accountAnalyzers = accountAnalyzers.filter { it.getMoney() == maxMoney }
+        if (splitRequest[1].isBlank() || (splitRequest[1].isNotBlank() && accountAnalyzers.none { it.id == splitRequest[1] })) {
+            return accountAnalyzers
+                .map { it.getStrategyConfig() }
+                .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                .minByOrNull { it.multiplier }
+        }
+        return null
+    }
+
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {

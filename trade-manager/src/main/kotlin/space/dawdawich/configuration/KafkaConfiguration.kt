@@ -2,6 +2,7 @@ package space.dawdawich.configuration
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.serialization.ListDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
@@ -13,12 +14,11 @@ import org.springframework.kafka.listener.ContainerProperties
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
-import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
+import space.dawdawich.constants.RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
-import space.dawdawich.repositories.entity.TradeManagerDocument
 
 
 @Configuration
@@ -41,7 +41,6 @@ class KafkaConfiguration {
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
-        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "manager_ticker_group"
         configProps[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
         return DefaultKafkaConsumerFactory(configProps)
     }
@@ -82,9 +81,9 @@ class KafkaConfiguration {
     @Bean
     fun strategyConfigReplyingTemplate(
         producerFactory: ProducerFactory<String, String>,
-        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyConfigModel>
+        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyConfigModel?>
     ) =
-        replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+        replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
 
     @Bean
     fun strategyRuntimeDataReplyingTemplate(

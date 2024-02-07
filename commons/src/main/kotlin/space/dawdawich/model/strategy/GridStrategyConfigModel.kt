@@ -1,5 +1,8 @@
 package space.dawdawich.model.strategy
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 class GridStrategyConfigModel(
     override val id: String,
     override val symbol: String,

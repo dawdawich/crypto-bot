@@ -71,7 +71,7 @@ class AnalyzerService(
                 active
             )
             gridTableAnalyzerRepository.insert(gridTableAnalyzerDocument)
-            if (public) {
+            if (active) {
                 kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
             }
         }

@@ -45,7 +45,7 @@ class TradeManagerService(
         }
     }
 
-    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
+    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group")
     fun deactivateManager(managerId: String) {
         deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
     }
