@@ -99,6 +99,7 @@ class ByBitWebSocketClient(
                                     currentCumRealizedPnL - previousCumRealizedPnL
                                 ) else null
                             }
+                        logger.info { "Get position data to update: $positionsToUpdate" }
                         positionUpdateCallback?.invoke(positionsToUpdate)
                     } else if (topic == "order.linear") {
                         response.read<List<Map<String, Any>>>("\$.data")
@@ -114,6 +115,7 @@ class ByBitWebSocketClient(
                                 }
                             }
                             .forEach { order ->
+                                logger.info { "Get order data to update: '${order.first}'; filled: '${order.second}'" }
                                 fillOrderCallback?.invoke(order.first)
                             }
                     }
@@ -125,6 +127,7 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         if (remote) {
+            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$reason'" }
             signatureWithExpiration = getAuthData()
             GlobalScope.launch { reconnect() }
         }
