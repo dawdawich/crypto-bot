@@ -4,7 +4,7 @@ class Position(
     var entryPrice: Double,
     var size: Double,
     val trend: Trend,
-    realizedPnL: Double? = null
+    realizedPnL: Double? = null,
 ) {
     private var realizedPnL = -(entryPrice * 0.00055 * size)
 
@@ -31,6 +31,16 @@ class Position(
     fun calculateProfit(currentPrice: Double): Double {
         val profitPerUnit = if (trend == Trend.SHORT) currentPrice - entryPrice else entryPrice - currentPrice
         return (profitPerUnit - (currentPrice - entryPrice) * 0.00055) * size + realizedPnL
+    }
+
+    fun calculateReduceOrder(orderPrice: Double, orderSize: Double, orderTrend: Trend): Double {
+        return if (orderTrend != trend) {
+            val toReduce = if (orderSize > size) size else orderSize
+            val profit = if (orderTrend == Trend.SHORT) orderPrice - entryPrice else entryPrice - orderPrice
+            (profit - orderPrice * 0.00055) * toReduce
+        } else {
+            0.0
+        }
     }
 
     fun getPositionValue(): Double = entryPrice * size

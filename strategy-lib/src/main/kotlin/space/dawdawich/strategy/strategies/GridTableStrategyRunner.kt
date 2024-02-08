@@ -2,7 +2,6 @@ package space.dawdawich.strategy.strategies
 
 import mu.KLogger
 import mu.KotlinLogging
-import org.slf4j.LoggerFactory
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.strategy.model.CreateOrderFunction
@@ -14,7 +13,6 @@ import space.dawdawich.strategy.model.Position
 import space.dawdawich.strategy.model.Trend
 import space.dawdawich.utils.plusPercent
 import java.util.UUID
-import java.util.logging.Logger
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 
@@ -189,16 +187,16 @@ class GridTableStrategyRunner(
                 .filter { it.value == null }
                 .map { it.key }
                 .forEach { inPrice ->
-                    val isLong = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
+                    val orderTrend = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / inPrice
 
                     logger.info { "Want to create order at price '$inPrice'" }
 
-                    if (position?.let { pos ->
-                            val prof =
-                                if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
-                            (prof - pos.entryPrice * 0.00055 - inPrice * 0.00055) * qty > 0
-                        } == false) {
+                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(inPrice, qty, orderTrend) ?: 0.0) < 0) {
+                        return@forEach
+                    }
+
+                    if (((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier > money) {
                         return@forEach
                     }
 
@@ -208,9 +206,9 @@ class GridTableStrategyRunner(
                         inPrice,
                         symbol,
                         qty,
-                        inPrice - step * isLong.direction,
-                        inPrice + step * isLong.direction,
-                        isLong
+                        inPrice - step * orderTrend.direction,
+                        inPrice + step * orderTrend.direction,
+                        orderTrend
                     )
 
                     logger.info { "Order creation result '$order'" }
