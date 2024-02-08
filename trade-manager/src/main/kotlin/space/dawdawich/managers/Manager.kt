@@ -243,6 +243,10 @@ class Manager(
             try {
                 val price = message.value().toDouble()
                 if (!isPriceInBounds(price)) {
+                    logger {
+                        val (minPrice, maxPrice) = getPriceBounds()
+                        it.info { "Price not in price bound. Min Price: '$minPrice'; Max Price: '$maxPrice'; Current: '$price'" }
+                    }
                     val runtimeData = replayingStrategyDataKafkaTemplate.sendAndReceive(
                         ProducerRecord(
                             REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, strategyConfig.id

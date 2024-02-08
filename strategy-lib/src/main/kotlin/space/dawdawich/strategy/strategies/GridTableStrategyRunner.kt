@@ -76,6 +76,8 @@ class GridTableStrategyRunner(
 
     fun isPriceInBounds(price: Double) = price in minPrice..maxPrice
 
+    fun getPriceBounds() = minPrice to maxPrice
+
     override fun getRuntimeInfo() = GridTableStrategyRuntimeInfoModel(
         id,
         orderPriceGrid.keys,
