@@ -123,6 +123,7 @@ class Manager(
             if (listener?.isRunning == true) {
                 listener?.stop()
             }
+            logger { it.info { "Manager successfully stopped" } }
         }
     }
 
