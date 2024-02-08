@@ -230,7 +230,7 @@ class Manager(
                         logger { it.info { "Complete initializing websocket" } }
                         if (!isOpen) {
                             logger { it.info { "Connecting to web socket" } }
-                            connect()
+                            connectBlocking()
                         }
                     }
                     listener = priceListenerFactory.getPriceListener(symbol, true).apply {
@@ -296,7 +296,7 @@ class Manager(
                         logger {
                             it.info { "WebSocket connection is closed. Reconnecting..." }
                         }
-                        webSocket.reconnect()
+                        webSocket.reconnectBlocking()
                     }
                 }
                 refreshStrategyConfig()
