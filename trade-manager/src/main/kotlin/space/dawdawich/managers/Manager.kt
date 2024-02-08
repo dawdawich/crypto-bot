@@ -165,7 +165,7 @@ class Manager(
                 trend: Trend,
             ->
             val orderId = UUID.randomUUID().toString()
-            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'" } }
+            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $qty; symbol: $orderSymbol" } }
             val isSuccess =
                 runBlocking {
                     bybitService.createOrder(
