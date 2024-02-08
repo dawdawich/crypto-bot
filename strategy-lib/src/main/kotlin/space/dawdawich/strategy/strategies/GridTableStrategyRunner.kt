@@ -120,10 +120,12 @@ class GridTableStrategyRunner(
 
             position?.let { position ->
                 if (position.size > 0.0) {
-                    moneyWithProfit =
-                        money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
+                    val moneyWithProfit =
+                        money + position.calculateProfit(currentPrice)
                     if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
-                        money = moneyWithProfit
+                        if (simulateTradeOperations) {
+                            money = moneyWithProfit
+                        }
                         closePositionFunction.invoke()
                     }
                 }
@@ -158,7 +160,9 @@ class GridTableStrategyRunner(
 
     private fun checkPriceForSetupBounds(currentPrice: Double) {
         if (currentPrice !in minPrice..maxPrice && priceOutOfDiapasonCounter++ > 30) {
-            money += position?.calculateProfit(currentPrice) ?: 0.0
+            if (simulateTradeOperations) {
+                money += position?.calculateProfit(currentPrice) ?: 0.0
+            }
             position = null
 
             setUpPrices(currentPrice)
@@ -171,10 +175,10 @@ class GridTableStrategyRunner(
     private fun processOrders(currentPrice: Double, previousPrice: Double) {
         val moneyPerOrder = money / gridSize
 
-        if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money && position?.outOfMoney != true) {
+        if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money) {
             orderPriceGrid.entries
                 .asSequence()
-                .filter { (it.key - currentPrice).absoluteValue > priceMinStep }
+                .filter { (it.key - currentPrice).absoluteValue > step }
                 .sortedBy { (it.key - currentPrice).absoluteValue }
                 .take(2)
                 .filter { it.value == null }
@@ -191,11 +195,11 @@ class GridTableStrategyRunner(
 
                     val expectedPositionValue = ((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier
 
-                    if (orderTrend != position?.trend && expectedPositionValue > money.plusPercent(-1)) {
+                    if (orderTrend != position?.trend && expectedPositionValue > money.plusPercent(-5)) {
                         return@forEach
                     }
 
-                    if (orderTrend == position?.trend && expectedPositionValue > money.plusPercent(-5)) {
+                    if (orderTrend == position?.trend && expectedPositionValue > money.plusPercent(-10)) {
                         return@forEach
                     }
 
@@ -226,7 +230,7 @@ class GridTableStrategyRunner(
                 }
             } else if (order.isPriceOutOfRefreshBorder(currentPrice)) {
                 order.isFilled = false
-                orderPriceGrid[orderPriceGrid.entries.first { it.value == order }.key] = null
+                orderPriceGrid[order.inPrice] = null
             }
         }
     }
