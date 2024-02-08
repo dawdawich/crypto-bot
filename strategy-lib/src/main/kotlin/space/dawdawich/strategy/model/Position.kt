@@ -7,6 +7,7 @@ class Position(
     realizedPnL: Double? = null,
 ) {
     private var realizedPnL = -(entryPrice * 0.00055 * size)
+    var outOfMoney = false
 
     init {
         realizedPnL?.let {

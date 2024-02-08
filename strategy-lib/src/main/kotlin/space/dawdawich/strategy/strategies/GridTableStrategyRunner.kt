@@ -1,5 +1,6 @@
 package space.dawdawich.strategy.strategies
 
+import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.strategy.StrategyRunner
@@ -170,7 +171,7 @@ class GridTableStrategyRunner(
     private fun processOrders(currentPrice: Double, previousPrice: Double) {
         val moneyPerOrder = money / gridSize
 
-        if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money) {
+        if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money && position?.outOfMoney != true) {
             orderPriceGrid.entries
                 .asSequence()
                 .filter { (it.key - currentPrice).absoluteValue > priceMinStep }
@@ -182,7 +183,9 @@ class GridTableStrategyRunner(
                     val orderTrend = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / inPrice
 
-                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(inPrice, qty, orderTrend) ?: 0.0) < 0) {
+                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(inPrice, qty, orderTrend)
+                            ?: 0.0) < 0
+                    ) {
                         return@forEach
                     }
 
@@ -190,16 +193,21 @@ class GridTableStrategyRunner(
                         return@forEach
                     }
 
-                    val order = createOrderFunction(
-                        inPrice,
-                        symbol,
-                        qty,
-                        inPrice - step * orderTrend.direction,
-                        inPrice + step * orderTrend.direction,
-                        orderTrend
-                    )
-
-                    orderPriceGrid[inPrice] = order
+                    orderPriceGrid[inPrice] = try {
+                        createOrderFunction(
+                            inPrice,
+                            symbol,
+                            qty,
+                            inPrice - step * orderTrend.direction,
+                            inPrice + step * orderTrend.direction,
+                            orderTrend
+                        )
+                    } catch (ex: InsufficientBalanceException) {
+                        if (!simulateTradeOperations) {
+                            position?.outOfMoney = true
+                        }
+                        null
+                    }
                 }
         }
 

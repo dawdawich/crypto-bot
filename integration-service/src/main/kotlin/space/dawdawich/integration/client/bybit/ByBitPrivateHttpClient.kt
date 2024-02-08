@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mu.KotlinLogging
+import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
@@ -72,6 +73,7 @@ class ByBitPrivateHttpClient(
                     cancelAllOrder(symbol)
                     return createOrder(symbol, entryPrice, qty, isLong, orderId)
                 }
+                110007 -> throw InsufficientBalanceException()
 
                 else -> {
                     throw UnknownRetCodeException(returnCode)
