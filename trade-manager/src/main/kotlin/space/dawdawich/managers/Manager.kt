@@ -165,13 +165,14 @@ class Manager(
                 trend: Trend,
             ->
             val orderId = UUID.randomUUID().toString()
-            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $qty; symbol: $orderSymbol" } }
+            val orderQty = qty.trimToStep(strategyConfig.minQtyStep)
+            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $orderQty; symbol: $orderSymbol" } }
             val isSuccess =
                 runBlocking {
                     bybitService.createOrder(
                         orderSymbol,
                         inPrice,
-                        qty.trimToStep(strategyConfig.minQtyStep),
+                        orderQty,
                         trend.directionBoolean,
                         orderId
                     )
