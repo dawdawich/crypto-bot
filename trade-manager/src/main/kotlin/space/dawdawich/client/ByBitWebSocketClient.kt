@@ -125,7 +125,7 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         if (remote) {
-            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$reason'" }
+            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
             GlobalScope.launch { reconnect() }
         }
     }
@@ -134,7 +134,7 @@ class ByBitWebSocketClient(
         logger.error(ex) { "Failed to listen websocket" }
     }
 
-    fun subscribe() {
+    private fun subscribe() {
         val signatureWithExpiration: Pair<String, Long> = getAuthData()
         val operationRequest = JSONObject(
             mapOf(

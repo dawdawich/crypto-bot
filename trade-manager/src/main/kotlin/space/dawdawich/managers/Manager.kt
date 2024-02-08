@@ -299,6 +299,7 @@ class Manager(
                 }
                 refreshStrategyConfig()
             } catch (ex: Exception) {
+                logger { it.warn(ex) { "Error occurred." } }
                 deactivate()
                 crashPostAction.invoke(ex)
             }
