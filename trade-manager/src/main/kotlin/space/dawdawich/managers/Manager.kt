@@ -293,7 +293,7 @@ class Manager(
                                 currentPrice = price
                             } catch (ex: InvalidSignatureException) {
                                 logger { it.warn { "Signature become invalid" } }
-                                webSocket.subscribe()
+                                webSocket.reconnectBlocking()
                             }
                         }
                     }
