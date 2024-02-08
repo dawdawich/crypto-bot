@@ -110,6 +110,7 @@ class SwitchStrategyRunner(
         }
     }
 
+    // TODO враховувати комісію
     private fun comparePositionPriceAndCurrentPriceDependOnTrend(currentPrice: Double): Boolean {
         position?.let {
             if (direction != null) {

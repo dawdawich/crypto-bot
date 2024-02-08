@@ -189,7 +189,7 @@ class Manager(
                     }
                 }
             }
-
+// TODO add SwitchStrategyRunner
             is SwitchStrategyConfigModel -> {
                 SwitchStrategyRunner(
                         strategyConfig.symbol,
