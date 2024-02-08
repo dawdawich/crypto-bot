@@ -53,6 +53,7 @@ class Manager(
 
     private var currentPrice: Double by Delegates.observable(0.0) { _, oldPrice, newPrice ->
         if (oldPrice > 0 && newPrice > 0) {
+            logger { it.info { "Accept price change. old price: '$oldPrice'; new price: '$newPrice'" } }
             strategyRunner.acceptPriceChange(oldPrice, newPrice)
         }
     }

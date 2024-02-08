@@ -30,7 +30,7 @@ class GridTableStrategyRunner(
     private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
-    id: String = UUID.randomUUID().toString()
+    id: String = UUID.randomUUID().toString(),
 ) : StrategyRunner(
     money,
     multiplier,
@@ -41,6 +41,7 @@ class GridTableStrategyRunner(
     simulateTradeOperations,
     id
 ) {
+    private val synchronizeObject: Any = Any()
     private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
     private var minPrice: Double = -1.0
     private var maxPrice: Double = -1.0
@@ -52,8 +53,10 @@ class GridTableStrategyRunner(
         private set
 
     fun fillOrder(orderId: String) {
-        if (!simulateTradeOperations) {
-            orderPriceGrid.values.filterNotNull().find { order -> order.id == orderId }?.isFilled = true
+        synchronized(synchronizeObject) {
+            if (!simulateTradeOperations) {
+                orderPriceGrid.values.filterNotNull().find { order -> order.id == orderId }?.isFilled = true
+            }
         }
     }
 
@@ -62,7 +65,7 @@ class GridTableStrategyRunner(
         minPrice: Double,
         maxPrice: Double,
         step: Double,
-        orderPrices: Set<Double>
+        orderPrices: Set<Double>,
     ) {
         this.middlePrice = middlePrice
         this.minPrice = minPrice
@@ -103,27 +106,28 @@ class GridTableStrategyRunner(
             orderPriceGrid.keys
         )
 
-    @Synchronized
     override fun acceptPriceChange(previousPrise: Double, currentPrice: Double) {
-        this.currentPrice = currentPrice
+        synchronized(synchronizeObject) {
+            this.currentPrice = currentPrice
 
-        if (simulateTradeOperations) {
-            if (minPrice <= 0.0 && maxPrice <= 0.0) {
-                setUpPrices(currentPrice)
+            if (simulateTradeOperations) {
+                if (minPrice <= 0.0 && maxPrice <= 0.0) {
+                    setUpPrices(currentPrice)
+                }
+
+                checkPriceForSetupBounds(currentPrice)
             }
 
-            checkPriceForSetupBounds(currentPrice)
-        }
+            processOrders(currentPrice, previousPrise)
 
-        processOrders(currentPrice, previousPrise)
-
-        position?.let { position ->
-            if (position.size > 0.0) {
-                moneyWithProfit =
-                    money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
-                if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
-                    money = moneyWithProfit
-                    closePositionFunction.invoke()
+            position?.let { position ->
+                if (position.size > 0.0) {
+                    moneyWithProfit =
+                        money + position.calculateProfit(currentPrice) // Process data to update in db including calculation profits/loses
+                    if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
+                        money = moneyWithProfit
+                        closePositionFunction.invoke()
+                    }
                 }
             }
         }
