@@ -214,6 +214,7 @@ class Manager(
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
                         }
+                        webSocket.resetCumRealizedPnL()
                     }
                     with(webSocket) {
                         positionUpdateCallback = { position ->
