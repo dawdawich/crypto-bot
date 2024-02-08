@@ -60,10 +60,11 @@ class Manager(
 
     private var lastRefreshTime = System.currentTimeMillis()
     private var listener: ConcurrentMessageListenerContainer<String, String>? = null
-    private var active: Boolean = true
     private lateinit var strategyRunner: StrategyRunner
-
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
+
+    var active: Boolean = true
+        private set
 
     init {
         var strategyConfig: StrategyConfigModel? = null
@@ -280,7 +281,7 @@ class Manager(
                                 data.minPrice,
                                 data.maxPrice,
                                 data.step,
-                                data.prices
+                                data.prices.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                             )
                         }
                     }
@@ -297,6 +298,4 @@ class Manager(
                 crashPostAction.invoke(ex)
             }
         }
-
-    fun isActive() = active
 }

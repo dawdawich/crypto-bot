@@ -53,7 +53,7 @@ class TradeManagerService(
     fun deactivateTradeManager(managerId: String, status: ManagerStatus = ManagerStatus.CRASHED, stopDescription: String? = null, ex: Exception? = null) {
         tradeManagers.removeIf {
             if (it.getId() == managerId) {
-                if (it.isActive()) {
+                if (it.active) {
                     it.deactivate()
                 }
                 return@removeIf true
