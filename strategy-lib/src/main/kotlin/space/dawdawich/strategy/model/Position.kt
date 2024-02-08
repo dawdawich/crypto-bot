@@ -44,9 +44,8 @@ class Position(
     }
 
     fun getPositionValue(): Double = entryPrice * size
+
     override fun toString(): String {
         return "Position(entryPrice=$entryPrice, size=$size, trend=$trend, realizedPnL=$realizedPnL)"
     }
-
-
 }

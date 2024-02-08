@@ -23,10 +23,14 @@ class ByBitWebSocketClient(
     private val jsonPath: ParseContext,
 ) : WebSocketClient(URI(if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL)) {
 
+    private var previousCumRealizedPnL: Double = 0.0
+
     var positionUpdateCallback: PositionUpdateCallback? = null
+        set(value) {
+            previousCumRealizedPnL = 0.0
+            field = value
+        }
     var fillOrderCallback: FillOrderCallback? = null
-    var previousCumRealizedPnL: Double = 0.0
-    var currentCumRealizedPnL: Double = 0.0
 
     companion object {
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
@@ -82,24 +86,18 @@ class ByBitWebSocketClient(
                                 list[0]
                             }
                             .let { position ->
-                                logger.info { "Unparsed position message:\n'${position}'" }
                                 val side = position["side"].toString()
                                 val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
-                                logger.info { "Retrieved cumRealizedPnL: '$cumRealizedPnL'" }
                                 if (previousCumRealizedPnL == 0.0) {
                                     previousCumRealizedPnL = cumRealizedPnL
-                                    currentCumRealizedPnL = cumRealizedPnL
-                                } else {
-                                    previousCumRealizedPnL = currentCumRealizedPnL
-                                    currentCumRealizedPnL = cumRealizedPnL
                                 }
                                 if (side.isNotBlank())
-                                Position(
-                                    position["entryPrice"].toString().toDouble(),
-                                    position["size"].toString().toDouble(),
-                                    Trend.fromDirection(side),
-                                    currentCumRealizedPnL - previousCumRealizedPnL
-                                ) else null
+                                    Position(
+                                        position["entryPrice"].toString().toDouble(),
+                                        position["size"].toString().toDouble(),
+                                        Trend.fromDirection(side),
+                                        cumRealizedPnL - previousCumRealizedPnL
+                                    ) else null
                             }
                         logger.info { "Get position data to update: $positionsToUpdate" }
                         positionUpdateCallback?.invoke(positionsToUpdate)

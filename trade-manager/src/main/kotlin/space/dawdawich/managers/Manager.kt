@@ -209,6 +209,7 @@ class Manager(
                         strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
                     setClosePosition {
+                        logger { it.info { "Try to close position: '${position}'" } }
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
                         }
@@ -256,6 +257,7 @@ class Manager(
 
                     runtimeData?.let { data ->
                         if (data is GridTableStrategyRuntimeInfoModel && this.middlePrice != data.middlePrice) {
+                            logger { it.info { "Start to reinitialize strategy bounds" } }
                             runBlocking {
                                 bybitService.cancelAllOrder(strategyConfig.symbol)
                                 position?.let { pos ->
@@ -288,4 +290,6 @@ class Manager(
                 crashPostAction.invoke(ex)
             }
         }
+
+    fun isActive() = active
 }
