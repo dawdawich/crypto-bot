@@ -84,6 +84,7 @@ class ByBitWebSocketClient(
                             .let { position ->
                                 val side = position["side"].toString()
                                 val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
+                                logger.info { "Retrieved cumRealizedPnL: '$cumRealizedPnL'" }
                                 if (previousCumRealizedPnL == 0.0) {
                                     previousCumRealizedPnL = cumRealizedPnL
                                     currentCumRealizedPnL = cumRealizedPnL

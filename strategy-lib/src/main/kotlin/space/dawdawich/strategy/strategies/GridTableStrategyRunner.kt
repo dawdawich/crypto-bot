@@ -43,7 +43,6 @@ class GridTableStrategyRunner(
     simulateTradeOperations,
     id
 ) {
-    private val logger: KLogger = KotlinLogging.logger { }
     private val synchronizeObject: Any = Any()
     private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
     private var minPrice: Double = -1.0
@@ -190,8 +189,6 @@ class GridTableStrategyRunner(
                     val orderTrend = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / inPrice
 
-                    logger.info { "Want to create order at price '$inPrice'" }
-
                     if (position?.trend != orderTrend && (position?.calculateReduceOrder(inPrice, qty, orderTrend) ?: 0.0) < 0) {
                         return@forEach
                     }
@@ -199,8 +196,6 @@ class GridTableStrategyRunner(
                     if (((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier > money) {
                         return@forEach
                     }
-
-                    logger.info { "Pass check to create order at price '$inPrice'" }
 
                     val order = createOrderFunction(
                         inPrice,
@@ -211,7 +206,6 @@ class GridTableStrategyRunner(
                         orderTrend
                     )
 
-                    logger.info { "Order creation result '$order'" }
                     orderPriceGrid[inPrice] = order
                 }
         }
