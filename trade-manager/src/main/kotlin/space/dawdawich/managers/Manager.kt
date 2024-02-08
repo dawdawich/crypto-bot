@@ -97,16 +97,12 @@ class Manager(
                     }
                     strategyRunner.position?.let { position ->
                         runBlocking {
-                            launch {
-                                bybitService.closePosition(
-                                    strategyRunner.symbol,
-                                    position.trend.direction == 1,
-                                    position.size
-                                )
-                            }
-                            launch {
-                                bybitService.cancelAllOrder(strategyRunner.symbol)
-                            }
+                            bybitService.cancelAllOrder(strategyRunner.symbol)
+                            bybitService.closePosition(
+                                strategyRunner.symbol,
+                                position.trend.direction == 1,
+                                position.size
+                            )
                             delay(5.seconds)
                         }
                         if (strategyRunner.position != null) {
@@ -215,7 +211,7 @@ class Manager(
                         strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
                     setClosePosition {
-                        logger { it.info { "Try to close position: '${position}'" } }
+                        logger { it.info { "CLOSE POSITION: Get TP/SL;\n'${position}'" } }
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
                         }
@@ -268,6 +264,7 @@ class Manager(
                             runBlocking {
                                 bybitService.cancelAllOrder(strategyConfig.symbol)
                                 position?.let { pos ->
+                                    logger { it.info { "CLOSE POSITION: change middle price" } }
                                     bybitService.closePosition(
                                         strategyConfig.symbol,
                                         pos.trend.directionBoolean,
