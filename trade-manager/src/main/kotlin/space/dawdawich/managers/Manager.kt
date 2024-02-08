@@ -166,7 +166,7 @@ class Manager(
             ->
             val orderId = UUID.randomUUID().toString()
             val orderQty = qty.trimToStep(strategyConfig.minQtyStep)
-            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $orderQty; symbol: $orderSymbol" } }
+            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $orderQty; symbol: $orderSymbol; minOrderQty: ${strategyConfig.minQtyStep}; priceTick: ${strategyConfig.priceMinStep}" } }
             val isSuccess =
                 runBlocking {
                     bybitService.createOrder(

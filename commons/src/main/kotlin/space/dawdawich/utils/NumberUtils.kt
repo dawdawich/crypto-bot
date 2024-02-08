@@ -27,12 +27,12 @@ fun Double.trimToStep(value: Double): Double {
     val bdRoundedValue = when {
         value >= 10 -> bdValue.divide(BigDecimal(value.toString())).setScale(0, RoundingMode.HALF_UP).multiply(BigDecimal(value.toString()))
         value >= 1 -> bdValue.multiply(BigDecimal("10")).divide(BigDecimal(value.toString()), 0, RoundingMode.HALF_UP).divide(BigDecimal("10"))
-        value >= 0.1 -> bdValue.multiply(BigDecimal("10")).divide(BigDecimal(value.toString()), 1, RoundingMode.HALF_UP).divide(BigDecimal("10"))
-        value >= 0.01 -> bdValue.multiply(BigDecimal("100")).divide(BigDecimal(value.toString()), 2, RoundingMode.HALF_UP).divide(BigDecimal("100"))
-        value >= 0.001 -> bdValue.multiply(BigDecimal("1000")).divide(BigDecimal(value.toString()), 3, RoundingMode.HALF_UP).divide(BigDecimal("1000"))
-        value >= 0.0001 -> bdValue.multiply(BigDecimal("10000")).divide(BigDecimal(value.toString()), 4, RoundingMode.HALF_UP).divide(BigDecimal("10000"))
-        value >= 0.00001 -> bdValue.multiply(BigDecimal("100000")).divide(BigDecimal(value.toString()), 5, RoundingMode.HALF_UP).divide(BigDecimal("100000"))
-        value >= 0.000001 -> bdValue.multiply(BigDecimal("1000000")).divide(BigDecimal(value.toString()), 6, RoundingMode.HALF_UP).divide(BigDecimal("1000000"))
+        value >= 0.1 -> bdValue.setScale(1, RoundingMode.HALF_UP)
+        value >= 0.01 -> bdValue.setScale(2, RoundingMode.HALF_UP)
+        value >= 0.001 -> bdValue.setScale(3, RoundingMode.HALF_UP)
+        value >= 0.0001 -> bdValue.setScale(4, RoundingMode.HALF_UP)
+        value >= 0.00001 -> bdValue.setScale(5, RoundingMode.HALF_UP)
+        value >= 0.000001 -> bdValue.setScale(6, RoundingMode.HALF_UP)
         else -> throw IllegalArgumentException("Invalid step provided")
     }
     return bdRoundedValue.toDouble()
