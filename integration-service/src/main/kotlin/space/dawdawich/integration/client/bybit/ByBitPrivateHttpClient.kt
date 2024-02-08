@@ -62,7 +62,10 @@ class ByBitPrivateHttpClient(
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
                 0 -> return true
-                10001, 10002 -> return false
+                10001, 10002 -> {
+                    logger.info { "Failed to create order. Reason:\n${parsedJson.jsonString()}" }
+                    return false
+                }
                 110009 -> {
                     cancelAllOrder(symbol)
                     return createOrder(symbol, entryPrice, qty, isLong, orderId)
