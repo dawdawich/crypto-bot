@@ -189,11 +189,17 @@ class GridTableStrategyRunner(
                         return@forEach
                     }
 
-                    if (((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier > money) {
+                    val expectedPositionValue = ((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier
+
+                    if (orderTrend != position?.trend && expectedPositionValue > money.plusPercent(-1)) {
                         return@forEach
                     }
 
-                    orderPriceGrid[inPrice] = try {
+                    if (orderTrend == position?.trend && expectedPositionValue > money.plusPercent(-5)) {
+                        return@forEach
+                    }
+
+                    orderPriceGrid[inPrice] =
                         createOrderFunction(
                             inPrice,
                             symbol,
@@ -202,12 +208,6 @@ class GridTableStrategyRunner(
                             inPrice + step * orderTrend.direction,
                             orderTrend
                         )
-                    } catch (ex: InsufficientBalanceException) {
-                        if (!simulateTradeOperations) {
-                            position?.outOfMoney = true
-                        }
-                        null
-                    }
                 }
         }
 

@@ -134,7 +134,10 @@ class Manager(
     private fun getAnalyzerConfig(currentAnalyzerId: String = ""): StrategyConfigModel? {
         try {
             return replayingStrategyConfigKafkaTemplate.sendAndReceive(
-                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, "${tradeManagerData.accountId}:${currentAnalyzerId}")
+                ProducerRecord(
+                    REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC,
+                    "${tradeManagerData.accountId}:${currentAnalyzerId}"
+                )
             ).get(5, TimeUnit.SECONDS).value()
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
@@ -263,18 +266,14 @@ class Manager(
                         if (data is GridTableStrategyRuntimeInfoModel && this.middlePrice != data.middlePrice) {
                             logger { it.info { "Start to reinitialize strategy bounds" } }
                             runBlocking {
-                                launch {
-                                    bybitService.cancelAllOrder(strategyConfig.symbol)
-                                }
-                                launch {
-                                    position?.let { pos ->
-                                        bybitService.closePosition(
-                                            strategyConfig.symbol,
-                                            pos.trend.directionBoolean,
-                                            pos.size
-                                        )
-                                        webSocket.resetCumRealizedPnL()
-                                    }
+                                bybitService.cancelAllOrder(strategyConfig.symbol)
+                                position?.let { pos ->
+                                    bybitService.closePosition(
+                                        strategyConfig.symbol,
+                                        pos.trend.directionBoolean,
+                                        pos.size
+                                    )
+                                    webSocket.resetCumRealizedPnL()
                                 }
                             }
                             this.setDiapasonConfigs(
