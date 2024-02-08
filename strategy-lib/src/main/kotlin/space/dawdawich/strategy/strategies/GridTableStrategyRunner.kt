@@ -1,18 +1,11 @@
 package space.dawdawich.strategy.strategies
 
-import mu.KLogger
-import mu.KotlinLogging
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
-import space.dawdawich.strategy.model.CreateOrderFunction
-import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.StrategyRunner
-import space.dawdawich.strategy.model.UpdateMiddlePricePostProcessFunction
-import space.dawdawich.strategy.model.Order
-import space.dawdawich.strategy.model.Position
-import space.dawdawich.strategy.model.Trend
+import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent
-import java.util.UUID
+import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 

@@ -259,13 +259,18 @@ class Manager(
                         if (data is GridTableStrategyRuntimeInfoModel && this.middlePrice != data.middlePrice) {
                             logger { it.info { "Start to reinitialize strategy bounds" } }
                             runBlocking {
-                                bybitService.cancelAllOrder(strategyConfig.symbol)
-                                position?.let { pos ->
-                                    bybitService.closePosition(
-                                        strategyConfig.symbol,
-                                        pos.trend.directionBoolean,
-                                        pos.size
-                                    )
+                                launch {
+                                    bybitService.cancelAllOrder(strategyConfig.symbol)
+                                }
+                                launch {
+                                    position?.let { pos ->
+                                        bybitService.closePosition(
+                                            strategyConfig.symbol,
+                                            pos.trend.directionBoolean,
+                                            pos.size
+                                        )
+                                        webSocket.resetCumRealizedPnL()
+                                    }
                                 }
                             }
                             this.setDiapasonConfigs(

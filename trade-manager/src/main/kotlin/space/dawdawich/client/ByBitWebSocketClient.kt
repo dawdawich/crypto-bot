@@ -30,6 +30,7 @@ class ByBitWebSocketClient(
             previousCumRealizedPnL = 0.0
             field = value
         }
+    var currentPositionTrend: Trend? = null
     var fillOrderCallback: FillOrderCallback? = null
 
     companion object {
@@ -91,13 +92,21 @@ class ByBitWebSocketClient(
                                 if (previousCumRealizedPnL == 0.0) {
                                     previousCumRealizedPnL = cumRealizedPnL
                                 }
-                                if (side.isNotBlank())
+                                if (side.isNotBlank()) {
+                                    val trend = Trend.fromDirection(side)
+                                    if (currentPositionTrend == null) {
+                                        currentPositionTrend = trend
+                                    } else if (currentPositionTrend != trend) {
+                                        resetCumRealizedPnL()
+                                        currentPositionTrend = trend
+                                    }
                                     Position(
                                         position["entryPrice"].toString().toDouble(),
                                         position["size"].toString().toDouble(),
-                                        Trend.fromDirection(side),
+                                        trend,
                                         cumRealizedPnL - previousCumRealizedPnL
-                                    ) else null
+                                    )
+                                } else null
                             }
                         logger.info { "Get position data to update: $positionsToUpdate" }
                         positionUpdateCallback?.invoke(positionsToUpdate)
@@ -136,6 +145,11 @@ class ByBitWebSocketClient(
 
     override fun onError(ex: Exception?) {
         logger.error(ex) { "Failed to listen websocket" }
+    }
+
+    fun resetCumRealizedPnL() {
+        previousCumRealizedPnL = 0.0
+        currentPositionTrend = null
     }
 
     private fun getAuthData(): Pair<String, Long> {
