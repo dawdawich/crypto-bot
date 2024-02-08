@@ -285,11 +285,18 @@ class Manager(
                             )
                         }
                     }
-                } else {
-                    synchronized(synchronizationObject) {
-                        if (active) {
-                            currentPrice = price
+                } else { // Processed only with active web socket connection
+                    if (webSocket.isOpen) {
+                        synchronized(synchronizationObject) {
+                            if (active) {
+                                currentPrice = price
+                            }
                         }
+                    } else {
+                        logger {
+                            it.info { "WebSocket connection is closed. Reconnecting..." }
+                        }
+                        webSocket.reconnect()
                     }
                 }
                 refreshStrategyConfig()
