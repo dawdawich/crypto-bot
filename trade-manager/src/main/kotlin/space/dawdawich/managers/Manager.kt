@@ -163,6 +163,7 @@ class Manager(
                 trend: Trend,
             ->
             val orderId = UUID.randomUUID().toString()
+            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'" } }
             val isSuccess =
                 runBlocking {
                     bybitService.createOrder(
@@ -174,8 +175,10 @@ class Manager(
                     )
                 }
             if (isSuccess) {
+                logger { it.info { "Order '$orderId' created successfully" } }
                 Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend, id = orderId)
             } else {
+                logger { it.info { "Order '$orderId' do not created" } }
                 null
             }
         }

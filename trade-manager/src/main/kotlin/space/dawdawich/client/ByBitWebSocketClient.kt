@@ -109,8 +109,9 @@ class ByBitWebSocketClient(
                                 id to status
                             }
                             .filter { order ->
+                                logger.info { "Obtain order to process. id: '${order.first}'; status: ${order.second}" }
                                 order.first.isNotBlank() && when (order.second.lowercase()) {
-                                    "filled", "deactivated", "rejected" -> true
+                                    "filled", "deactivated", "rejected", "cancelled" -> true
                                     else -> false
                                 }
                             }
