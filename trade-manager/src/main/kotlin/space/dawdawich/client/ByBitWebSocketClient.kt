@@ -82,6 +82,7 @@ class ByBitWebSocketClient(
                                 list[0]
                             }
                             .let { position ->
+                                logger.info { "Unparsed position message:\n'${position}'" }
                                 val side = position["side"].toString()
                                 val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
                                 logger.info { "Retrieved cumRealizedPnL: '$cumRealizedPnL'" }
