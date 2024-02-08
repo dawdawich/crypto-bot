@@ -1,5 +1,8 @@
 package space.dawdawich.strategy.strategies
 
+import mu.KLogger
+import mu.KotlinLogging
+import org.slf4j.LoggerFactory
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.strategy.model.CreateOrderFunction
@@ -11,6 +14,7 @@ import space.dawdawich.strategy.model.Position
 import space.dawdawich.strategy.model.Trend
 import space.dawdawich.utils.plusPercent
 import java.util.UUID
+import java.util.logging.Logger
 import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 
@@ -41,6 +45,7 @@ class GridTableStrategyRunner(
     simulateTradeOperations,
     id
 ) {
+    private val logger: KLogger = KotlinLogging.logger { }
     private val synchronizeObject: Any = Any()
     private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
     private var minPrice: Double = -1.0
@@ -175,39 +180,43 @@ class GridTableStrategyRunner(
     private fun processOrders(currentPrice: Double, previousPrice: Double) {
         val moneyPerOrder = money / gridSize
 
-        orderPriceGrid.entries
-            .asSequence()
-            .filter { (it.key - currentPrice).absoluteValue > priceMinStep }
-            .sortedBy { (it.key - currentPrice).absoluteValue }
-            .take(2)
-            .filter { it.value == null }
-            .map { it.key }
-            .forEach { inPrice ->
-                val isLong = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
-                val qty = moneyPerOrder * multiplier / inPrice
+        if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money) {
+            orderPriceGrid.entries
+                .asSequence()
+                .filter { (it.key - currentPrice).absoluteValue > priceMinStep }
+                .sortedBy { (it.key - currentPrice).absoluteValue }
+                .take(2)
+                .filter { it.value == null }
+                .map { it.key }
+                .forEach { inPrice ->
+                    val isLong = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
+                    val qty = moneyPerOrder * multiplier / inPrice
 
-                if (position?.let { pos ->
-                        val prof =
-                            if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
-                        (prof - pos.entryPrice * 0.00055 - inPrice * 0.00055) * qty > 0
-                    } == false) {
-                    return@forEach
+                    logger.info { "Want to create order at price '$inPrice'" }
+
+                    if (position?.let { pos ->
+                            val prof =
+                                if (pos.trend == Trend.LONG) inPrice - pos.entryPrice else pos.entryPrice - inPrice
+                            (prof - pos.entryPrice * 0.00055 - inPrice * 0.00055) * qty > 0
+                        } == false) {
+                        return@forEach
+                    }
+
+                    logger.info { "Pass check to create order at price '$inPrice'" }
+
+                    val order = createOrderFunction(
+                        inPrice,
+                        symbol,
+                        qty,
+                        inPrice - step * isLong.direction,
+                        inPrice + step * isLong.direction,
+                        isLong
+                    )
+
+                    logger.info { "Order creation result '$order'" }
+                    orderPriceGrid[inPrice] = order
                 }
-
-                if ((position?.getPositionValue() ?: 0.0) / multiplier + step > money) {
-                    return@forEach
-                }
-
-                val order = createOrderFunction(
-                    inPrice,
-                    symbol,
-                    qty,
-                    inPrice - step * isLong.direction,
-                    inPrice + step * isLong.direction,
-                    isLong
-                )
-                orderPriceGrid[inPrice] = order
-            }
+        }
 
         orderPriceGrid.values.filterNotNull().forEach { order ->
             if (!order.isFilled) {
