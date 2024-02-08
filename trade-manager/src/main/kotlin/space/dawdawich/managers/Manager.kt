@@ -11,6 +11,7 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
+import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
@@ -286,17 +287,15 @@ class Manager(
                         }
                     }
                 } else { // Processed only with active web socket connection
-                    if (webSocket.isOpen) {
-                        synchronized(synchronizationObject) {
-                            if (active) {
+                    synchronized(synchronizationObject) {
+                        if (active) {
+                            try {
                                 currentPrice = price
+                            } catch (ex: InvalidSignatureException) {
+                                logger { it.warn { "Signature become invalid" } }
+                                webSocket.subscribe()
                             }
                         }
-                    } else {
-                        logger {
-                            it.info { "WebSocket connection is closed. Reconnecting..." }
-                        }
-                        webSocket.reconnectBlocking()
                     }
                 }
                 refreshStrategyConfig()

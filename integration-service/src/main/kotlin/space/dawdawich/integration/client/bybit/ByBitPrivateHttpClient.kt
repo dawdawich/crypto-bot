@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mu.KotlinLogging
+import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
@@ -66,6 +67,7 @@ class ByBitPrivateHttpClient(
                     logger.info { "Failed to create order. Reason:\n${parsedJson.jsonString()}" }
                     return false
                 }
+                10004 -> throw InvalidSignatureException()
                 110009 -> {
                     cancelAllOrder(symbol)
                     return createOrder(symbol, entryPrice, qty, isLong, orderId)
