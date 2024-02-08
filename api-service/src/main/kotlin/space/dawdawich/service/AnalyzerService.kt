@@ -1,5 +1,6 @@
 package space.dawdawich.service
 
+import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.core.KafkaTemplate
@@ -10,10 +11,12 @@ import space.dawdawich.controller.model.AnalyzerBulkCreateRequest
 import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
 import space.dawdawich.exception.model.AnalyzerNotFoundException
+import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.service.validation.AnalyzerValidationService
+import space.dawdawich.utils.plusPercent
 import java.util.*
 
 @Service
@@ -21,7 +24,8 @@ class AnalyzerService(
     private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
     private val analyzerValidationService: AnalyzerValidationService,
     private val symbolRepository: SymbolRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val publicBybitClient: ByBitPublicHttpClient
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -81,26 +85,33 @@ class AnalyzerService(
         val analyzersToInsert = mutableListOf<GridTableAnalyzerDocument>()
 
         for (symbol in symbols) {
+            val currentPrice = runBlocking { publicBybitClient.getPairCurrentPrice(symbol.symbol) }
             for (stopLoss in request.minStopLoss..request.maxStopLoss) {
                 for (takeProfit in request.minTakeProfit..request.maxTakeProfit) {
                     for (diapason in request.startDiapasonPercent..request.endDiapasonPercent) {
                         for (gridSize in request.fromGridSize..request.toGridSize step request.gridSizeStep) {
                             for (multiplier in request.multiplierFrom..request.multiplierTo) {
-                                analyzersToInsert.add(
-                                    GridTableAnalyzerDocument(
-                                        UUID.randomUUID().toString(),
-                                        accountId,
-                                        true,
-                                        diapason,
-                                        gridSize,
-                                        multiplier,
-                                        stopLoss,
-                                        takeProfit,
-                                        symbol,
-                                        request.startCapital.toDouble(),
-                                        false
+                                val startCapital = request.startCapital.toDouble()
+                                val moneyPerOrder = startCapital.plusPercent(-2) / gridSize
+                                val qty = moneyPerOrder * multiplier / currentPrice
+
+                                if (qty > symbol.minOrderQty) {
+                                    analyzersToInsert.add(
+                                        GridTableAnalyzerDocument(
+                                            UUID.randomUUID().toString(),
+                                            accountId,
+                                            true,
+                                            diapason,
+                                            gridSize,
+                                            multiplier,
+                                            stopLoss,
+                                            takeProfit,
+                                            symbol,
+                                            startCapital,
+                                            false
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
