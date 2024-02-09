@@ -219,7 +219,7 @@ class GridTableStrategyRunner(
 
         orderPriceGrid.entries
             .asSequence()
-            .filter { it.key in (currentPrice - step)..(currentPrice + step) }
+            .filter { it.key !in (currentPrice - step)..(currentPrice + step) }
             .map { it.value }
             .filterNotNull()
             .forEach {
