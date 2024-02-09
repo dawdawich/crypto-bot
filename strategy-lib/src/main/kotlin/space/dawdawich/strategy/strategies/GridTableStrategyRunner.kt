@@ -183,13 +183,13 @@ class GridTableStrategyRunner(
                 .filter { it.value == null }
                 .map { it.key }
                 .forEach { orderPrice ->
-                    val middlePrice = position?.entryPrice ?: currentPrice
+                    val middlePrice = position?.entryPrice ?: this.middlePrice
 
                     val orderTrend = if (orderPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / orderPrice
 
                     if (position?.trend != orderTrend && (position?.calculateReduceOrder(orderPrice, qty, orderTrend)
-                            ?: 0.1) < 0.1
+                            ?: 0.03) < 0.03
                     ) {
                         return@forEach
                     }
