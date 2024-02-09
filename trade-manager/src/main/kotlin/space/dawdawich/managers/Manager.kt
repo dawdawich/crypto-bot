@@ -201,7 +201,12 @@ class Manager(
                     strategyConfig.minQtyStep,
                     false,
                     createOrderFunction = createOrderFunction,
-                    cancelOrderFunction = { symbol, orderId -> runBlocking { bybitService.cancelOrder(symbol, orderId) } },
+                    cancelOrderFunction = { symbol, orderId ->
+                        logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
+                        runBlocking {
+                            bybitService.cancelOrder(symbol, orderId)
+                        }
+                    },
                     id = strategyConfig.id
                 ).apply {
                     setDiapasonConfigs(
