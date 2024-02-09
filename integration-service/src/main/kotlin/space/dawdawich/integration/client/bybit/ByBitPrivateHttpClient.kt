@@ -116,6 +116,7 @@ class ByBitPrivateHttpClient(
             10002 -> {
                 return getAccountBalance(repeatCount)
             }
+            10004 -> throw InvalidSignatureException()
 
             else -> {
                 throw UnknownRetCodeException(returnCode)
@@ -195,6 +196,7 @@ class ByBitPrivateHttpClient(
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("$.retCode")) {
                 0, 110017 -> return
+                10004 -> throw InvalidSignatureException()
                 else -> {
                     throw UnknownRetCodeException(returnCode)
                 }
@@ -218,6 +220,7 @@ class ByBitPrivateHttpClient(
 
     }
 
+    @Synchronized
     private fun getByBitHeadersWithSign(body: String): Array<Pair<String, String>> {
         val timestamp = System.currentTimeMillis().toString()
         return arrayOf(
