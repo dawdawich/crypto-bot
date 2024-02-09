@@ -201,6 +201,7 @@ class Manager(
                     strategyConfig.minQtyStep,
                     false,
                     createOrderFunction = createOrderFunction,
+                    cancelOrderFunction = { symbol, orderId -> runBlocking { bybitService.cancelOrder(symbol, orderId) } },
                     id = strategyConfig.id
                 ).apply {
                     setDiapasonConfigs(

@@ -26,6 +26,7 @@ class GridTableStrategyRunner(
     private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
+    private val cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
     id: String = UUID.randomUUID().toString(),
 ) : StrategyRunner(
     money,
@@ -178,22 +179,23 @@ class GridTableStrategyRunner(
         if ((position?.getPositionValue() ?: 0.0) / multiplier + step < money) {
             orderPriceGrid.entries
                 .asSequence()
-                .filter { (it.key - currentPrice).absoluteValue > step }
-                .sortedBy { (it.key - currentPrice).absoluteValue }
-                .take(2)
+                .filter { it.key in (currentPrice - step)..(currentPrice + step) }
                 .filter { it.value == null }
                 .map { it.key }
-                .forEach { inPrice ->
-                    val orderTrend = if (inPrice < middlePrice) Trend.LONG else Trend.SHORT
-                    val qty = moneyPerOrder * multiplier / inPrice
+                .forEach { orderPrice ->
+                    val middlePrice = position?.entryPrice ?: currentPrice
 
-                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(inPrice, qty, orderTrend)
+                    val orderTrend = if (orderPrice < middlePrice) Trend.LONG else Trend.SHORT
+                    val qty = moneyPerOrder * multiplier / orderPrice
+
+                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(orderPrice, qty, orderTrend)
                             ?: 0.0) < 0
                     ) {
                         return@forEach
                     }
 
-                    val expectedPositionValue = ((position?.getPositionValue() ?: 0.0) + (inPrice * qty)) / multiplier
+                    val expectedPositionValue =
+                        ((position?.getPositionValue() ?: 0.0) + (orderPrice * qty)) / multiplier
 
                     if (orderTrend != position?.trend && expectedPositionValue > money.plusPercent(-5)) {
                         return@forEach
@@ -203,17 +205,28 @@ class GridTableStrategyRunner(
                         return@forEach
                     }
 
-                    orderPriceGrid[inPrice] =
+                    orderPriceGrid[orderPrice] =
                         createOrderFunction(
-                            inPrice,
+                            orderPrice,
                             symbol,
                             qty,
-                            inPrice - step * orderTrend.direction,
-                            inPrice + step * orderTrend.direction,
+                            orderPrice - step * orderTrend.direction,
+                            orderPrice + step * orderTrend.direction,
                             orderTrend
                         )
                 }
         }
+
+        orderPriceGrid.entries
+            .asSequence()
+            .filter { it.key in (currentPrice - step)..(currentPrice + step) }
+            .map { it.value }
+            .filterNotNull()
+            .forEach {
+                if (it.isFilled || cancelOrderFunction(it.pair, it.id)) { // If order did not filled, then need to cancel order
+                    orderPriceGrid[it.inPrice] = null
+                }
+            }
 
         orderPriceGrid.values.filterNotNull().forEach { order ->
             if (!order.isFilled) {
@@ -228,9 +241,6 @@ class GridTableStrategyRunner(
                         position?.let { if (it.size <= 0) position = null }
                     }
                 }
-            } else if (order.isPriceOutOfRefreshBorder(currentPrice)) {
-                order.isFilled = false
-                orderPriceGrid[order.inPrice] = null
             }
         }
     }
