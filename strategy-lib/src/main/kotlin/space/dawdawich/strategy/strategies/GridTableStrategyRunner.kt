@@ -188,7 +188,7 @@ class GridTableStrategyRunner(
                     val orderTrend = if (orderPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / orderPrice
 
-                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(orderPrice, qty, orderTrend)
+                    if (position?.trend != orderTrend && (position?.calculateReduceOrder(orderPrice, qty, orderTrend)?.plusPercent(-10)
                             ?: 0.0) < 0
                     ) {
                         return@forEach
@@ -219,7 +219,7 @@ class GridTableStrategyRunner(
 
         orderPriceGrid.entries
             .asSequence()
-            .filter { it.key !in (currentPrice - step)..(currentPrice + step) }
+            .filter { it.key !in (currentPrice - step * 2)..(currentPrice + step * 2) }
             .map { it.value }
             .filterNotNull()
             .forEach {
