@@ -25,7 +25,7 @@ import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -36,14 +36,18 @@ class AnalyzerService(
         private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
-    private val log = KotlinLogging.logger {  }
+    companion object {
+        val comparator = Comparator<Pair<String, Double>> { p1, p2 -> p1.first.compareTo(p2.first) }
+    }
+
+    private val log = KotlinLogging.logger { }
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
             mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<Analyzer> = mutableListOf()
-    private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
-    private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
+    private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
+    private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
 
     init {
         gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
@@ -131,17 +135,16 @@ class AnalyzerService(
     }
 
     @SuppressWarnings("kotlin:S6518")
-    private fun updateList(updateList: ArrayBlockingQueue<Pair<String, Double>>, fieldName: String) {
+    private fun updateList(updateList: ConcurrentSkipListSet<Pair<String, Double>>, fieldName: String) {
         val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
 
-        var pair = updateList.poll()
+        while (true) {
+            val pair = updateList.pollFirst() ?: break
 
-        while (pair != null) {
             ops.updateOne(
-                    Query.query(Criteria.where("_id").`is`(pair.first)),
-                    Update().set(fieldName, pair.second)
+                Query.query(Criteria.where("_id").`is`(pair.first)),
+                Update().set(fieldName, pair.second)
             )
-            pair = updateList.poll()
         }
         ops.execute()
     }
@@ -149,18 +152,18 @@ class AnalyzerService(
     private fun addAnalyzer(analyzer: Analyzer) {
         val partition = partitionMap.getOrPut(analyzer.symbol) {
             symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
-                    ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
+                ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
         }
 
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
-                    kafkaListenerContainerFactory.createContainer(
-                            TopicPartitionOffset(
-                                    BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
-                                    partition,
-                                    TopicPartitionOffset.SeekPosition.END
-                            )
+                kafkaListenerContainerFactory.createContainer(
+                    TopicPartitionOffset(
+                        BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
+                        partition,
+                        TopicPartitionOffset.SeekPosition.END
                     )
+                )
             )
         }.addObserver(analyzer::acceptPriceChange)
 
@@ -177,33 +180,33 @@ class AnalyzerService(
     }
 
     private fun GridTableAnalyzerDocument.convert(): Analyzer = Analyzer(
-            GridTableStrategyRunner(
-                    symbolInfo.symbol,
-                    diapason,
-                    gridSize,
-                    positionStopLoss,
-                    positionTakeProfit,
-                    multiplayer,
-                    money,
-                    symbolInfo.tickSize,
-                    symbolInfo.minOrderQty,
-                    true,
-                    moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
-                    updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
-                    id = id
-            ),
-            0.0,
+        GridTableStrategyRunner(
             symbolInfo.symbol,
-            accountId,
-            id
+            diapason,
+            gridSize,
+            positionStopLoss,
+            positionTakeProfit,
+            multiplayer,
+            money,
+            symbolInfo.tickSize,
+            symbolInfo.minOrderQty,
+            true,
+            moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
+            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
+            id = id
+        ),
+        0.0,
+        symbolInfo.symbol,
+        accountId,
+        id
     )
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         val accountAnalyzer = analyzers
-                .filter { it.accountId == request.accountId }
-                .toList()
-                .asSequence()
-                .maxBy { it.calculateStabilityCoef() }
+            .filter { it.accountId == request.accountId }
+            .toList()
+            .asSequence()
+            .maxBy { it.calculateStabilityCoef() }
 
         return if (accountAnalyzer.id != request.currentAnalyzerId && accountAnalyzer.getMoney() > request.managerMoney) {
             accountAnalyzer.getStrategyConfig()
@@ -216,9 +219,9 @@ class AnalyzerService(
         accountAnalyzers = accountAnalyzers.filter { it.getMoney() == maxMoney }
         if (accountAnalyzers.none { it.id == request.currentAnalyzerId }) {
             return accountAnalyzers
-                    .map { it.getStrategyConfig() }
-                    .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
-                    .minByOrNull { it.multiplier }
+                .map { it.getStrategyConfig() }
+                .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                .minByOrNull { it.multiplier }
         }
         return null
     }
