@@ -1,5 +1,8 @@
 package space.dawdawich.services
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -32,6 +35,8 @@ class AnalyzerService(
         private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
         private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
+
+    private val log = KotlinLogging.logger {  }
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
@@ -104,15 +109,25 @@ class AnalyzerService(
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
     private fun updateSnapshot() {
-        val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
-        analyzers.toList().parallelStream().forEach {analyzer ->
-            analyzer.updateSnapshot()
-            ops.updateOne(
-                    Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                    Update().set("stabilityCoef", analyzer.calculateStabilityCoef())
-            )
+        if (analyzers.isNotEmpty()) {
+            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+            val calculationStartTime = System.currentTimeMillis()
+            log.info { "Start to process analyzers stability calculations" }
+            runBlocking {
+                analyzers.toList().forEach { analyzer ->
+                    launch {
+                        analyzer.updateSnapshot()
+                        val stabilityCoef = analyzer.calculateStabilityCoef()
+                        ops.updateOne(
+                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                            Update().set("stabilityCoef", stabilityCoef)
+                        )
+                    }
+                }
+            }
+            log.info { "Finish. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
+            ops.execute()
         }
-        ops.execute()
     }
 
     @SuppressWarnings("kotlin:S6518")
