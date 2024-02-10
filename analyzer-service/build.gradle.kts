@@ -13,8 +13,10 @@ dependencies {
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.spring.boot.mongo)
     implementation(libs.spring.kafka)
+
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines)
+
     implementation(libs.jackson.kotlin.module)
 }
 
