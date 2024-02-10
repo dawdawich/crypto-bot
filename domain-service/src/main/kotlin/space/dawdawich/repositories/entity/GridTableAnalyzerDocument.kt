@@ -21,6 +21,7 @@ data class GridTableAnalyzerDocument(
     var isActive: Boolean,
     var money: Double = startCapital,
     var middlePrice: Double? = null,
+    var stabilityCoef: Double? = null,
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = createTime
 )

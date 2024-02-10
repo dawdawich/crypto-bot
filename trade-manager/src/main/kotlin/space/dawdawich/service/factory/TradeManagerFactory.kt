@@ -6,6 +6,7 @@ import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.managers.Manager
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.ApiAccessTokenRepository
@@ -18,7 +19,7 @@ class TradeManagerFactory(
     private val apiAccessTokenRepository: ApiAccessTokenRepository,
     private val jsonPath: ParseContext,
     private val serviceFactory: PrivateHttpClientFactory,
-    private val strategyConfigReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    private val strategyConfigReplyingTemplate: ReplyingKafkaTemplate<String, RequestProfitableAnalyzer, StrategyConfigModel?>,
     private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val priceListenerFactoryService: PriceTickerListenerFactoryService
 ) {

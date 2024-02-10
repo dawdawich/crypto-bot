@@ -12,6 +12,7 @@ import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
@@ -35,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 class Manager(
     private val tradeManagerData: TradeManagerDocument,
     private val bybitService: ByBitPrivateHttpClient,
-    private val replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyConfigModel?>,
+    private val replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, RequestProfitableAnalyzer, StrategyConfigModel?>,
     private val replayingStrategyDataKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val webSocket: ByBitWebSocketClient,
     private val priceListenerFactory: PriceTickerListenerFactoryService,
@@ -129,10 +130,10 @@ class Manager(
 
     fun getId() = tradeManagerData.id
 
-    private fun getAnalyzerConfig(currentAnalyzerId: String = ""): StrategyConfigModel? {
+    private fun getAnalyzerConfig(strategyConfigModel: StrategyConfigModel? = null): StrategyConfigModel? {
         try {
             return replayingStrategyConfigKafkaTemplate.sendAndReceive(
-                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, "${tradeManagerData.accountId}:${currentAnalyzerId}")
+                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(tradeManagerData.accountId, tradeManagerData.chooseStrategy, strategyConfigModel?.id, strategyRunner.money))
             ).get(5, TimeUnit.SECONDS).value()
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
@@ -143,7 +144,7 @@ class Manager(
     private fun refreshStrategyConfig() {
         if ((System.currentTimeMillis() - lastRefreshTime) > tradeManagerData.refreshAnalyzerMinutes.minutes.inWholeMilliseconds) {
             logger { it.info { "Try to find more suitable analyzer" } }
-            getAnalyzerConfig(strategyRunner.id)?.let { config ->
+            getAnalyzerConfig(strategyRunner.getStrategyConfig())?.let { config ->
                 logger { it.info { "Found more suitable analyzer '${config.id}'" } }
                 deactivate(true)
                 setupStrategyRunner(config)

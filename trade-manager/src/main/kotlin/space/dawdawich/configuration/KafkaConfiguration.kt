@@ -16,6 +16,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
@@ -75,12 +76,21 @@ class KafkaConfiguration {
     }
 
     @Bean
+    fun <T> jsonProducerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ProducerFactory<String, T> {
+        val configProps: MutableMap<String, Any> = HashMap()
+        configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
+        configProps[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+        configProps[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean
     fun managerInfoKafkaTemplate(managerInfoProducerFactory: ProducerFactory<String, ManagerInfoModel>): KafkaTemplate<String, ManagerInfoModel> =
         KafkaTemplate(managerInfoProducerFactory)
 
     @Bean
     fun strategyConfigReplyingTemplate(
-        producerFactory: ProducerFactory<String, String>,
+        producerFactory: ProducerFactory<String, RequestProfitableAnalyzer>,
         jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyConfigModel?>
     ) =
         replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
@@ -91,11 +101,11 @@ class KafkaConfiguration {
         jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyRuntimeInfoModel>
     ) = replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
 
-    private fun <T> replyingTemplate(
-        producerFactory: ProducerFactory<String, String>,
+    private fun <T, P> replyingTemplate(
+        producerFactory: ProducerFactory<String, P>,
         jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, T>,
         topic: String
-    ): ReplyingKafkaTemplate<String, String, T> {
+    ): ReplyingKafkaTemplate<String, P, T> {
         val replyContainer =
             jsonKafkaListenerContainerFactory.createContainer(topic).apply {
                 isAutoStartup = false

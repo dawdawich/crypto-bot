@@ -33,11 +33,29 @@ class KafkaConfiguration {
         }
 
     @Bean
+    fun <T> jsonKafkaListenerReplayingContainerFactory(jsonConsumerFactory: ConsumerFactory<String, T>, jsonKafkaTemplate: KafkaTemplate<String, T>) =
+        ConcurrentKafkaListenerContainerFactory<String, T>().apply {
+            this.consumerFactory = jsonConsumerFactory
+            setReplyTemplate(jsonKafkaTemplate)
+        }
+
+    @Bean
     fun consumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ConsumerFactory<String, String> {
         val configProps: MutableMap<String, Any> = HashMap()
         configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
         configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+        configProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "latest"
+        configProps[ConsumerConfig.GROUP_ID_CONFIG] = "analyzer_event_group"
+        return DefaultKafkaConsumerFactory(configProps)
+    }
+
+    @Bean
+    fun <T> jsonConsumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ConsumerFactory<String, T> {
+        val configProps: MutableMap<String, Any> = HashMap()
+        configProps[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
+        configProps[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
+        configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = JsonSerializer::class.java
         configProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "latest"
         configProps[ConsumerConfig.GROUP_ID_CONFIG] = "analyzer_event_group"
         return DefaultKafkaConsumerFactory(configProps)

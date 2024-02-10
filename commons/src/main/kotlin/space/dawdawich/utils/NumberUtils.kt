@@ -3,7 +3,6 @@ package space.dawdawich.utils
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 fun Double.calculatePercentageChange(value: Double): Double {

@@ -14,26 +14,28 @@ import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 @Service
 class AnalyzerService(
-    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-    private val symbolRepository: SymbolRepository,
-    private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val mongoTemplate: MongoTemplate,
+        private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+        private val symbolRepository: SymbolRepository,
+        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
+        private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
     private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
-        mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
+            mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
     private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
@@ -43,8 +45,8 @@ class AnalyzerService(
     }
 
     override fun onPartitionsAssigned(
-        assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
-        callback: ConsumerSeekAware.ConsumerSeekCallback,
+            assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
+            callback: ConsumerSeekAware.ConsumerSeekCallback,
     ) {
         callback.seekToEnd(assignments.keys)
     }
@@ -70,32 +72,25 @@ class AnalyzerService(
     }
 
     @KafkaListener(
-        topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
+            topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
+            containerFactory = "kafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
     fun requestAnalyzerData(analyzerId: String) =
-        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
+            analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
 
     @KafkaListener(
-        topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
+            topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
+            containerFactory = "jsonKafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
-    fun requestMostProfitableAnalyzer(request: String): StrategyConfigModel? {
-        val splitRequest = request.split(":").toTypedArray()
-        var accountAnalyzers = analyzers.filter { it.accountId == splitRequest[0] }.toList()
-        val maxMoney = accountAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
-        accountAnalyzers = accountAnalyzers.filter { it.getMoney() == maxMoney }
-        if (splitRequest[1].isBlank() || (splitRequest[1].isNotBlank() && accountAnalyzers.none { it.id == splitRequest[1] })) {
-            return accountAnalyzers
-                .map { it.getStrategyConfig() }
-                .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
-                .minByOrNull { it.multiplier }
+    fun requestMostProfitableAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        return when (request.chooseStrategy) {
+            AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
+            AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)
+            AnalyzerChooseStrategy.CUSTOM -> throw NotImplementedError("No such analyzer strategy : %s".format(request.chooseStrategy))
         }
-        return null
     }
-
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
@@ -107,6 +102,19 @@ class AnalyzerService(
         }
     }
 
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
+    private fun updateSnapshot() {
+        val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+        analyzers.toList().parallelStream().forEach {analyzer ->
+            analyzer.updateSnapshot()
+            ops.updateOne(
+                    Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                    Update().set("stabilityCoef", analyzer.calculateStabilityCoef())
+            )
+        }
+        ops.execute()
+    }
+
     @SuppressWarnings("kotlin:S6518")
     private fun updateList(updateList: ArrayBlockingQueue<Pair<String, Double>>, fieldName: String) {
         val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
@@ -115,8 +123,8 @@ class AnalyzerService(
 
         while (pair != null) {
             ops.updateOne(
-                Query.query(Criteria.where("_id").`is`(pair.first)),
-                Update().set(fieldName, pair.second)
+                    Query.query(Criteria.where("_id").`is`(pair.first)),
+                    Update().set(fieldName, pair.second)
             )
             pair = updateList.poll()
         }
@@ -126,18 +134,18 @@ class AnalyzerService(
     private fun addAnalyzer(analyzer: Analyzer) {
         val partition = partitionMap.getOrPut(analyzer.symbol) {
             symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
-                ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
+                    ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
         }
 
         priceListeners.getOrPut(partition) {
             PriceTickerListener(
-                kafkaListenerContainerFactory.createContainer(
-                    TopicPartitionOffset(
-                        BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
-                        partition,
-                        TopicPartitionOffset.SeekPosition.END
+                    kafkaListenerContainerFactory.createContainer(
+                            TopicPartitionOffset(
+                                    BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
+                                    partition,
+                                    TopicPartitionOffset.SeekPosition.END
+                            )
                     )
-                )
             )
         }.addObserver(analyzer::acceptPriceChange)
 
@@ -154,24 +162,49 @@ class AnalyzerService(
     }
 
     private fun GridTableAnalyzerDocument.convert(): Analyzer = Analyzer(
-        GridTableStrategyRunner(
+            GridTableStrategyRunner(
+                    symbolInfo.symbol,
+                    diapason,
+                    gridSize,
+                    positionStopLoss,
+                    positionTakeProfit,
+                    multiplayer,
+                    money,
+                    symbolInfo.tickSize,
+                    symbolInfo.minOrderQty,
+                    true,
+                    moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
+                    updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
+                    id = id
+            ),
+            0.0,
             symbolInfo.symbol,
-            diapason,
-            gridSize,
-            positionStopLoss,
-            positionTakeProfit,
-            multiplayer,
-            money,
-            symbolInfo.tickSize,
-            symbolInfo.minOrderQty,
-            true,
-            moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
-            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
-            id = id
-        ),
-        0.0,
-        symbolInfo.symbol,
-        accountId,
-        id
+            accountId,
+            id
     )
+
+    private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        val accountAnalyzer = analyzers
+                .filter { it.accountId == request.accountId }
+                .toList()
+                .asSequence()
+                .maxBy { it.calculateStabilityCoef() }
+
+        return if (accountAnalyzer.id != request.currentAnalyzerId && accountAnalyzer.getMoney() > request.managerMoney) {
+            accountAnalyzer.getStrategyConfig()
+        } else null
+    }
+
+    private fun getBiggestByMoneyAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        var accountAnalyzers = analyzers.filter { it.accountId == request.accountId }.toList()
+        val maxMoney = accountAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
+        accountAnalyzers = accountAnalyzers.filter { it.getMoney() == maxMoney }
+        if (accountAnalyzers.none { it.id == request.currentAnalyzerId }) {
+            return accountAnalyzers
+                    .map { it.getStrategyConfig() }
+                    .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                    .minByOrNull { it.multiplier }
+        }
+        return null
+    }
 }
