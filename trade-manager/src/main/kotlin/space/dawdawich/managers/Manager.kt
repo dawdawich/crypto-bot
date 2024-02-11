@@ -46,10 +46,8 @@ class Manager(
     private val synchronizationObject = Any()
     private val _logger = KotlinLogging.logger {}
 
-    private var money: Double by Delegates.observable(0.0) { _, _, newValue ->
-        if (strategyRunner != null) {
-            strategyRunner.updateMoney(newValue)
-        }
+    private var money: Double by Delegates.observable(runBlocking {bybitService.getAccountBalance() }) { _, _, newValue ->
+        strategyRunner.updateMoney(newValue)
     }
 
     private infix fun logger(action: (KLogger) -> Unit) {
@@ -68,15 +66,12 @@ class Manager(
     private var lastRefreshTime = System.currentTimeMillis()
     private var listener: ConcurrentMessageListenerContainer<String, String>? = null
     private var active: Boolean = true
-    private lateinit var strategyRunner: StrategyRunner
 
+    private lateinit var strategyRunner: StrategyRunner
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
 
     init {
         var strategyConfig: StrategyConfigModel? = null
-        money = runBlocking {
-            bybitService.getAccountBalance()
-        }
 
         initJob = GlobalScope.launch {
             while (strategyConfig == null) {
@@ -142,7 +137,15 @@ class Manager(
     private fun getAnalyzerConfig(strategyConfigModel: StrategyConfigModel? = null): StrategyConfigModel? {
         try {
             return replayingStrategyConfigKafkaTemplate.sendAndReceive(
-                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(tradeManagerData.accountId, tradeManagerData.chooseStrategy, strategyConfigModel?.id, money))
+                ProducerRecord(
+                    REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC,
+                    RequestProfitableAnalyzer(
+                        tradeManagerData.accountId,
+                        tradeManagerData.chooseStrategy,
+                        strategyConfigModel?.id,
+                        money
+                    )
+                )
             ).get(5, TimeUnit.SECONDS).value()
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
