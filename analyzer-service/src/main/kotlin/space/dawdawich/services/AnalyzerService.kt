@@ -116,11 +116,18 @@ class AnalyzerService(
         if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
-            log.info { "Start to process analyzers stability calculations" }
+            log.info { "Start to process analyzers stability calculations. Start Time: $calculationStartTime" }
+            val copiedAnalyzers = analyzers.toList()
             runBlocking {
-                analyzers.toList().forEach { analyzer ->
+                copiedAnalyzers.forEach { analyzer ->
                     launch {
                         analyzer.updateSnapshot()
+                    }
+                }
+            }
+            runBlocking {
+                copiedAnalyzers.forEach { analyzer ->
+                    launch {
                         val stabilityCoef = analyzer.calculateStabilityCoef()
                         ops.updateOne(
                             Query.query(Criteria.where("_id").`is`(analyzer.id)),

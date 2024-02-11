@@ -59,6 +59,7 @@ class KafkaConfiguration {
         configProps[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = JsonDeserializer::class.java
         configProps[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "latest"
         configProps[ConsumerConfig.GROUP_ID_CONFIG] = "analyzer_event_group"
+        configProps[JsonDeserializer.TRUSTED_PACKAGES] = "*"
         return DefaultKafkaConsumerFactory(configProps)
     }
 
