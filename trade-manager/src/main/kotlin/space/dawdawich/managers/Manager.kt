@@ -11,6 +11,7 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
+import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.strategy.GridStrategyConfigModel
@@ -65,10 +66,11 @@ class Manager(
 
     private var lastRefreshTime = System.currentTimeMillis()
     private var listener: ConcurrentMessageListenerContainer<String, String>? = null
-    private var active: Boolean = true
-
     private lateinit var strategyRunner: StrategyRunner
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
+
+    var active: Boolean = true
+        private set
 
     init {
         var strategyConfig: StrategyConfigModel? = null
@@ -100,16 +102,12 @@ class Manager(
                     }
                     strategyRunner.position?.let { position ->
                         runBlocking {
-                            launch {
-                                bybitService.closePosition(
-                                    strategyRunner.symbol,
-                                    position.trend.direction == 1,
-                                    position.size
-                                )
-                            }
-                            launch {
-                                bybitService.cancelAllOrder(strategyRunner.symbol)
-                            }
+                            bybitService.cancelAllOrder(strategyRunner.symbol)
+                            bybitService.closePosition(
+                                strategyRunner.symbol,
+                                position.trend.direction == 1,
+                                position.size
+                            )
                             delay(5.seconds)
                         }
                         if (strategyRunner.position != null) {
@@ -176,13 +174,14 @@ class Manager(
                 trend: Trend,
             ->
             val orderId = UUID.randomUUID().toString()
-            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $qty; symbol: $orderSymbol" } }
+            val orderQty = qty.trimToStep(strategyConfig.minQtyStep)
+            logger { it.info { "Try to create order. id: '$orderId'; price: '$inPrice'; qty: $orderQty; symbol: $orderSymbol; minOrderQty: ${strategyConfig.minQtyStep}; priceTick: ${strategyConfig.priceMinStep}" } }
             val isSuccess =
                 runBlocking {
                     bybitService.createOrder(
                         orderSymbol,
                         inPrice,
-                        qty.trimToStep(strategyConfig.minQtyStep),
+                        orderQty,
                         trend.directionBoolean,
                         orderId
                     )
@@ -210,6 +209,12 @@ class Manager(
                     strategyConfig.minQtyStep,
                     false,
                     createOrderFunction = createOrderFunction,
+                    cancelOrderFunction = { symbol, orderId ->
+                        logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
+                        runBlocking {
+                            bybitService.cancelOrder(symbol, orderId)
+                        }
+                    },
                     id = strategyConfig.id
                 ).apply {
                     setDiapasonConfigs(
@@ -220,10 +225,11 @@ class Manager(
                         strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
                     setClosePosition {
-                        logger { it.info { "Try to close position: '${position}'" } }
+                        logger { it.info { "CLOSE POSITION: Get TP/SL;\n'${position}'" } }
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
                         }
+                        webSocket.resetCumRealizedPnL()
                     }
                     with(webSocket) {
                         positionUpdateCallback = { position ->
@@ -238,7 +244,7 @@ class Manager(
                         logger { it.info { "Complete initializing websocket" } }
                         if (!isOpen) {
                             logger { it.info { "Connecting to web socket" } }
-                            connect()
+                            connectBlocking()
                         }
                     }
                     listener = priceListenerFactory.getPriceListener(symbol, true).apply {
@@ -270,18 +276,15 @@ class Manager(
                         if (data is GridTableStrategyRuntimeInfoModel && this.middlePrice != data.middlePrice) {
                             logger { it.info { "Start to reinitialize strategy bounds" } }
                             runBlocking {
-                                launch {
-                                    bybitService.cancelAllOrder(strategyConfig.symbol)
-                                }
-                                launch {
-                                    position?.let { pos ->
-                                        bybitService.closePosition(
-                                            strategyConfig.symbol,
-                                            pos.trend.directionBoolean,
-                                            pos.size
-                                        )
-                                        webSocket.resetCumRealizedPnL()
-                                    }
+                                bybitService.cancelAllOrder(strategyConfig.symbol)
+                                position?.let { pos ->
+                                    logger { it.info { "CLOSE POSITION: change middle price" } }
+                                    bybitService.closePosition(
+                                        strategyConfig.symbol,
+                                        pos.trend.directionBoolean,
+                                        pos.size
+                                    )
+                                    webSocket.resetCumRealizedPnL()
                                 }
                             }
                             this.setDiapasonConfigs(
@@ -289,23 +292,27 @@ class Manager(
                                 data.minPrice,
                                 data.maxPrice,
                                 data.step,
-                                data.prices
+                                data.prices.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                             )
                         }
                     }
-                } else {
+                } else { // Processed only with active web socket connection
                     synchronized(synchronizationObject) {
                         if (active) {
-                            currentPrice = price
+                            try {
+                                currentPrice = price
+                            } catch (ex: InvalidSignatureException) {
+                                logger { it.warn { "Signature become invalid" } }
+                                webSocket.reconnectBlocking()
+                            }
                         }
                     }
                 }
                 refreshStrategyConfig()
             } catch (ex: Exception) {
+                logger { it.warn(ex) { "Error occurred." } }
                 deactivate()
                 crashPostAction.invoke(ex)
             }
         }
-
-    fun isActive() = active
 }

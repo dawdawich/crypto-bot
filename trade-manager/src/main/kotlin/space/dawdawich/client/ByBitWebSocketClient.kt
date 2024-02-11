@@ -40,20 +40,8 @@ class ByBitWebSocketClient(
 
     private val logger = logger {}
 
-    private var signatureWithExpiration: Pair<String, Long>
-
-    init {
-        signatureWithExpiration = getAuthData()
-    }
-
     override fun onOpen(handshakedata: ServerHandshake?) {
-        val operationRequest = JSONObject(
-            mapOf(
-                "op" to "auth",
-                "args" to listOf(apiKey, signatureWithExpiration.second.toString(), signatureWithExpiration.first)
-            )
-        ).toString()
-        send(operationRequest)
+        subscribe()
     }
 
     override fun onMessage(message: String?) {
@@ -137,14 +125,24 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         if (remote) {
-            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$reason'" }
-            signatureWithExpiration = getAuthData()
+            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
             GlobalScope.launch { reconnect() }
         }
     }
 
     override fun onError(ex: Exception?) {
         logger.error(ex) { "Failed to listen websocket" }
+    }
+
+    private fun subscribe() {
+        val signatureWithExpiration: Pair<String, Long> = getAuthData()
+        val operationRequest = JSONObject(
+            mapOf(
+                "op" to "auth",
+                "args" to listOf(apiKey, signatureWithExpiration.second.toString(), signatureWithExpiration.first)
+            )
+        ).toString()
+        send(operationRequest)
     }
 
     fun resetCumRealizedPnL() {
