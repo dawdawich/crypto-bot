@@ -45,9 +45,10 @@ class Analyzer(
             stabilityCoef = 0.0
             return stabilityCoef
         }
+        val listToProcess = snapshots.toList()
 
-        val biggestDiapasonOfSnapshots = findLargestRange(snapshots.toList()).size.toDouble()
-        val smallestDiapasonOfSnapshots = findLowestRange(snapshots.toList()).size.toDouble()
+        val biggestDiapasonOfSnapshots = findLargestRange(listToProcess).size.toDouble()
+        val smallestDiapasonOfSnapshots = findLowestRange(listToProcess).size.toDouble()
 
         stabilityCoef = biggestDiapasonOfSnapshots / smallestDiapasonOfSnapshots
 
