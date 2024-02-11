@@ -24,10 +24,8 @@ abstract class StrategyRunner(
     protected var currentPrice = 0.0
     var position: Position? = null
 
-    var money: Double  by Delegates.observable(money) { _, _, newValue ->
-        if ((newValue - moneyHandler).absoluteValue > moneyHandler / 100) {
-            moneyHandler = newValue
-        }
+    var money: Double  by Delegates.observable(money) { _, oldValue, newValue ->
+        moneyChangeFunction(oldValue, newValue)
     }
         protected set
 
@@ -60,8 +58,4 @@ abstract class StrategyRunner(
     fun getActivePositionTrend() = position?.trend
 
     protected fun Position.convertToInfo() = this.let { PositionModel(it.trend == Trend.LONG, it.size, it.entryPrice) }
-
-    private var moneyHandler: Double by Delegates.observable(money) { _, old, new ->
-        moneyChangeFunction(old, new)
-    }
 }
