@@ -46,6 +46,12 @@ class Manager(
     private val synchronizationObject = Any()
     private val _logger = KotlinLogging.logger {}
 
+    private var money: Double by Delegates.observable(0.0) { _, _, newValue ->
+        if (strategyRunner != null) {
+            strategyRunner.updateMoney(newValue)
+        }
+    }
+
     private infix fun logger(action: (KLogger) -> Unit) {
         MDC.put("manager-id", tradeManagerData.id)
         action(_logger)
@@ -68,6 +74,9 @@ class Manager(
 
     init {
         var strategyConfig: StrategyConfigModel? = null
+        money = runBlocking {
+            bybitService.getAccountBalance()
+        }
 
         initJob = GlobalScope.launch {
             while (strategyConfig == null) {
@@ -133,7 +142,7 @@ class Manager(
     private fun getAnalyzerConfig(strategyConfigModel: StrategyConfigModel? = null): StrategyConfigModel? {
         try {
             return replayingStrategyConfigKafkaTemplate.sendAndReceive(
-                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(tradeManagerData.accountId, tradeManagerData.chooseStrategy, strategyConfigModel?.id, strategyRunner.money))
+                ProducerRecord(REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(tradeManagerData.accountId, tradeManagerData.chooseStrategy, strategyConfigModel?.id, money))
             ).get(5, TimeUnit.SECONDS).value()
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
@@ -154,8 +163,6 @@ class Manager(
     }
 
     private fun setupStrategyRunner(strategyConfig: StrategyConfigModel) {
-        val money = runBlocking { bybitService.getAccountBalance() }
-
         runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
         val createOrderFunction: CreateOrderFunction = {
                 inPrice: Double,
@@ -218,9 +225,9 @@ class Manager(
                     with(webSocket) {
                         positionUpdateCallback = { position ->
                             this@apply.updatePosition(position)
-                            this@apply.updateMoney(runBlocking {
+                            this@Manager.money = runBlocking {
                                 bybitService.getAccountBalance()
-                            })
+                            }
                         }
                         fillOrderCallback = { orderId ->
                             this@apply.fillOrder(orderId)
