@@ -13,9 +13,9 @@ class Analyzer(
     val accountId: String,
     val id: String = UUID.randomUUID().toString()
 ) {
-    private var snapshots : Queue<Double> = LinkedList()
+    private var snapshots : Queue<Double> = ArrayDeque()
     private val maxCountOfSnapshots : Int = 1440
-    var stabilityCoef : Double = 0.0
+    private var stabilityCoef : Double = 0.0
 
     private var currentPrice: Double by Delegates.observable(currentPrice) { _, oldPrice, newPrice ->
         if (oldPrice > 0 && newPrice > 0) {
@@ -46,8 +46,8 @@ class Analyzer(
             return stabilityCoef
         }
 
-        val biggestDiapasonOfSnapshots = findLargestRange(snapshots.stream().toList()).size.toDouble()
-        val smallestDiapasonOfSnapshots = findLowestRange(snapshots.stream().toList()).size.toDouble()
+        val biggestDiapasonOfSnapshots = findLargestRange(snapshots.toList()).size.toDouble()
+        val smallestDiapasonOfSnapshots = findLowestRange(snapshots.toList()).size.toDouble()
 
         stabilityCoef = biggestDiapasonOfSnapshots / smallestDiapasonOfSnapshots
 

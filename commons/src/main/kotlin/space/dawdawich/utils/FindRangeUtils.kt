@@ -4,12 +4,11 @@ package space.dawdawich.utils
 fun findLowestRange(list: List<Double>): List<Double> = findRange(list.reversed())
 fun findLargestRange(list: List<Double>): List<Double> = findRange(list)
 
-private fun createTree(groups: MutableList<Group>) {
+private fun createTree(groups: List<Group>) {
     val stack = mutableListOf<Group>()
-    for (i in 0 until groups.size) {
-        val current = groups[i]
+    for (element in groups) {
         if (stack.isEmpty()) {
-            stack.add(current)
+            stack.add(element)
         }
         var index = 0
         var value = Int.MAX_VALUE
@@ -18,14 +17,14 @@ private fun createTree(groups: MutableList<Group>) {
                 value = stack[j].depth
                 index = j
             }
-            if (current.value > stack[j].value) {
-                current.parent = stack[j]
-                current.depth += stack[j].depth
-                stack.add(index, current)
+            if (element.value > stack[j].value) {
+                element.parent = stack[j]
+                element.depth += stack[j].depth
+                stack.add(index, element)
                 break
             }
             if (j == stack.size - 1) {
-                stack.add(current)
+                stack.add(element)
                 break
             }
         }
