@@ -118,6 +118,7 @@ const ManagerPageEditor: React.FC<ManagerEditorPageProps> = (props: ManagerEdito
                         onChange={handleStrategyChange}
                     >
                         <MenuItem value={"BIGGEST_BY_MONEY"}>Biggest by money</MenuItem>
+                        <MenuItem value={"MOST_STABLE"}>Most stable analyzer</MenuItem>
                         <MenuItem value={"CUSTOM"}>Custom</MenuItem>
                     </Select>
                 </FormControl>

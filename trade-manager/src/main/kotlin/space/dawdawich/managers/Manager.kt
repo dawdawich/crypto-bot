@@ -144,7 +144,7 @@ class Manager(
                         money
                     )
                 )
-            ).get(5, TimeUnit.SECONDS).value()
+            ).get(2, TimeUnit.MINUTES).value() // TODO: refactor to 30 seconds
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
         }

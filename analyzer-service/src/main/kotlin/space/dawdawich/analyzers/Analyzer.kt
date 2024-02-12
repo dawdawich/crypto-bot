@@ -15,7 +15,8 @@ class Analyzer(
 ) {
     private var snapshots : Queue<Double> = ArrayDeque()
     private val maxCountOfSnapshots : Int = 1440
-    private var stabilityCoef : Double = 0.0
+    var stabilityCoef : Double = 0.0
+        private set
 
     private var currentPrice: Double by Delegates.observable(currentPrice) { _, oldPrice, newPrice ->
         if (oldPrice > 0 && newPrice > 0) {

@@ -211,9 +211,7 @@ class AnalyzerService(
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         val accountAnalyzer = analyzers
             .filter { it.accountId == request.accountId }
-            .toList()
-            .asSequence()
-            .maxBy { it.calculateStabilityCoef() }
+            .maxBy { it.stabilityCoef }
 
         return if (accountAnalyzer.id != request.currentAnalyzerId && accountAnalyzer.getMoney() > request.managerMoney) {
             accountAnalyzer.getStrategyConfig()
