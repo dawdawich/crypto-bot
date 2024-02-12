@@ -114,6 +114,18 @@ class AnalyzerService(
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
     private fun updateSnapshot() {
         if (analyzers.isNotEmpty()) {
+            val copiedAnalyzers = analyzers.toList()
+            runBlocking {
+                copiedAnalyzers.forEach { analyzer ->
+                    launch { analyzer.updateSnapshot() }
+                }
+            }
+        }
+    }
+
+    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.MINUTES)
+    private fun calculateStabilityCoef() {
+        if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
             log.info { "Start to process analyzers stability calculations. Start Time: $calculationStartTime" }
@@ -121,17 +133,10 @@ class AnalyzerService(
             runBlocking {
                 copiedAnalyzers.forEach { analyzer ->
                     launch {
-                        analyzer.updateSnapshot()
-                    }
-                }
-            }
-            runBlocking {
-                copiedAnalyzers.forEach { analyzer ->
-                    launch {
                         val stabilityCoef = analyzer.calculateStabilityCoef()
                         ops.updateOne(
-                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                            Update().set("stabilityCoef", stabilityCoef)
+                                Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                                Update().set("stabilityCoef", stabilityCoef)
                         )
                     }
                 }
@@ -209,12 +214,20 @@ class AnalyzerService(
     )
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
-        val accountAnalyzer = analyzers
-            .filter { it.accountId == request.accountId }
-            .maxBy { it.stabilityCoef }
+        val copiedAnalyzers = analyzers.toList()
+        val maxStabilityCoef = copiedAnalyzers
+                .asSequence()
+                .filter { it.accountId == request.accountId }
+                .filter { it.getMoney() > request.managerMoney }
+                .maxBy { it.stabilityCoef }.stabilityCoef
 
-        return if (accountAnalyzer.id != request.currentAnalyzerId && accountAnalyzer.getMoney() > request.managerMoney) {
-            accountAnalyzer.getStrategyConfig()
+        val mostStableAnalyzers = copiedAnalyzers.filter { it.stabilityCoef == maxStabilityCoef }
+
+        return if (mostStableAnalyzers.none { it.id == request.currentAnalyzerId }) {
+            mostStableAnalyzers
+                    .map { it.getStrategyConfig() }
+                    .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                    .minByOrNull { it.multiplier }
         } else null
     }
 
