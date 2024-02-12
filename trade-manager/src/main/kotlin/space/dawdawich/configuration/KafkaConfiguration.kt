@@ -19,6 +19,9 @@ import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.manager.ManagerInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 
 @Configuration
@@ -92,7 +95,7 @@ class KafkaConfiguration {
         producerFactory: ProducerFactory<String, RequestProfitableAnalyzer>,
         jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyConfigModel?>
     ) =
-        replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+        replyingTemplate(producerFactory, jsonKafkaListenerContainerFactory, RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC).apply { setDefaultReplyTimeout(2.minutes.toJavaDuration()) }
 
     @Bean
     fun strategyRuntimeDataReplyingTemplate(

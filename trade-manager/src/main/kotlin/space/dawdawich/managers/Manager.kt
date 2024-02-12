@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.MDC
 import org.springframework.kafka.listener.AcknowledgingMessageListener
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
+import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
@@ -144,7 +145,9 @@ class Manager(
                         money
                     )
                 )
-            ).get(2, TimeUnit.MINUTES).value() // TODO: refactor to 30 seconds
+            ).get(2, TimeUnit.MINUTES).value()
+        } catch (ex: KafkaReplyTimeoutException) {
+            logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
         }
