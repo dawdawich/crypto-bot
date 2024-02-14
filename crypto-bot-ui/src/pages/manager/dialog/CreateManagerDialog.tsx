@@ -3,7 +3,8 @@ import {ApiToken} from "../../../model/ApiToken";
 import {useLocation} from "wouter";
 import {getApiTokens} from "../../../service/AccountService";
 import {
-    Button, Dialog,
+    Button,
+    Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
@@ -12,10 +13,10 @@ import {
     InputLabel,
     MenuItem,
     Select,
-    Switch, TextField
+    Switch,
+    TextField
 } from "@mui/material";
 import {createManager} from "../../../service/ManagerService";
-import {AuthInfo} from "../../../model/AuthInfo";
 import {useAuth} from "../../../context/AuthContext";
 
 interface AddApiTokenDialogProps {
@@ -29,17 +30,17 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
     const [data, setData] = useState<{
         customAnalyzerId: string;
         status: string;
-        apiTokenId: string | null;
+        apiTokenId: string;
         stopLoss: number | null;
         takeProfit: number | null;
-        analyzerChooseStrategy: string | null;
+        analyzerChooseStrategy: string;
     }>({
         customAnalyzerId: "",
         status: 'INACTIVE',
-        apiTokenId: null,
+        apiTokenId: "",
         stopLoss: null,
         takeProfit: null,
-        analyzerChooseStrategy: null
+        analyzerChooseStrategy: "MOST_STABLE"
     })
     const [, navigate] = useLocation();
     const {authInfo} = useAuth();
@@ -138,14 +139,14 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                     <Select
                         labelId="choose-strategy-select-label"
                         id="choose-strategy-select"
-                        value="MOST_STABLE"
+                        value={data.analyzerChooseStrategy}
                         label="Strategy"
                         onChange={(event) => handleChange(event as React.ChangeEvent<HTMLInputElement>)}
                         name="analyzerChooseStrategy"
                     >
-                        <MenuItem value={"BIGGEST_BY_MONEY"}>Biggest by money</MenuItem>
-                        <MenuItem value={"MOST_STABLE"}>Most stable analyzer</MenuItem>
-                        <MenuItem value={"CUSTOM"}>Custom</MenuItem>
+                        <MenuItem key="BIGGEST_BY_MONEY" value={"BIGGEST_BY_MONEY"}>Biggest by money</MenuItem>
+                        <MenuItem key="MOST_STABLE" value={"MOST_STABLE"}>Most stable analyzer</MenuItem>
+                        <MenuItem key="CUSTOM" value={"CUSTOM"}>Custom</MenuItem>
                     </Select>
                 </FormControl>
                 <FormControlLabel
