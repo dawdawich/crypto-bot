@@ -32,12 +32,14 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
         apiTokenId: string | null;
         stopLoss: number | null;
         takeProfit: number | null;
+        analyzerChooseStrategy: string | null;
     }>({
         customAnalyzerId: "",
         status: 'INACTIVE',
         apiTokenId: null,
         stopLoss: null,
-        takeProfit: null
+        takeProfit: null,
+        analyzerChooseStrategy: null
     })
     const [, navigate] = useLocation();
     const {authInfo} = useAuth();
@@ -131,6 +133,21 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({open, onClose, o
                     value={data.takeProfit}
                     onChange={handleChange}
                 />
+                <FormControl fullWidth>
+                    <InputLabel id="choose-strategy-select-label">Analyzer Find Strategy</InputLabel>
+                    <Select
+                        labelId="choose-strategy-select-label"
+                        id="choose-strategy-select"
+                        value="MOST_STABLE"
+                        label="Strategy"
+                        onChange={(event) => handleChange(event as React.ChangeEvent<HTMLInputElement>)}
+                        name="analyzerChooseStrategy"
+                    >
+                        <MenuItem value={"BIGGEST_BY_MONEY"}>Biggest by money</MenuItem>
+                        <MenuItem value={"MOST_STABLE"}>Most stable analyzer</MenuItem>
+                        <MenuItem value={"CUSTOM"}>Custom</MenuItem>
+                    </Select>
+                </FormControl>
                 <FormControlLabel
                     control={<Switch checked={data.status === 'ACTIVE'} onChange={handleChange} name="status"/>}
                     label="Active"

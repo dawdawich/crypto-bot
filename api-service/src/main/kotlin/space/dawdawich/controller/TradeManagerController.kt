@@ -20,6 +20,7 @@ class TradeManagerController(private val tradeMangerService: TradeManagerService
         tradeMangerService.createNewTraderManager(
             request.apiTokenId,
             request.status,
+            request.analyzerChooseStrategy,
             request.customAnalyzerId,
             request.stopLoss,
             request.takeProfit,

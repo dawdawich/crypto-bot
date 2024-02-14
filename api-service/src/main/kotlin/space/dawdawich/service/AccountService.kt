@@ -6,7 +6,7 @@ import space.dawdawich.repositories.AccountRepository
 import space.dawdawich.repositories.ApiAccessTokenRepository
 import space.dawdawich.repositories.entity.AccountDocument
 import space.dawdawich.repositories.entity.ApiAccessTokenDocument
-import space.dawdawich.repositories.entity.constants.Market
+import space.dawdawich.model.constants.Market
 import java.util.UUID
 
 @Service

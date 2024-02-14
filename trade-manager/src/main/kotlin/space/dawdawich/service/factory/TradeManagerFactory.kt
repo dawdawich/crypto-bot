@@ -25,28 +25,30 @@ class TradeManagerFactory(
 ) {
 
     fun createTradeManager(tradeManagerData: TradeManagerDocument): Manager {
-        val apiTokens = apiAccessTokenRepository.findById(tradeManagerData.apiTokensId).orElseThrow {
+        val apiToken = apiAccessTokenRepository.findById(tradeManagerData.apiTokenId).orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
 
         val encryptor = Mac.getInstance("HmacSHA256").apply {
             init(
-                SecretKeySpec(apiTokens.secretKey.toByteArray(), "HmacSHA256")
+                SecretKeySpec(apiToken.secretKey.toByteArray(), "HmacSHA256")
             )
         }
 
         return Manager(
             tradeManagerData,
-            serviceFactory.createHttpClient(apiTokens.test, apiTokens.apiKey, encryptor),
+            serviceFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, encryptor),
             strategyConfigReplyingTemplate,
             strategyRuntimeDataReplyingTemplate,
             ByBitWebSocketClient(
-                apiTokens.test,
-                apiTokens.apiKey,
+                apiToken.demoAccount,
+                apiToken.apiKey,
                 encryptor,
                 jsonPath
             ),
-            priceListenerFactoryService
+            priceListenerFactoryService,
+            apiToken.market,
+            apiToken.demoAccount
         )
     }
 }

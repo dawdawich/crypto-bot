@@ -4,6 +4,7 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
+import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.repositories.TradeManagerRepository
 import space.dawdawich.repositories.entity.TradeManagerDocument
 import space.dawdawich.repositories.entity.constants.ManagerStatus
@@ -19,6 +20,7 @@ class TradeManagerService(
     fun createNewTraderManager(
         apiTokenId: String,
         status: ManagerStatus,
+        analyzerFindStrategy: AnalyzerChooseStrategy,
         customAnalyzerId: String,
         stopLoss: Int?,
         takeProfit: Int?,
@@ -31,7 +33,8 @@ class TradeManagerService(
             customAnalyzerId = customAnalyzerId,
             status = status,
             stopLoss = stopLoss,
-            takeProfit = takeProfit
+            takeProfit = takeProfit,
+            chooseStrategy = analyzerFindStrategy
         )
     ).apply {
         if (status == ManagerStatus.ACTIVE) {

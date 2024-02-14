@@ -1,6 +1,7 @@
 package space.dawdawich.controller.model
 
 import kotlinx.serialization.Serializable
+import space.dawdawich.model.constants.Market
 
 @Serializable
 data class AnalyzerBulkCreateRequest(
@@ -16,5 +17,7 @@ data class AnalyzerBulkCreateRequest(
     val gridSizeStep: Int,
     val multiplierFrom: Int,
     val multiplierTo: Int,
-    val startCapital: Int
+    val startCapital: Int,
+    val demoAccount: Boolean,
+    val market: Market
 )

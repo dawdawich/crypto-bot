@@ -25,6 +25,7 @@ import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import space.dawdawich.utils.getRightTopic
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 
@@ -123,12 +124,11 @@ class AnalyzerService(
         }
     }
 
-    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
     private fun calculateStabilityCoef() {
         if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
-            log.info { "Start to process analyzers stability calculations. Start Time: $calculationStartTime" }
             val copiedAnalyzers = analyzers.toList()
             runBlocking {
                 copiedAnalyzers.forEach { analyzer ->
@@ -141,7 +141,7 @@ class AnalyzerService(
                     }
                 }
             }
-            log.info { "Finish. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
+            log.info { "Finish process analyzers stability. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
             ops.execute()
         }
     }
@@ -171,7 +171,7 @@ class AnalyzerService(
             PriceTickerListener(
                 kafkaListenerContainerFactory.createContainer(
                     TopicPartitionOffset(
-                        BYBIT_TICKER_TOPIC, // TODO need to extract and process on fly
+                        getRightTopic(analyzer.market, analyzer.demoAccount),
                         partition,
                         TopicPartitionOffset.SeekPosition.END
                     )
@@ -210,14 +210,20 @@ class AnalyzerService(
         0.0,
         symbolInfo.symbol,
         accountId,
-        id
+        market,
+        demoAccount,
+        id,
     )
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
-        val copiedAnalyzers = analyzers.toList()
+        val copiedAnalyzers = analyzers
+            .asSequence()
+            .filter { it.demoAccount == request.demoAccount }
+            .filter { it.market == request.market }
+            .filter { it.accountId == request.accountId }
+            .toList()
         val maxStabilityCoef = copiedAnalyzers
                 .asSequence()
-                .filter { it.accountId == request.accountId }
                 .filter { it.getMoney() > request.managerMoney }
                 .maxBy { it.stabilityCoef }.stabilityCoef
 
@@ -232,11 +238,16 @@ class AnalyzerService(
     }
 
     private fun getBiggestByMoneyAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
-        var accountAnalyzers = analyzers.filter { it.accountId == request.accountId }.toList()
-        val maxMoney = accountAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
-        accountAnalyzers = accountAnalyzers.filter { it.getMoney() == maxMoney }
-        if (accountAnalyzers.none { it.id == request.currentAnalyzerId }) {
-            return accountAnalyzers
+        val copiedAnalyzers = analyzers
+            .asSequence()
+            .filter { it.demoAccount == request.demoAccount }
+            .filter { it.market == request.market }
+            .filter { it.accountId == request.accountId }
+            .toList()
+        val maxMoney = copiedAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
+        val mostProfitableAnalyzers = copiedAnalyzers.filter { it.getMoney() == maxMoney }
+        if (mostProfitableAnalyzers.none { it.id == request.currentAnalyzerId }) {
+            return mostProfitableAnalyzers
                 .map { it.getStrategyConfig() }
                 .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
                 .minByOrNull { it.multiplier }

@@ -24,7 +24,7 @@ class SymbolService(
 
     fun addNewSymbol(accountId: String, symbol: String) {
         val apiToken = apiAccessTokenRepository.findAllByAccountId(accountId)[0]
-        val httpClient = clientFactory.createHttpClient(apiToken.test, apiToken.apiKey, apiToken.secretKey)
+        val httpClient = clientFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, apiToken.secretKey)
         val symbolInfo = runBlocking {
             httpClient.getPairInstructions(symbol)
         }
@@ -33,7 +33,6 @@ class SymbolService(
             SymbolInfoDocument(
                 symbol,
                 symbolRepository.count().toInt(),
-                apiToken.test,
                 symbolInfo.tickSize,
                 symbolInfo.minPrice,
                 symbolInfo.maxPrice,
@@ -47,5 +46,5 @@ class SymbolService(
     }
 
     private fun SymbolInfoDocument.toModel() =
-        SymbolResponse(symbol, partition, testServer, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
+        SymbolResponse(symbol, partition, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
 }

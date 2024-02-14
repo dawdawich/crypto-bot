@@ -72,7 +72,9 @@ class AnalyzerService(
                 takeProfit,
                 symbolRepository.findByIdOrNull(symbol)!!,
                 startCapital,
-                active
+                active,
+                demoAccount,
+                market
             )
             gridTableAnalyzerRepository.insert(gridTableAnalyzerDocument)
             if (active) {
@@ -108,7 +110,9 @@ class AnalyzerService(
                                             takeProfit,
                                             symbol,
                                             startCapital,
-                                            false
+                                            false,
+                                            request.demoAccount,
+                                            request.market
                                         )
                                     )
                                 }

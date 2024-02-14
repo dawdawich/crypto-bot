@@ -15,6 +15,7 @@ import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOP
 import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
+import space.dawdawich.model.constants.Market
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
@@ -42,13 +43,15 @@ class Manager(
     private val replayingStrategyDataKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val webSocket: ByBitWebSocketClient,
     private val priceListenerFactory: PriceTickerListenerFactoryService,
+    private val market: Market,
+    private val demoAccount: Boolean,
 ) {
 
     private val initJob: Job
     private val synchronizationObject = Any()
     private val _logger = KotlinLogging.logger {}
 
-    private var money: Double by Delegates.observable(runBlocking {bybitService.getAccountBalance() }) { _, _, newValue ->
+    private var money: Double by Delegates.observable(runBlocking { bybitService.getAccountBalance() }) { _, _, newValue ->
         strategyRunner.updateMoney(newValue)
     }
 
@@ -142,7 +145,9 @@ class Manager(
                         tradeManagerData.accountId,
                         tradeManagerData.chooseStrategy,
                         strategyConfigModel?.id,
-                        money
+                        money,
+                        demoAccount,
+                        market
                     )
                 )
             ).get(2, TimeUnit.MINUTES).value()
@@ -154,8 +159,8 @@ class Manager(
         return null
     }
 
-    private fun refreshStrategyConfig() {
-        if ((System.currentTimeMillis() - lastRefreshTime) > tradeManagerData.refreshAnalyzerMinutes.minutes.inWholeMilliseconds) {
+    private fun refreshStrategyConfig(force: Boolean = false) {
+        if (force || (System.currentTimeMillis() - lastRefreshTime) > tradeManagerData.refreshAnalyzerMinutes.minutes.inWholeMilliseconds) {
             logger { it.info { "Try to find more suitable analyzer" } }
             getAnalyzerConfig(strategyRunner.getStrategyConfig())?.let { config ->
                 logger { it.info { "Found more suitable analyzer '${config.id}'" } }
@@ -227,12 +232,21 @@ class Manager(
                         strategyConfig.step,
                         strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
-                    setClosePosition {
-                        logger { it.info { "CLOSE POSITION: Get TP/SL;\n'${position}'" } }
+                    setClosePosition { isStopLoss ->
+                        logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
                         }
                         webSocket.resetCumRealizedPnL()
+                        if (isStopLoss) {
+                            runBlocking {
+                                listener?.pause()
+                                bybitService.cancelAllOrder(symbol)
+                                delay(5.minutes)
+                                listener?.resume()
+                                refreshStrategyConfig(true)
+                            }
+                        }
                     }
                     with(webSocket) {
                         positionUpdateCallback = { position ->

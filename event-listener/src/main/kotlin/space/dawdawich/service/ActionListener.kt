@@ -26,10 +26,8 @@ class ActionListener(
     @PostConstruct
     fun postInit() {
         val allSymbols = symbolRepository.findAll()
-        val symbols = allSymbols.filter { !it.testServer }
-        val testSymbols = allSymbols.filter { it.testServer }
-        initializeTickerTopics(BYBIT_TICKER_TOPIC, symbols, byBitClient)
-        initializeTickerTopics(BYBIT_TEST_TICKER_TOPIC, testSymbols, byBitTestClient)
+        initializeTickerTopics(BYBIT_TICKER_TOPIC, allSymbols, byBitClient)
+        initializeTickerTopics(BYBIT_TEST_TICKER_TOPIC, allSymbols, byBitTestClient)
     }
 
     @KafkaListener(topics = [SYMBOL_REINITIALIZE_TOPIC])

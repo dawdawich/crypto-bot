@@ -18,6 +18,6 @@ data class TradeManagerResponse(
     val errorDescription: String? = null,
 ) {
     companion object {
-        fun TradeManagerDocument.convert() = TradeManagerResponse(this.id, this.chooseStrategy.name, this.customAnalyzerId, this.status.name, this.apiTokensId, this.createTime, this.updateTime, this.stopLoss, this.takeProfit, this.stopDescription, this.errorDescription)
+        fun TradeManagerDocument.convert() = TradeManagerResponse(this.id, this.chooseStrategy.name, this.customAnalyzerId, this.status.name, this.apiTokenId, this.createTime, this.updateTime, this.stopLoss, this.takeProfit, this.stopDescription, this.errorDescription)
     }
 }

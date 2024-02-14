@@ -7,19 +7,19 @@ import space.dawdawich.repositories.entity.constants.ManagerStatus
 
 @Document("trade_manager")
 data class TradeManagerDocument(
-        @Id
+    @Id
     val id: String,
-        val accountId: String,
-        var apiTokensId: String,
-        var money: Double = 0.0,
-        var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
-        var refreshAnalyzerMinutes: Int = 30,
-        var customAnalyzerId: String = "",
-        var status: ManagerStatus = ManagerStatus.INACTIVE,
-        val stopLoss: Int? = null,
-        val takeProfit: Int? = null,
-        var stopDescription: String? = null,
-        var errorDescription: String? = null,
-        val createTime: Long = System.currentTimeMillis(),
-        var updateTime: Long = System.currentTimeMillis()
+    val accountId: String,
+    var apiTokenId: String,
+    var money: Double = 0.0,
+    var chooseStrategy: AnalyzerChooseStrategy,
+    var refreshAnalyzerMinutes: Int = 30,
+    var customAnalyzerId: String = "",
+    var status: ManagerStatus = ManagerStatus.INACTIVE,
+    val stopLoss: Int? = null,
+    val takeProfit: Int? = null,
+    var stopDescription: String? = null,
+    var errorDescription: String? = null,
+    val createTime: Long = System.currentTimeMillis(),
+    var updateTime: Long = System.currentTimeMillis()
 )

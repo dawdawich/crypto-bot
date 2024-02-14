@@ -1,5 +1,6 @@
 package space.dawdawich.analyzers
 
+import space.dawdawich.model.constants.Market
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.utils.findLargestRange
 import space.dawdawich.utils.findLowestRange
@@ -11,6 +12,8 @@ class Analyzer(
     currentPrice: Double,
     val symbol: String,
     val accountId: String,
+    val market: Market,
+    val demoAccount: Boolean,
     val id: String = UUID.randomUUID().toString()
 ) {
     private var snapshots : Queue<Double> = ArrayDeque()

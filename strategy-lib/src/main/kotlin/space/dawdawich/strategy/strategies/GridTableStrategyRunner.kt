@@ -123,11 +123,13 @@ class GridTableStrategyRunner(
                 if (position.size > 0.0) {
                     val moneyWithProfit =
                         money + position.calculateProfit(currentPrice)
-                    if (moneyWithProfit > money.plusPercent(takeProfit) || moneyWithProfit < money.plusPercent(-stopLoss)) {
+                    val isTakeProfitExceeded = moneyWithProfit > money.plusPercent(takeProfit)
+                    val isStopLossExceeded = moneyWithProfit < money.plusPercent(-stopLoss)
+                    if (isTakeProfitExceeded || isStopLossExceeded) {
                         if (simulateTradeOperations) {
                             money = moneyWithProfit
                         }
-                        closePositionFunction.invoke()
+                        closePositionFunction.invoke(isStopLossExceeded)
                     }
                 }
             }
