@@ -242,8 +242,10 @@ class Manager(
                             runBlocking {
                                 listener?.pause()
                                 bybitService.cancelAllOrder(symbol)
+                                logger { it.info { "Wait 5 minutes to continue working" } }
                                 delay(5.minutes)
                                 listener?.resume()
+                                logger { it.info { "Resuming work. Try to find new analyzer" } }
                                 refreshStrategyConfig(true)
                             }
                         }
