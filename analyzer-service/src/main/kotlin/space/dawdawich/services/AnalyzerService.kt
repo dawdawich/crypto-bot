@@ -43,7 +43,7 @@ class AnalyzerService(
 
     private val log = KotlinLogging.logger { }
 
-    private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
+    private val priceListeners = mutableMapOf<Pair<Int, Boolean>, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
             mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<Analyzer> = mutableListOf()
@@ -167,7 +167,7 @@ class AnalyzerService(
                 ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
         }
 
-        priceListeners.getOrPut(partition) {
+        priceListeners.getOrPut(partition to analyzer.demoAccount) {
             PriceTickerListener(
                 kafkaListenerContainerFactory.createContainer(
                     TopicPartitionOffset(
@@ -185,7 +185,7 @@ class AnalyzerService(
     private fun removeAnalyzer(analyzerId: String) {
         analyzers.find { it.id == analyzerId }?.let {
             val partition = partitionMap[it.symbol]
-            priceListeners[partition]?.removeObserver(it::acceptPriceChange)
+            priceListeners[partition to it.demoAccount]?.removeObserver(it::acceptPriceChange)
         }
 
         analyzers.removeIf { it.id == analyzerId }
