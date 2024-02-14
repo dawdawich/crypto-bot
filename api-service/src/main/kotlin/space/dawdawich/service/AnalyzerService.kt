@@ -25,7 +25,8 @@ class AnalyzerService(
     private val analyzerValidationService: AnalyzerValidationService,
     private val symbolRepository: SymbolRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
-    private val publicBybitClient: ByBitPublicHttpClient
+    private val publicBybitClient: ByBitPublicHttpClient,
+    private val publicBybitTestClient: ByBitPublicHttpClient
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -87,7 +88,9 @@ class AnalyzerService(
         val analyzersToInsert = mutableListOf<GridTableAnalyzerDocument>()
 
         for (symbol in symbols) {
-            val currentPrice = runBlocking { publicBybitClient.getPairCurrentPrice(symbol.symbol) }
+            val currentPrice = runBlocking {
+                (if (request.demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice(symbol.symbol)
+            }
             for (stopLoss in request.minStopLoss..request.maxStopLoss) {
                 for (takeProfit in request.minTakeProfit..request.maxTakeProfit) {
                     for (diapason in request.startDiapasonPercent..request.endDiapasonPercent) {
