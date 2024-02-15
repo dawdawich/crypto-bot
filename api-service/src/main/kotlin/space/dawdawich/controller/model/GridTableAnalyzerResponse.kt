@@ -14,7 +14,8 @@ data class GridTableAnalyzerResponse(
     val symbol: String,
     var startCapital: Double,
     var money: Double,
-    var isActive: Boolean
+    var isActive: Boolean,
+    var stabilityCoef: Double? = 0.0
 ) {
     constructor(documentAnalyzer: GridTableAnalyzerDocument) : this(
         documentAnalyzer.id,
@@ -27,5 +28,6 @@ data class GridTableAnalyzerResponse(
         documentAnalyzer.startCapital,
         documentAnalyzer.money,
         documentAnalyzer.isActive,
+        documentAnalyzer.stabilityCoef,
     )
 }

@@ -23,10 +23,15 @@ class ByBitWebSocketClient(
     private val jsonPath: ParseContext,
 ) : WebSocketClient(URI(if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL)) {
 
+    private var previousCumRealizedPnL: Double = 0.0
+
     var positionUpdateCallback: PositionUpdateCallback? = null
+        set(value) {
+            previousCumRealizedPnL = 0.0
+            field = value
+        }
+    var currentPositionTrend: Trend? = null
     var fillOrderCallback: FillOrderCallback? = null
-    var previousCumRealizedPnL: Double = 0.0
-    var currentCumRealizedPnL: Double = 0.0
 
     companion object {
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
@@ -35,20 +40,8 @@ class ByBitWebSocketClient(
 
     private val logger = logger {}
 
-    private var signatureWithExpiration: Pair<String, Long>
-
-    init {
-        signatureWithExpiration = getAuthData()
-    }
-
     override fun onOpen(handshakedata: ServerHandshake?) {
-        val operationRequest = JSONObject(
-            mapOf(
-                "op" to "auth",
-                "args" to listOf(apiKey, signatureWithExpiration.second.toString(), signatureWithExpiration.first)
-            )
-        ).toString()
-        send(operationRequest)
+        subscribe()
     }
 
     override fun onMessage(message: String?) {
@@ -86,19 +79,24 @@ class ByBitWebSocketClient(
                                 val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
                                 if (previousCumRealizedPnL == 0.0) {
                                     previousCumRealizedPnL = cumRealizedPnL
-                                    currentCumRealizedPnL = cumRealizedPnL
-                                } else {
-                                    previousCumRealizedPnL = currentCumRealizedPnL
-                                    currentCumRealizedPnL = cumRealizedPnL
                                 }
-                                if (side.isNotBlank())
-                                Position(
-                                    position["entryPrice"].toString().toDouble(),
-                                    position["size"].toString().toDouble(),
-                                    Trend.fromDirection(side),
-                                    currentCumRealizedPnL - previousCumRealizedPnL
-                                ) else null
+                                if (side.isNotBlank()) {
+                                    val trend = Trend.fromDirection(side)
+                                    if (currentPositionTrend == null) {
+                                        currentPositionTrend = trend
+                                    } else if (currentPositionTrend != trend) {
+                                        resetCumRealizedPnL()
+                                        currentPositionTrend = trend
+                                    }
+                                    Position(
+                                        position["entryPrice"].toString().toDouble(),
+                                        position["size"].toString().toDouble(),
+                                        trend,
+                                        cumRealizedPnL - previousCumRealizedPnL
+                                    )
+                                } else null
                             }
+                        logger.info { "Get position data to update: $positionsToUpdate" }
                         positionUpdateCallback?.invoke(positionsToUpdate)
                     } else if (topic == "order.linear") {
                         response.read<List<Map<String, Any>>>("\$.data")
@@ -108,12 +106,14 @@ class ByBitWebSocketClient(
                                 id to status
                             }
                             .filter { order ->
+                                logger.info { "Obtain order to process. id: '${order.first}'; status: ${order.second}" }
                                 order.first.isNotBlank() && when (order.second.lowercase()) {
-                                    "filled", "deactivated", "rejected" -> true
+                                    "filled", "deactivated", "rejected", "cancelled" -> true
                                     else -> false
                                 }
                             }
                             .forEach { order ->
+                                logger.info { "Get order data to update: '${order.first}'; filled: '${order.second}'" }
                                 fillOrderCallback?.invoke(order.first)
                             }
                     }
@@ -125,13 +125,29 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         if (remote) {
-            signatureWithExpiration = getAuthData()
+            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
             GlobalScope.launch { reconnect() }
         }
     }
 
     override fun onError(ex: Exception?) {
         logger.error(ex) { "Failed to listen websocket" }
+    }
+
+    private fun subscribe() {
+        val signatureWithExpiration: Pair<String, Long> = getAuthData()
+        val operationRequest = JSONObject(
+            mapOf(
+                "op" to "auth",
+                "args" to listOf(apiKey, signatureWithExpiration.second.toString(), signatureWithExpiration.first)
+            )
+        ).toString()
+        send(operationRequest)
+    }
+
+    fun resetCumRealizedPnL() {
+        previousCumRealizedPnL = 0.0
+        currentPositionTrend = null
     }
 
     private fun getAuthData(): Pair<String, Long> {

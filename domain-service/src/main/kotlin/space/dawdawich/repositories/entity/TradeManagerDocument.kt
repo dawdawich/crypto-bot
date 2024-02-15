@@ -2,7 +2,7 @@ package space.dawdawich.repositories.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import space.dawdawich.repositories.entity.constants.AnalyzerChooseStrategy
+import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.repositories.entity.constants.ManagerStatus
 
 @Document("trade_manager")
@@ -10,9 +10,10 @@ data class TradeManagerDocument(
     @Id
     val id: String,
     val accountId: String,
-    var apiTokensId: String,
+    var apiTokenId: String,
     var money: Double = 0.0,
-    var chooseStrategy: AnalyzerChooseStrategy = AnalyzerChooseStrategy.BIGGEST_BY_MONEY,
+    var chooseStrategy: AnalyzerChooseStrategy,
+    var refreshAnalyzerMinutes: Int = 30,
     var customAnalyzerId: String = "",
     var status: ManagerStatus = ManagerStatus.INACTIVE,
     val stopLoss: Int? = null,

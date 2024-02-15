@@ -8,16 +8,10 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.configuration.WebSocketConfigurator
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
-import space.dawdawich.constants.REQUEST_ANALYZER_TOPIC
-import space.dawdawich.constants.RESPONSE_ANALYZER_TOPIC
-import space.dawdawich.model.analyzer.GridTableDetailInfoModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException

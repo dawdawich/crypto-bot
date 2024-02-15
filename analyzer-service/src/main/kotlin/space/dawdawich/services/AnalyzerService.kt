@@ -1,5 +1,8 @@
 package space.dawdawich.services
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -7,8 +10,6 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.annotation.PartitionOffset
-import org.springframework.kafka.annotation.TopicPartition
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.listener.ConsumerSeekAware
 import org.springframework.kafka.support.TopicPartitionOffset
@@ -16,36 +17,46 @@ import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
+import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.GridTableAnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
-import java.util.concurrent.ArrayBlockingQueue
+import space.dawdawich.utils.getRightTopic
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 
 @Service
 class AnalyzerService(
-    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-    private val symbolRepository: SymbolRepository,
-    private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-    private val mongoTemplate: MongoTemplate
+        private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+        private val symbolRepository: SymbolRepository,
+        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
+        private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
-    private val priceListeners = mutableMapOf<Int, PriceTickerListener>()
+    companion object {
+        val comparator = Comparator<Pair<String, Double>> { p1, p2 -> p1.first.compareTo(p2.first) }
+    }
+
+    private val log = KotlinLogging.logger { }
+
+    private val priceListeners = mutableMapOf<Pair<Int, Boolean>, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
-        mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
+            mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<Analyzer> = mutableListOf()
-    private val moneyUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
-    private val middlePriceUpdateQueue: ArrayBlockingQueue<Pair<String, Double>> = ArrayBlockingQueue(1_000_000)
+    private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
+    private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
 
     init {
         gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
     }
 
     override fun onPartitionsAssigned(
-        assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
-        callback: ConsumerSeekAware.ConsumerSeekCallback
+            assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
+            callback: ConsumerSeekAware.ConsumerSeekCallback,
     ) {
         callback.seekToEnd(assignments.keys)
     }
@@ -71,23 +82,25 @@ class AnalyzerService(
     }
 
     @KafkaListener(
-        topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
+            topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
+            containerFactory = "kafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
     fun requestAnalyzerData(analyzerId: String) =
-        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
+            analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
 
     @KafkaListener(
-        topics = [REQUEST_ANALYZER_STRATEGY_CONFIG_TOPIC],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
+            topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
+            containerFactory = "jsonKafkaListenerReplayingContainerFactory"
     )
-    @SendTo(RESPONSE_ANALYZER_STRATEGY_CONFIG_TOPIC)
-    fun requestAnalyzerStrategyConfig(accountId: String) =
-        analyzers
-            .filter { analyzer -> analyzer.accountId == accountId }
-            .maxByOrNull(Analyzer::getMoney)
-            ?.getStrategyConfig()
+    @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+    fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        return when (request.chooseStrategy) {
+            AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
+            AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)
+            AnalyzerChooseStrategy.CUSTOM -> throw NotImplementedError("No such analyzer strategy : %s".format(request.chooseStrategy))
+        }
+    }
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     private fun processMiddlePriceUpdateList() {
@@ -99,18 +112,51 @@ class AnalyzerService(
         }
     }
 
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
+    private fun updateSnapshot() {
+        if (analyzers.isNotEmpty()) {
+            val copiedAnalyzers = analyzers.toList()
+            runBlocking {
+                copiedAnalyzers.forEach { analyzer ->
+                    launch { analyzer.updateSnapshot() }
+                }
+            }
+        }
+    }
+
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
+    private fun calculateStabilityCoef() {
+        if (analyzers.isNotEmpty()) {
+            val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
+            val calculationStartTime = System.currentTimeMillis()
+            val copiedAnalyzers = analyzers.toList()
+            runBlocking {
+                copiedAnalyzers.forEach { analyzer ->
+                    launch {
+                        val stabilityCoef = analyzer.calculateStabilityCoef()
+                        ops.updateOne(
+                                Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                                Update().set("stabilityCoef", stabilityCoef)
+                        )
+                    }
+                }
+            }
+            log.info { "Finish process analyzers stability. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
+            ops.execute()
+        }
+    }
+
     @SuppressWarnings("kotlin:S6518")
-    private fun updateList(updateList: ArrayBlockingQueue<Pair<String, Double>>, fieldName: String) {
+    private fun updateList(updateList: ConcurrentSkipListSet<Pair<String, Double>>, fieldName: String) {
         val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
 
-        var pair = updateList.poll()
+        while (true) {
+            val pair = updateList.pollFirst() ?: break
 
-        while (pair != null) {
             ops.updateOne(
                 Query.query(Criteria.where("_id").`is`(pair.first)),
                 Update().set(fieldName, pair.second)
             )
-            pair = updateList.poll()
         }
         ops.execute()
     }
@@ -121,11 +167,11 @@ class AnalyzerService(
                 ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
         }
 
-        priceListeners.getOrPut(partition) {
+        priceListeners.getOrPut(partition to analyzer.demoAccount) {
             PriceTickerListener(
                 kafkaListenerContainerFactory.createContainer(
                     TopicPartitionOffset(
-                        BYBIT_TEST_TICKER_TOPIC,
+                        getRightTopic(analyzer.market, analyzer.demoAccount),
                         partition,
                         TopicPartitionOffset.SeekPosition.END
                     )
@@ -139,7 +185,7 @@ class AnalyzerService(
     private fun removeAnalyzer(analyzerId: String) {
         analyzers.find { it.id == analyzerId }?.let {
             val partition = partitionMap[it.symbol]
-            priceListeners[partition]?.removeObserver(it::acceptPriceChange)
+            priceListeners[partition to it.demoAccount]?.removeObserver(it::acceptPriceChange)
         }
 
         analyzers.removeIf { it.id == analyzerId }
@@ -164,6 +210,48 @@ class AnalyzerService(
         0.0,
         symbolInfo.symbol,
         accountId,
-        id
+        market,
+        demoAccount,
+        id,
     )
+
+    private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        val copiedAnalyzers = analyzers
+            .asSequence()
+            .filter { it.demoAccount == request.demoAccount }
+            .filter { it.market == request.market }
+            .filter { it.accountId == request.accountId }
+            .toList()
+        val maxStabilityCoef = copiedAnalyzers
+                .asSequence()
+                .filter { it.getMoney() > request.managerMoney }
+                .maxBy { it.stabilityCoef }.stabilityCoef
+
+        val mostStableAnalyzers = copiedAnalyzers.filter { it.stabilityCoef == maxStabilityCoef }
+
+        return if (mostStableAnalyzers.none { it.id == request.currentAnalyzerId }) {
+            mostStableAnalyzers
+                    .map { it.getStrategyConfig() }
+                    .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                    .minByOrNull { it.multiplier }
+        } else null
+    }
+
+    private fun getBiggestByMoneyAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        val copiedAnalyzers = analyzers
+            .asSequence()
+            .filter { it.demoAccount == request.demoAccount }
+            .filter { it.market == request.market }
+            .filter { it.accountId == request.accountId }
+            .toList()
+        val maxMoney = copiedAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
+        val mostProfitableAnalyzers = copiedAnalyzers.filter { it.getMoney() == maxMoney }
+        if (mostProfitableAnalyzers.none { it.id == request.currentAnalyzerId }) {
+            return mostProfitableAnalyzers
+                .map { it.getStrategyConfig() }
+                .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                .minByOrNull { it.multiplier }
+        }
+        return null
+    }
 }

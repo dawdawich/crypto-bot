@@ -6,6 +6,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":commons"))
     implementation(libs.spring.boot.mongo)
 }
 

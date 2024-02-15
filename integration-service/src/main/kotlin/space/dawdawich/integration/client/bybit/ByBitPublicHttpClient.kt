@@ -12,6 +12,22 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
 
     companion object {
         const val GET_INSTRUMENTS_INFO = "/market/instruments-info"
+        const val GET_TICKER = "/market/tickers"
+    }
+
+    suspend fun getPairCurrentPrice(symbol: String): Double {
+        val response = get(GET_TICKER, "category=linear&symbol=$symbol")
+
+        val parsedJson = jsonPath.parse(response.bodyAsText())
+        when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            0 -> {
+                return parsedJson.read<String>("\$.result.list[0].lastPrice").toDouble()
+            }
+
+            else -> {
+                throw UnknownRetCodeException(returnCode)
+            }
+        }
     }
 
     suspend fun getPairInstructions(symbol: String): PairInfo {

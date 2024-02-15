@@ -3,6 +3,7 @@ package space.dawdawich.repositories.entity
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
+import space.dawdawich.model.constants.Market
 
 @Document("grid_table_analyzer")
 data class GridTableAnalyzerDocument(
@@ -19,8 +20,11 @@ data class GridTableAnalyzerDocument(
     val symbolInfo: SymbolInfoDocument,
     var startCapital: Double,
     var isActive: Boolean,
+    val demoAccount: Boolean,
+    val market: Market,
     var money: Double = startCapital,
     var middlePrice: Double? = null,
+    var stabilityCoef: Double? = null,
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = createTime
 )

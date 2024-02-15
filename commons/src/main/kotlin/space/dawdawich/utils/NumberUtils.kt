@@ -3,7 +3,6 @@ package space.dawdawich.utils
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 fun Double.calculatePercentageChange(value: Double): Double {
@@ -22,12 +21,20 @@ fun Double.leaveTail(length: Int): Double {
     return BigDecimal(this).setScale(length, RoundingMode.HALF_UP).toDouble()
 }
 
-fun Double.trimToStep(step: Double): Double {
-    return if (step < 1.0) {
-        (this / step).roundToInt()  * step
-    } else {
-        ((this * step).roundToInt() / step).roundToInt().toDouble()
+fun Double.trimToStep(value: Double): Double {
+    val bdValue = BigDecimal(this.toString())
+    val bdRoundedValue = when {
+        value >= 10 -> bdValue.divide(BigDecimal(value.toString())).setScale(0, RoundingMode.HALF_UP).multiply(BigDecimal(value.toString()))
+        value >= 1 -> bdValue.multiply(BigDecimal("10")).divide(BigDecimal(value.toString()), 0, RoundingMode.HALF_UP).divide(BigDecimal("10"))
+        value >= 0.1 -> bdValue.setScale(1, RoundingMode.HALF_UP)
+        value >= 0.01 -> bdValue.setScale(2, RoundingMode.HALF_UP)
+        value >= 0.001 -> bdValue.setScale(3, RoundingMode.HALF_UP)
+        value >= 0.0001 -> bdValue.setScale(4, RoundingMode.HALF_UP)
+        value >= 0.00001 -> bdValue.setScale(5, RoundingMode.HALF_UP)
+        value >= 0.000001 -> bdValue.setScale(6, RoundingMode.HALF_UP)
+        else -> throw IllegalArgumentException("Invalid step provided")
     }
+    return bdRoundedValue.toDouble()
 }
 
 fun ByteArray.bytesToHex(): String {

@@ -45,18 +45,17 @@ class TradeManagerService(
         }
     }
 
-    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC])
+    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group")
     fun deactivateManager(managerId: String) {
         deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
     }
 
     fun deactivateTradeManager(managerId: String, status: ManagerStatus = ManagerStatus.CRASHED, stopDescription: String? = null, ex: Exception? = null) {
-        tradeManagers.removeIf {
-            if (it.getId() == managerId) {
+        tradeManagers.find { it.getId() == managerId }?.let {
+            if (it.active) {
                 it.deactivate()
-                return@removeIf true
             }
-            return@removeIf false
+            tradeManagers.remove(it)
         }
         tradeManagerRepository.updateTradeManagerStatus(managerId, status, stopDescription, ex?.message)
     }

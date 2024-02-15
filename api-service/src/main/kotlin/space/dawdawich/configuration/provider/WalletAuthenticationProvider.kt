@@ -5,6 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider
+import org.springframework.security.core.authority.AuthorityUtils
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import org.web3j.crypto.Keys
@@ -28,9 +29,17 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
     val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneOffset.UTC)
 
-    override fun additionalAuthenticationChecks(userDetails: UserDetails?, authentication: UsernamePasswordAuthenticationToken) {
+    override fun additionalAuthenticationChecks(
+        userDetails: UserDetails?,
+        authentication: UsernamePasswordAuthenticationToken,
+    ) {
         val walletUserDetails = userDetails as WalletUserDetails?
-        if (walletUserDetails == null || !isSignatureValid(walletUserDetails.address, walletUserDetails.signature, walletUserDetails.salt)) {
+        if (walletUserDetails == null || !isSignatureValid(
+                walletUserDetails.address,
+                walletUserDetails.signature,
+                walletUserDetails.salt
+            )
+        ) {
             log.debug("Authentication failed: signature is not valid");
             throw BadCredentialsException("Signature is not valid");
         }
@@ -39,7 +48,12 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
     override fun retrieveUser(username: String, authentication: UsernamePasswordAuthenticationToken?): UserDetails? =
         (authentication as WalletAuthenticationRequest?)?.let { auth ->
             accountRepository.findByIdOrNull(auth.address)?.let { account ->
-                WalletUserDetails(auth.address, auth.signature, account.saltValidUntil)
+                WalletUserDetails(
+                    auth.address,
+                    auth.signature,
+                    AuthorityUtils.createAuthorityList(account.role),
+                    account.saltValidUntil
+                )
             }
         }
 

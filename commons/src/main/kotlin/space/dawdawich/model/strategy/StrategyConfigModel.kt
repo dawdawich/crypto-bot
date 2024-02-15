@@ -1,5 +1,8 @@
 package space.dawdawich.model.strategy
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 sealed class StrategyConfigModel {
     abstract val id: String
     abstract val symbol: String

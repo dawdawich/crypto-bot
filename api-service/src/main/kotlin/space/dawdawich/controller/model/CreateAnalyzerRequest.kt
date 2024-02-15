@@ -1,6 +1,7 @@
 package space.dawdawich.controller.model
 
 import kotlinx.serialization.Serializable
+import space.dawdawich.model.constants.Market
 
 @Serializable
 data class CreateAnalyzerRequest(
@@ -12,5 +13,7 @@ data class CreateAnalyzerRequest(
     val takeProfit: Int,
     val symbol: String,
     val startCapital: Double,
-    val active: Boolean
+    val active: Boolean,
+    val market: Market,
+    val demoAccount: Boolean
 )

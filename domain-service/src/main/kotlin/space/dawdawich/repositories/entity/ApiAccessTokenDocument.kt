@@ -2,7 +2,7 @@ package space.dawdawich.repositories.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import space.dawdawich.repositories.entity.constants.Market
+import space.dawdawich.model.constants.Market
 
 @Document("api_token")
 data class ApiAccessTokenDocument(
@@ -12,5 +12,5 @@ data class ApiAccessTokenDocument(
     val apiKey: String,
     val secretKey: String,
     val market: Market,
-    val test: Boolean
+    val demoAccount: Boolean
 )
