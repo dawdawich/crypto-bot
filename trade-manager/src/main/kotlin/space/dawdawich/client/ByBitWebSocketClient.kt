@@ -97,6 +97,9 @@ class ByBitWebSocketClient(
                                 } else null
                             }
                         logger.info { "Get position data to update: $positionsToUpdate" }
+                        if (positionsToUpdate == null) {
+                            previousCumRealizedPnL = 0.0
+                        }
                         positionUpdateCallback?.invoke(positionsToUpdate)
                     } else if (topic == "order.linear") {
                         response.read<List<Map<String, Any>>>("\$.data")
@@ -124,8 +127,9 @@ class ByBitWebSocketClient(
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
+        logger.info { "Web socket closed. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
         if (remote) {
-            logger.info { "Reconnect web socket. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
+            logger.info { "Reconnect web socket." }
             GlobalScope.launch { reconnect() }
         }
     }

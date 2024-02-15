@@ -25,7 +25,7 @@ fun Double.trimToStep(value: Double): Double {
     val bdValue = BigDecimal(this.toString())
     val bdRoundedValue = when {
         value >= 10 -> bdValue.divide(BigDecimal(value.toString())).setScale(0, RoundingMode.HALF_UP).multiply(BigDecimal(value.toString()))
-        value >= 1 -> bdValue.multiply(BigDecimal("10")).divide(BigDecimal(value.toString()), 0, RoundingMode.HALF_UP).divide(BigDecimal("10"))
+        value >= 1 -> bdValue.setScale(0, RoundingMode.HALF_UP)
         value >= 0.1 -> bdValue.setScale(1, RoundingMode.HALF_UP)
         value >= 0.01 -> bdValue.setScale(2, RoundingMode.HALF_UP)
         value >= 0.001 -> bdValue.setScale(3, RoundingMode.HALF_UP)

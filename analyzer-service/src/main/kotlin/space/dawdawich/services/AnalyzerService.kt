@@ -233,7 +233,7 @@ class AnalyzerService(
             mostStableAnalyzers
                     .map { it.getStrategyConfig() }
                     .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
-                    .minByOrNull { it.multiplier }
+                    .maxByOrNull { it.money }
         } else null
     }
 
