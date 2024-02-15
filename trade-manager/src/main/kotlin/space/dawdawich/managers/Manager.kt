@@ -20,7 +20,7 @@ import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.service.factory.PriceTickerListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.CreateOrderFunction

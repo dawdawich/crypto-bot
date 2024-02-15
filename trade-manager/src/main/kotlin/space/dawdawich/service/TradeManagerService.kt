@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.managers.Manager
-import space.dawdawich.repositories.TradeManagerRepository
-import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.repositories.entity.constants.ManagerStatus
+import space.dawdawich.repositories.mongo.TradeManagerRepository
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
+import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.service.factory.TradeManagerFactory
 import java.util.*
 

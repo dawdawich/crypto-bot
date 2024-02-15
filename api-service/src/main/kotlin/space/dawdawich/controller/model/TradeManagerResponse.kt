@@ -1,7 +1,7 @@
 package space.dawdawich.controller.model
 
 import kotlinx.serialization.Serializable
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 
 @Serializable
 data class TradeManagerResponse(

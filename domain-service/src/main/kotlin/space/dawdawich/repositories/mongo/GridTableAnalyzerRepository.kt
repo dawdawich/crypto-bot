@@ -1,4 +1,4 @@
-package space.dawdawich.repositories
+package space.dawdawich.repositories.mongo
 
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 interface GridTableAnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String> {
 

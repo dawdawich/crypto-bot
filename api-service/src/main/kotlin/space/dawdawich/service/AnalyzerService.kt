@@ -12,9 +12,9 @@ import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
-import space.dawdawich.repositories.GridTableAnalyzerRepository
-import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.GridTableAnalyzerRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
 import java.util.*

@@ -20,9 +20,9 @@ import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
 import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.repositories.GridTableAnalyzerRepository
-import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.GridTableAnalyzerRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.getRightTopic

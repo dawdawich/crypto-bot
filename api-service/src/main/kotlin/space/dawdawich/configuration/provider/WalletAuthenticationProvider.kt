@@ -13,7 +13,7 @@ import org.web3j.crypto.Sign
 import org.web3j.utils.Numeric
 import space.dawdawich.configuration.model.WalletAuthenticationRequest
 import space.dawdawich.configuration.model.WalletUserDetails
-import space.dawdawich.repositories.AccountRepository
+import space.dawdawich.repositories.mongo.AccountRepository
 import java.security.SignatureException
 import java.time.Instant
 import java.time.ZoneOffset

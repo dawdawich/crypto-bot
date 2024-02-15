@@ -2,7 +2,7 @@ package space.dawdawich.service.validation
 
 import org.springframework.stereotype.Service
 import space.dawdawich.exception.model.AnalyzerNotFoundException
-import space.dawdawich.repositories.GridTableAnalyzerRepository
+import space.dawdawich.repositories.mongo.GridTableAnalyzerRepository
 import kotlin.jvm.Throws
 
 @Service

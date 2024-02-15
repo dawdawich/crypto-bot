@@ -9,8 +9,8 @@ import space.dawdawich.managers.Manager
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
-import space.dawdawich.repositories.ApiAccessTokenRepository
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 

@@ -1,7 +1,7 @@
-package space.dawdawich.repositories
+package space.dawdawich.repositories.mongo
 
 import org.springframework.data.mongodb.repository.MongoRepository
-import space.dawdawich.repositories.entity.FolderDocument
+import space.dawdawich.repositories.mongo.entity.FolderDocument
 
 interface FolderRepository : MongoRepository<FolderDocument, String> {
 

@@ -6,9 +6,9 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.SYMBOL_REINITIALIZE_TOPIC
 import space.dawdawich.controller.model.SymbolResponse
-import space.dawdawich.repositories.ApiAccessTokenRepository
-import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.SymbolInfoDocument
+import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.SymbolInfoDocument
 
 @Service
 class SymbolService(

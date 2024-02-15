@@ -1,7 +1,7 @@
-package space.dawdawich.repositories
+package space.dawdawich.repositories.mongo
 
 import org.springframework.data.mongodb.repository.MongoRepository
-import space.dawdawich.repositories.entity.FolderAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.FolderAnalyzerDocument
 
 interface FolderAnalyzerRepository : MongoRepository<FolderAnalyzerDocument, String> {
 

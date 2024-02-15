@@ -5,10 +5,10 @@ import space.dawdawich.controller.model.folder.CreateFolderResponse
 import space.dawdawich.controller.model.folder.GetFolderResponse
 import space.dawdawich.controller.model.folder.UpdateFolderResponse
 import space.dawdawich.exception.model.FolderNotFoundException
-import space.dawdawich.repositories.FolderAnalyzerRepository
-import space.dawdawich.repositories.FolderRepository
-import space.dawdawich.repositories.entity.FolderAnalyzerDocument
-import space.dawdawich.repositories.entity.FolderDocument
+import space.dawdawich.repositories.mongo.FolderAnalyzerRepository
+import space.dawdawich.repositories.mongo.FolderRepository
+import space.dawdawich.repositories.mongo.entity.FolderAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.FolderDocument
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.service.validation.FolderValidationService
 

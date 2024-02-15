@@ -1,4 +1,4 @@
-package space.dawdawich.repositories.entity
+package space.dawdawich.repositories.mongo.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
