@@ -94,7 +94,7 @@ class AnalyzerService(
             containerFactory = "jsonKafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
-    fun requestMostProfitableAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+    fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         return when (request.chooseStrategy) {
             AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)

@@ -236,6 +236,7 @@ class Manager(
                         logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
                         position?.let { pos ->
                             runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
+                            position = null
                         }
                         webSocket.resetCumRealizedPnL()
                         if (isStopLoss) {
