@@ -158,14 +158,15 @@ const AnalyzersPage: React.FC = () => {
                         }
                     </div>
                     <div className="analyzer-menu-panel-button">
-                        <Button variant="outlined"
-                                onClick={() => openCreateFolderDialog('create')}
-                                style={{
-                                    borderColor: '#D0FF12',
-                                    color: '#D0FF12',
-                                    textTransform: 'none',
-                                    fontWeight: 700
-                                }}>New Folder</Button>
+                        {!!authInfo &&
+                            <Button variant="outlined"
+                                    onClick={() => openCreateFolderDialog('create')}
+                                    style={{
+                                        borderColor: '#D0FF12',
+                                        color: '#D0FF12',
+                                        textTransform: 'none',
+                                        fontWeight: 700
+                                    }}>New Folder</Button>}
                     </div>
                 </div>
             }
@@ -184,7 +185,8 @@ const AnalyzersPage: React.FC = () => {
                     <Route path="/analyzer/detail/:analyzerId">
                         {(params) => {
                             return <AnalyzerDetailContent analyzerId={params.analyzerId}
-                                                    folderDialogStatus={isDialogOpen} addAnalyzerToFolder={addAnalyzersToFolder}
+                                                          folderDialogStatus={isDialogOpen}
+                                                          addAnalyzerToFolder={addAnalyzersToFolder}
                             />;
                         }}
                     </Route>
