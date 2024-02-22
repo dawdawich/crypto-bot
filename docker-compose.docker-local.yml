@@ -43,6 +43,13 @@ services:
     networks:
       - "crypto-bot-network"
 
+  redis:
+    image: redis:latest
+    hostname: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   event-listener:
     build:
       context: .

@@ -1,7 +1,8 @@
 package space.dawdawich.repositories.redis
 
 import org.springframework.data.repository.CrudRepository
-import space.dawdawich.repositories.redis.entity.AnalyzerStabilityCoefModel
+import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
 
-interface AnalyzerStabilityRepository: CrudRepository<AnalyzerStabilityCoefModel, String> {
+interface AnalyzerStabilityRepository : CrudRepository<AnalyzerMoneyModel, String> {
+    fun findAllByAnalyzerId(analyzerId: String): List<AnalyzerMoneyModel>
 }

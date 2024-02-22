@@ -16,6 +16,7 @@ web3 = "5.0.0"
 
 [libraries]
 spring-boot-mongo = { group = "org.springframework.boot", name = "spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
+spring-boot-redis = { group = "org.springframework.boot", name = "spring-boot-starter-data-redis", version.ref = "spring-boot" }
 spring-boot-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "spring-boot" }
 spring-boot-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "spring-boot" }
