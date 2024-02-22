@@ -1,0 +1,36 @@
+.account-api-token-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.account-api-token-header {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    border-bottom: 1px solid #262B31;
+    height: 72px;
+}
+
+.account-api-token-header-path {
+    display: flex;
+    flex-direction: row;
+}
+
+#account-api-token-table {
+    border: 0 solid #000;
+}
+
+#account-api-token-table-headers {
+    height: 32px;
+}
+
+#account-api-token-table-headers > #cell {
+    color: #868F9C;
+    font-weight: 200;
+    border-bottom: 2px solid #262B31;
+}
+
+#account-api-token-table-body-cell {
+    color: white;
+}

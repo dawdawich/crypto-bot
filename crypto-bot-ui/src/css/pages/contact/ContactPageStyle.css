@@ -1,0 +1,17 @@
+.contact-page{
+    height: 100%;
+    width: 100%;
+    background: #1D2024;
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}

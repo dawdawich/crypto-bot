@@ -2,7 +2,7 @@ import {WEB_SOCKET_HOST} from "./Constants";
 
 type MessageHandler = (message: string) => void;
 
-class WebSocketService {
+export class WebSocketService {
     private socket: WebSocket | null = null;
     private url: string;
     public onDisconnect = () => {};
@@ -51,5 +51,5 @@ class WebSocketService {
     }
 }
 
-export const webSocketAnalyzerService = new WebSocketService(`${WEB_SOCKET_HOST}/ws/analyzer`);
+export const getWebSocketAnalyzerService = () => new WebSocketService(`${WEB_SOCKET_HOST}/ws/analyzer`);
 export const webSocketManagerService = new WebSocketService(`${WEB_SOCKET_HOST}/ws/manager`);

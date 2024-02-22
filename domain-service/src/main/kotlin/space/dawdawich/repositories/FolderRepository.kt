@@ -6,6 +6,7 @@ import space.dawdawich.repositories.entity.FolderDocument
 interface FolderRepository : MongoRepository<FolderDocument, String> {
 
     fun findAllByAccountId(accountId: String): List<FolderDocument>
+    fun findAllByAccountIdAndIdIn(accountId: String, ids: List<String>): List<FolderDocument>
 
     fun existsByIdAndAccountId(id: String, accountId: String): Boolean
 

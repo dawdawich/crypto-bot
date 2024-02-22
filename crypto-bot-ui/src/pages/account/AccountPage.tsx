@@ -1,104 +1,88 @@
-import React, {useEffect, useState} from "react";
-import {deleteApiToken, getApiTokens} from "../../service/AccountService";
-import {useLocation} from "wouter";
-import "../../css/AccountInfo.css";
-import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
-import {ApiToken} from "../../model/ApiToken";
-import {Button} from "@mui/material";
+import React, {useState} from "react";
+import '../../css/pages/account/AccountPageStyles.css';
+import {ReactComponent as MetamaskIcon} from '../../assets/images/account/metamask-icon.svg';
+import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
+import {Button, Divider, styled, Typography} from "@mui/material";
 import {useAuth} from "../../context/AuthContext";
+import {sanitizeMiddle} from "../../utils/string-utils";
+import {Route, Switch, useLocation} from "wouter";
+import ApiTokenContent from "./ApiTokenContent";
+import SubscriptionContent from "./SubscriptionContent";
+import {successToast} from "../toast/Toasts";
+
+const hoverStyle = {
+    borderRadius: '4px',
+    backgroundColor: '#1D2024'
+};
+
+const CurrentPath = styled('div')({
+    font: plexFont,
+    color: "white",
+    fontSize: 20,
+    fontWeight: '700',
+    paddingTop: '24px',
+    marginLeft: '16px',
+    userSelect: 'none',
+    pointerEvents: 'none'
+});
 
 const AccountPage: React.FC = () => {
-    const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
-    const [data, setData] = useState<ApiToken[]>([])
-    const [error, setError] = useState<Error | null>(null);
-    const [, navigate] = useLocation();
-    const {authInfo} = useAuth();
-
-    console.log(authInfo)
+    const {authInfo, logout} = useAuth();
+    const [location, navigate] = useLocation();
 
     if (!authInfo) {
         navigate('/');
-        window.location.reload();
     }
 
-    useEffect(() => {
-        getApiTokens(authInfo!)
-            .then(res => setData(res))
-            .catch(ex => setError(ex))
-    }, [authInfo])
-
-    const handleNewApiToken = (apiToken: ApiToken) => {
-        if (Array.isArray(data)) {
-            setData([...data, apiToken]);
-        } else {
-            setData([apiToken]);
+    const copyWalletId = () => {
+        if (!!authInfo) {
+            navigator.clipboard.writeText(authInfo!.address).then(() => {
+                successToast("Wallet ID copied to clipboard");
+            });
         }
-    }
-
-    const handleDeleteApiToken = (id: string) => {
-        deleteApiToken(id, authInfo!)
-            .then(() => {
-                if (data) {
-                    setData({...data.filter((token: ApiToken) => token.id !== id)});
-                    console.log(JSON.stringify(data))
-                }
-            })
-    }
-
-    if (!!error) {
-        return (
-            <div>
-                <h1>Error occurred</h1>
-                <p>{error.message}</p>
-            </div>
-        );
-    }
-
-    if (!data) {
-        return (
-            <div>
-                <h1>Loading...</h1>
-            </div>
-        );
-    }
-    let apiTokensTable = data.length > 0 ?
-        <table className="material-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>API Key</th>
-                <th>Market</th>
-                <th>Test Account</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            {data.map((token: ApiToken) => (
-                <tr key={token.id}>
-                    <td>{token.id}</td>
-                    <td>{token.apiKey}</td>
-                    <td>{token.market}</td>
-                    <td>{token.test.toString()}</td>
-                    <td>
-                        <Button variant='contained' size={'medium'} color={'error'}
-                                onClick={() => handleDeleteApiToken(token.id)}>Delete</Button>
-                    </td>
-                </tr>
-            ))}
-            </tbody>
-        </table>
-        : null;
-
+    };
 
     return (
-        <div>
-            <Button variant='contained' size={'medium'} color={'primary'}
-                    onClick={() => setIsApiTokenDialogOpen(true)}>Add API token</Button>
-            <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
-                               onCreate={handleNewApiToken} authInfo={authInfo!}/>
-            {apiTokensTable}
+        <div className="account-page">
+            <div className="account-menu-panel">
+                <div className="account-menu-panel-tabs">
+                    <Typography onClick={() => navigate("/account/subscription")} id="tab"
+                                style={location === "/account/subscription" ? hoverStyle : {}}>
+                        Subscription
+                    </Typography>
+                    <Typography onClick={() => navigate("/account/api-token")} id="tab"
+                                style={location === "/account/api-token" ? hoverStyle : {}}>
+                        Api Token
+                    </Typography>
+                </div>
+                <div className="account-metamask-content">
+                    <Divider color="#1D2024"/>
+                    <MetamaskIcon style={{marginTop: '12px'}}/>
+                    {!!authInfo &&
+                        <Typography style={{marginTop: '8px', fontFamily: plexFont}}
+                                    color="white">{sanitizeMiddle(authInfo!.address, 22)}
+                        </Typography>}
+                    <div className="account-metamask-content-buttons">
+                        <Button variant="outlined" onClick={copyWalletId}
+                                style={{color: '#868F9C', borderColor: '#868F9C', textTransform: 'none'}}>Copy
+                            ID</Button>
+                        <Button variant="contained" onClick={logout}
+                                style={{color: 'white', backgroundColor: '#E7323B', textTransform: 'none'}}>Log
+                            Out</Button>
+                    </div>
+                </div>
+            </div>
+            <div className="account-content">
+                <Switch>
+                    <Route path="/account/api-token" component={ApiTokenContent}/>
+                    <Route path="/account/subscription" component={SubscriptionContent}/>
+                    <Route path="/account">
+                        <CurrentPath>Account</CurrentPath>
+                    </Route>
+                </Switch>
+            </div>
         </div>
     );
-}
+};
 
 export default AccountPage;

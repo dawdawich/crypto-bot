@@ -20,10 +20,11 @@ import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
 import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.repositories.GridTableAnalyzerRepository
+import space.dawdawich.repositories.AnalyzerRepository
 import space.dawdawich.repositories.SymbolRepository
 import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
+import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.getRightTopic
 import java.util.concurrent.ConcurrentSkipListSet
@@ -31,10 +32,10 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class AnalyzerService(
-        private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-        private val symbolRepository: SymbolRepository,
-        private val gridTableAnalyzerRepository: GridTableAnalyzerRepository,
-        private val mongoTemplate: MongoTemplate,
+    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+    private val symbolRepository: SymbolRepository,
+    private val analyzerRepository: AnalyzerRepository,
+    private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
     companion object {
@@ -45,18 +46,18 @@ class AnalyzerService(
 
     private val priceListeners = mutableMapOf<Pair<Int, Boolean>, PriceTickerListener>()
     private val partitionMap: MutableMap<String, Int> =
-            mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
+        mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
     private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
     private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
 
     init {
-        gridTableAnalyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
+        analyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
     }
 
     override fun onPartitionsAssigned(
-            assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
-            callback: ConsumerSeekAware.ConsumerSeekCallback,
+        assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
+        callback: ConsumerSeekAware.ConsumerSeekCallback,
     ) {
         callback.seekToEnd(assignments.keys)
     }
@@ -68,7 +69,7 @@ class AnalyzerService(
 
     @KafkaListener(topics = [ACTIVATE_ANALYZER_TOPIC])
     fun activateAnalyzer(analyzerId: String) {
-        gridTableAnalyzerRepository.findByIdOrNull(analyzerId)?.let {
+        analyzerRepository.findByIdOrNull(analyzerId)?.let {
             if (it.isActive) {
                 addAnalyzer(it.convert())
             }
@@ -77,21 +78,42 @@ class AnalyzerService(
 
     @KafkaListener(topics = [DELETE_ANALYZER_TOPIC])
     fun deleteAnalyzer(analyzerId: String) {
-        gridTableAnalyzerRepository.deleteById(analyzerId)
+        analyzerRepository.deleteById(analyzerId)
         removeAnalyzer(analyzerId)
     }
 
     @KafkaListener(
-            topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
-            containerFactory = "kafkaListenerReplayingContainerFactory"
+        topics = [REQUEST_ANALYZER_RUNTIME_DATA],
+        containerFactory = "kafkaListenerReplayingContainerFactory"
+    )
+    @SendTo(RESPONSE_ANALYZER_RUNTIME_DATA)
+    fun requestAnalyzerRuntimeInfoData(analyzerId: String): AnalyzerRuntimeInfoModel? {
+        return analyzers.find { analyzerId == it.id }?.let { analyzer ->
+            val money = analyzer.getMoney()
+            val stability = analyzerRepository.findByIdOrNull(analyzerId)?.stabilityCoef
+                analyzer.getRuntimeInfo().position?.let { position ->
+                    AnalyzerRuntimeInfoModel(
+                        money,
+                        stability,
+                        if (position.long) "Buy" else "Sell",
+                        position.entryPrice,
+                        position.size
+                    )
+                } ?: AnalyzerRuntimeInfoModel(money, stability)
+        }
+    }
+
+    @KafkaListener(
+        topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
+        containerFactory = "kafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
     fun requestAnalyzerData(analyzerId: String) =
-            analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
+        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
 
     @KafkaListener(
-            topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
-            containerFactory = "jsonKafkaListenerReplayingContainerFactory"
+        topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
+        containerFactory = "jsonKafkaListenerReplayingContainerFactory"
     )
     @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
     fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
@@ -135,8 +157,8 @@ class AnalyzerService(
                     launch {
                         val stabilityCoef = analyzer.calculateStabilityCoef()
                         ops.updateOne(
-                                Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                                Update().set("stabilityCoef", stabilityCoef)
+                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                            Update().set("stabilityCoef", stabilityCoef)
                         )
                     }
                 }
@@ -198,7 +220,7 @@ class AnalyzerService(
             gridSize,
             positionStopLoss,
             positionTakeProfit,
-            multiplayer,
+            multiplier,
             money,
             symbolInfo.tickSize,
             symbolInfo.minOrderQty,
@@ -223,17 +245,17 @@ class AnalyzerService(
             .filter { it.accountId == request.accountId }
             .toList()
         val maxStabilityCoef = copiedAnalyzers
-                .asSequence()
-                .filter { it.getMoney() > request.managerMoney }
-                .maxBy { it.stabilityCoef }.stabilityCoef
+            .asSequence()
+            .filter { it.getMoney() > request.managerMoney }
+            .maxBy { it.stabilityCoef }.stabilityCoef
 
         val mostStableAnalyzers = copiedAnalyzers.filter { it.stabilityCoef == maxStabilityCoef }
 
         return if (mostStableAnalyzers.none { it.id == request.currentAnalyzerId }) {
             mostStableAnalyzers
-                    .map { it.getStrategyConfig() }
-                    .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
-                    .maxByOrNull { it.money }
+                .map { it.getStrategyConfig() }
+                .filter { analyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                .maxByOrNull { it.money }
         } else null
     }
 
@@ -249,7 +271,7 @@ class AnalyzerService(
         if (mostProfitableAnalyzers.none { it.id == request.currentAnalyzerId }) {
             return mostProfitableAnalyzers
                 .map { it.getStrategyConfig() }
-                .filter { gridTableAnalyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
+                .filter { analyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
                 .minByOrNull { it.multiplier }
         }
         return null

@@ -1,0 +1,18 @@
+.login-banner {
+    position: absolute;
+    z-index: 10;
+    background-color: #121417;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 550px;
+    border-radius: 4px;
+}
+
+.login-banner-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+}

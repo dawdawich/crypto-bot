@@ -11,7 +11,6 @@ import kotlinx.serialization.json.put
 import mu.KotlinLogging
 import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.exception.InvalidSignatureException
-import space.dawdawich.exception.ReduceOnlyRuleNotSatisfiedException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
 import javax.crypto.Mac
@@ -181,12 +180,12 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    suspend fun setMarginMultiplier(symbol: String, multiplayer: Int, retryCount: Int = 2): Boolean {
+    suspend fun setMarginMultiplier(symbol: String, multiplier: Int, retryCount: Int = 2): Boolean {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
-            put("buyLeverage", multiplayer.toString())
-            put("sellLeverage", multiplayer.toString())
+            put("buyLeverage", multiplier.toString())
+            put("sellLeverage", multiplier.toString())
         }.toString()
         try {
             val response: HttpResponse =
