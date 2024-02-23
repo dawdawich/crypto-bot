@@ -63,7 +63,6 @@ class SecurityConfiguration {
                     requestMatchers(HttpMethod.GET, "/account/salt").permitAll()
                     requestMatchers("/account/**").authenticated()
                     requestMatchers("/analyzer").authenticated()
-                    requestMatchers("/analyzer/bulk").hasAuthority("ADMIN")
                     requestMatchers("/analyzer/top20").permitAll()
                     requestMatchers("/analyzer/**").authenticated()
                     requestMatchers("/folder").authenticated()

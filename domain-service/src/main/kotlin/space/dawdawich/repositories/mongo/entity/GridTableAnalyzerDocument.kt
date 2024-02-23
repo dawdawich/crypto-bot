@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import space.dawdawich.model.constants.Market
+import space.dawdawich.model.constants.TradeStrategy
 
 @Document("grid_table_analyzer")
 data class GridTableAnalyzerDocument(
@@ -14,7 +15,7 @@ data class GridTableAnalyzerDocument(
     val public: Boolean,
     val diapason: Int,
     val gridSize: Int,
-    val multiplayer: Int,
+    val multiplier: Int,
     val positionStopLoss: Int,
     val positionTakeProfit: Int,
     val symbolInfo: SymbolInfoDocument,
@@ -22,6 +23,7 @@ data class GridTableAnalyzerDocument(
     var isActive: Boolean,
     val demoAccount: Boolean,
     val market: Market,
+    val strategy: TradeStrategy,
     var money: Double = startCapital,
     var middlePrice: Double? = null,
     var stabilityCoef: Double? = null,

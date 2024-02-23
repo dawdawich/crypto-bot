@@ -26,7 +26,7 @@ class AccountController(private val accountService: AccountService) {
                 request.apiKey,
                 request.secretKey,
                 request.market,
-                request.test
+                request.demo
             )
         )
 

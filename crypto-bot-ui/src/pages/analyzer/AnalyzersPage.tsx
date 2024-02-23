@@ -1,147 +1,246 @@
-import React, {useCallback, useEffect, useState} from "react";
-import {changeAnalyzerStatus, deleteAnalyzer, fetchAnalyzersList} from "../../service/AnalyzerService";
-import {
-    Button,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow
-} from "@mui/material";
-import {Analyzer} from "./model/Analyzer";
-import {useLocation} from "wouter";
-import CreateAnalyzerDialog from "./dialog/CreateAnalyzerDialog";
+import React, {CSSProperties, useEffect, useState} from "react";
+import "../../css/pages/analyzer/AnalyzerPageStyles.css";
+import "../../css/pages/LoginBanner.css";
+import {Button, Divider, Menu, MenuItem, styled, Typography} from "@mui/material";
+import {Route, Switch, useLocation} from "wouter";
+import {ReactComponent as FlagIcon} from "../../assets/images/analyzer/flag-icon.svg";
+import {ReactComponent as MetamaskIcon} from "../../assets/images/account/metamask-icon.svg";
+import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
+import AnalyzerContent from "./AnalyzerContent";
 import {useAuth} from "../../context/AuthContext";
+import {FolderModel} from "../../model/FolderModel";
+import {fetchFolderList} from "../../service/FolderService";
+import {errorToast} from "../toast/Toasts";
+import FolderDialog, {FolderActionType} from "./dialog/FolderDialog";
+import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
+import AnalyzerDetailContent from "./AnalyzerDetailContent";
+
+const topHoverStyle = {
+    paddingLeft: '8px',
+    paddingTop: '10px',
+    marginBottom: '18px',
+    height: '28px',
+    display: 'flex',
+    flexDirection: 'row',
+    color: 'white',
+    background: '#1D2024',
+    borderRadius: '4px'
+};
+
+const folderHoverStyle = {
+    padding: '4px',
+    borderRadius: '4px',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    overflowY: 'hidden',
+    background: '#1D2024',
+    cursor: 'pointer'
+};
+
+const CurrentPath = styled('div')({
+    font: plexFont,
+    color: "white",
+    fontSize: 20,
+    fontWeight: '700',
+    paddingTop: '24px',
+    marginLeft: '16px',
+    userSelect: 'none',
+    pointerEvents: 'none'
+});
+
+const StyledMenuItem = styled(MenuItem)(
+    {
+        '&:hover': {
+            backgroundColor: "#2D323A"
+        },
+        marginLeft: '8px',
+        marginRight: '8px',
+        borderRadius: '4px',
+        color: 'white'
+    }
+)
 
 const AnalyzersPage: React.FC = () => {
-    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-    const [data, setData] = useState<Analyzer[]>([]);
-    const [error, setError] = useState<Error | null>(null);
-    const [, navigate] = useLocation();
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [dataSize, setDataSize] = useState(0);
-    const {authInfo} = useAuth();
-
-    if (!authInfo) {
-        navigate('/');
-        window.location.reload();
-    }
-
-    const updateAnalyzersList = useCallback(() => {
-        fetchAnalyzersList(authInfo!, page, rowsPerPage)
-            .then(data => {
-                setData(data.analyzers);
-                setDataSize(data.totalSize);
-            })
-            .catch(error => setError(error))
-    }, [authInfo, page, rowsPerPage]);
+    const [analyzerIdsToAdd, setAnalyzerIdsToAdd] = useState<string[]>([]);
+    const [actionType, setActionType] = useState<FolderActionType>('create');
+    const [currentFolder, setCurrentFolder] = useState<FolderModel | null>(null);
+    const [selectedFolder, setSelectedFolder] = useState<FolderModel | null>(null);
+    const [folders, setFolders] = useState<FolderModel[]>([]);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [location, navigate] = useLocation();
+    const {authInfo, login} = useAuth();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const menuOpen = Boolean(anchorEl);
 
     useEffect(() => {
-        updateAnalyzersList();
-    }, [updateAnalyzersList]);
+        if (!!authInfo) {
+            fetchFolderList(authInfo)
+                .then((folders) => setFolders(folders))
+                .catch(error => {
+                    errorToast("Failed to load folders list");
+                });
+        }
+    }, [authInfo]);
 
-    const handleChangePage = (event: unknown, newPage: number) => {
-        setPage(newPage);
-        updateAnalyzersList();
-    };
-
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-        updateAnalyzersList();
-    };
-
-    const changeAnalyzerActiveStatus = (analyzer: Analyzer) => {
-        changeAnalyzerStatus(authInfo!, analyzer.id, !analyzer.isActive)
-            .then(() => updateAnalyzersList())
-            .catch((error) => setError(error));
+    const handleNewFolder = (folder: FolderModel) => {
+        setFolders([...folders, folder]);
     }
 
-    const deleteItem = (id: string) => {
-        deleteAnalyzer(authInfo!, id)
-            .then(() => updateAnalyzersList())
-            .catch((error) => setError(error));
+    const handleDeleteFolder = (folder: FolderModel) => {
+        setFolders([...folders.filter(el => el.id !== folder.id)]);
     }
 
-    if (error) return <div>Error: {error.message}</div>
+    const handleRenameFolder = (folder: FolderModel) => {
+        folders.find(el => el.id === folder.id)!.name = folder.name
+    }
+
+    const openCreateFolderDialog = (action: FolderActionType) => {
+        setCurrentFolder(selectedFolder);
+        setActionType(action);
+        setIsDialogOpen(true);
+        handleMenuClose();
+    }
+
+    const handleMenuClick = (event: React.MouseEvent<HTMLElement>, folder: FolderModel) => {
+        setSelectedFolder(folder);
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setSelectedFolder(null);
+        setAnchorEl(null);
+    };
+
+    const addAnalyzersToFolder = (ids: string[]) => {
+        setAnalyzerIdsToAdd([...ids]);
+        openCreateFolderDialog('addToFolder');
+    }
 
     return (
-        <div>
-            <h1>Analyzers Page</h1>
-            <div>
-                <Button variant='contained' size={'medium'} color={'primary'} onClick={() => setCreateDialogOpen(true)}>Create
-                    New Analyzer</Button>
-                <CreateAnalyzerDialog
-                    auth={authInfo!}
-                    open={isCreateDialogOpen}
-                    authInfo={authInfo!}
-                    onClose={(result: boolean) => {
-                        if (result) {
-                            updateAnalyzersList();
+        <div className="analyzer-page">
+            {!location.includes('/detail') &&
+                <div className="analyzer-menu-panel">
+                    <div className="analyzer-menu-panel-tabs">
+                        <div className="analyzer-menu-panel-tabs-header"
+                             style={location === "/analyzer/folder/top" ? {...topHoverStyle as CSSProperties} : {}}>
+                            <FlagIcon style={{marginRight: '8px'}}/>
+                            <Typography onClick={() => navigate("/analyzer/folder/top")} fontSize="14px">
+                                Top Public Analyzer
+                            </Typography>
+                        </div>
+                        <Divider color="#1D2024"/>
+                        <div className="analyzer-menu-panel-folder-container"
+                             style={location === "/analyzer/folder/all" ? {marginTop: '12px', ...folderHoverStyle as CSSProperties} : {marginTop: '12px'}}>
+                            {!!authInfo &&
+                                <div id="folder"
+                                     onClick={() => navigate("/analyzer/folder/all")}>
+                                    All Analyzers
+                                </div>
+                            }
+                        </div>
+                        {
+                            folders.map(folder => (
+                                <div className="analyzer-menu-panel-folder-container"
+                                     style={location === `/analyzer/folder/${folder.id}` ? {...folderHoverStyle as CSSProperties} : {}}
+                                >
+                                    <div id="folder"
+                                         onClick={() => navigate(`/analyzer/folder/${folder.id}`)}>
+                                        {folder.name}
+                                    </div>
+                                    <MenuIcon className="analyzer-folder-menu-hover"
+                                              onClick={(event: React.MouseEvent<HTMLElement>) => {
+                                                  handleMenuClick(event, folder)
+                                              }}/>
+                                </div>
+                            ))
                         }
-                        setCreateDialogOpen(false);
-                    }}
-                />
+                    </div>
+                    <div className="analyzer-menu-panel-button">
+                        {!!authInfo &&
+                            <Button variant="outlined"
+                                    onClick={() => openCreateFolderDialog('create')}
+                                    style={{
+                                        borderColor: '#D0FF12',
+                                        color: '#D0FF12',
+                                        textTransform: 'none',
+                                        fontWeight: 700
+                                    }}>New Folder</Button>}
+                    </div>
+                </div>
+            }
+            <div className="analyzer-content">
+                <Switch>
+                    <Route path="/analyzer/folder/:folderId">
+                        {(params) => {
+                            const folderName = folders.find(folder => folder.id === params.folderId)?.name;
+                            return <AnalyzerContent folderId={params.folderId}
+                                                    folderName={folderName}
+                                                    addAnalyzersToFolder={addAnalyzersToFolder}
+                                                    folders={folders}
+                            />;
+                        }}
+                    </Route>
+                    <Route path="/analyzer/detail/:analyzerId">
+                        {(params) => {
+                            return <AnalyzerDetailContent analyzerId={params.analyzerId}
+                                                          folderDialogStatus={isDialogOpen}
+                                                          addAnalyzerToFolder={addAnalyzersToFolder}
+                            />;
+                        }}
+                    </Route>
+                    <Route path="/analyzer">
+                        <CurrentPath>Analyzer</CurrentPath>
+                    </Route>
+                </Switch>
+                {
+                    !authInfo &&
+                    <div className="login-banner">
+                        <div className="login-banner-content">
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: 'white',
+                                fontSize: '14px',
+                                fontWeight: 400
+                            }}>
+                                <MetamaskIcon style={{width: '36px', height: '34px', marginRight: '16px'}}/>
+                                Connect your wallet to unlock full access
+                            </div>
+                            <Button variant="contained"
+                                    onClick={() => login()}
+                                    style={{
+                                        backgroundColor: '#D0FF12',
+                                        color: '#121417',
+                                        textTransform: 'none',
+                                        fontWeight: 700
+                                    }}>Connect Wallet</Button>
+                        </div>
+                    </div>
+                }
             </div>
-            <TableContainer component={Paper}>
-                <Table aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Id</TableCell>
-                            <TableCell>Diapason</TableCell>
-                            <TableCell>Grid Size</TableCell>
-                            <TableCell>Multiplayer</TableCell>
-                            <TableCell>Stop Loss</TableCell>
-                            <TableCell>Take Profit</TableCell>
-                            <TableCell>Symbol</TableCell>
-                            <TableCell>Start Capital</TableCell>
-                            <TableCell>Money</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Delete</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {data.map(analyzer => (
-                            <TableRow
-                                key={analyzer.id}
-                                sx={{'&:last-child td, &:last-child th': {border: 0}}}
-                            >
-                                <TableCell component="th" scope="row"
-                                           onClick={() => navigate(`/analyzer/${analyzer.id}`)}>{analyzer.id}</TableCell>
-                                <TableCell align="left">{analyzer.diapason}</TableCell>
-                                <TableCell align="left">{analyzer.gridSize}</TableCell>
-                                <TableCell align="left">{analyzer.multiplayer}</TableCell>
-                                <TableCell align="left">{analyzer.positionStopLoss}</TableCell>
-                                <TableCell align="left">{analyzer.positionTakeProfit}</TableCell>
-                                <TableCell align="left">{analyzer.symbol}</TableCell>
-                                <TableCell align="left">{analyzer.startCapital}</TableCell>
-                                <TableCell align="left">{analyzer.money}</TableCell>
-                                <TableCell align="left">
-                                    <Button variant='contained' size={'medium'}
-                                            color={analyzer.isActive ? 'warning' : 'success'}
-                                            onClick={() => changeAnalyzerActiveStatus(analyzer)}>{analyzer.isActive ? 'Deactivate' : 'Activate'}</Button>
-                                </TableCell>
-                                <TableCell align="left">
-                                    <Button variant='contained' size={'medium'} color={'error'}
-                                            onClick={() => deleteItem(analyzer.id)}>{'Delete'}</Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    component="div"
-                    count={dataSize}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    rowsPerPage={rowsPerPage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                />
-            </TableContainer>
+            <FolderDialog actionType={actionType} authInfo={authInfo!} currentFolder={currentFolder}
+                          currentFolderList={folders} open={isDialogOpen} onClose={() => setIsDialogOpen(false)}
+                          onCreate={handleNewFolder} onDelete={handleDeleteFolder} onRename={handleRenameFolder}
+                          analyzerIds={analyzerIdsToAdd}/>
+            <Menu
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleMenuClose}
+                sx={{
+                    "& .MuiPaper-root": {
+                        backgroundColor: "#262B31",
+                        borderRadius: '4px',
+                        borderColor: '#555C68',
+                        color: 'white'
+                    },
+                }}
+            >
+                <StyledMenuItem onClick={() => openCreateFolderDialog('rename')}>Rename</StyledMenuItem>
+                <StyledMenuItem onClick={() => openCreateFolderDialog('delete')}
+                                style={{color: 'red'}}>Delete</StyledMenuItem>
+            </Menu>
         </div>
     );
 }
