@@ -159,6 +159,7 @@ class AnalyzerService(
                 copiedAnalyzers.forEach { analyzer ->
                     launch {
                         analyzerStabilityRepository.findAllByAnalyzerId(analyzer.id)
+                                .sortedBy { it.timestamp }
                                 .map { it.money }
                                 .let {
                                     val stabilityCoef = analyzer.calculateStabilityCoef(it)

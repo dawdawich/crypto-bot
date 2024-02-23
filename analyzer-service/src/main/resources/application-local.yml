@@ -13,9 +13,9 @@ spring:
       host: localhost
       port: 27017
       database: crypto-bot
-  redis:
-    host:localhost
-    port=6379
+    redis:
+      host: redis
+      port: 6379
 
 server:
   port: 8701

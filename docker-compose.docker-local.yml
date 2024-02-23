@@ -47,8 +47,12 @@ services:
     image: redis:latest
     hostname: redis
     restart: always
+    networks:
+      - "crypto-bot-network"
     ports:
       - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
 
   event-listener:
     build:
@@ -73,6 +77,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_started
       kafka:
         condition: service_started
       event-listener:
