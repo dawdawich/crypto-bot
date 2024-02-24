@@ -137,19 +137,19 @@ class AnalyzerService(
         }
     }
 
-    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.MINUTES)
     private fun updateMoneySnapshot() {
         if (analyzers.isNotEmpty()) {
-            val copiedAnalyzers = analyzers.toList()
+            val copiedAnalyzers = analyzers.asSequence()
             runBlocking {
-                copiedAnalyzers.forEach { analyzer ->
-                    launch { analyzerStabilityRepository.save(AnalyzerMoneyModel(analyzer.id, analyzer.getMoney())) }
-                }
+                copiedAnalyzers
+                        .map { AnalyzerMoneyModel(it.id, it.getMoney()) }
+                        .let { analyzerStabilityRepository.saveAll(it.toList()) }
             }
         }
     }
 
-    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
+    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.MINUTES, initialDelay = 4)
     private fun calculateStabilityCoef() {
         if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
