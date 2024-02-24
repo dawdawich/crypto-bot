@@ -139,6 +139,7 @@ class AnalyzerService(
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
     private fun updateMoneySnapshot() {
+        val calculationStartTime = System.currentTimeMillis()
         if (analyzers.isNotEmpty()) {
             val copiedAnalyzers = analyzers.asSequence()
             runBlocking {
@@ -151,6 +152,7 @@ class AnalyzerService(
                         .let { analyzerStabilityRepository.saveAll(it.toList()) }
             }
         }
+        log.info { "Finish process update money snapshot. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
     }
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
