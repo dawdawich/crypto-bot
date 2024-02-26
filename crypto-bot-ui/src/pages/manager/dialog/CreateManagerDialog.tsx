@@ -10,9 +10,11 @@ import {FolderModel} from "../../../model/FolderModel";
 import {createManager} from "../../../service/ManagerService";
 import {errorToast, successToast} from "../../toast/Toasts";
 import loadingSpinner from "../../../assets/images/loading-spinner.svga";
+import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
 
 interface AddApiTokenDialogProps {
     authInfo: AuthInfo;
+    logout: () => void;
     open: boolean;
     onClose: () => void;
     apiTokens: ApiToken[];
@@ -38,7 +40,7 @@ const AnalyzerStrategyOption = [
     },
 ];
 
-const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, open, onClose, apiTokens, folders}) => {
+const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, apiTokens, folders}) => {
     const spanRef = useRef<HTMLSpanElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [animation, setAnimation] = useState('');
@@ -96,9 +98,12 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, open, 
                 successToast('Manager created successfully');
                 onClose();
             })
-            .catch(() => {
+            .catch((ex) => {
                 setIsLoading(false);
                 errorToast('Failed to create manager');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             })
     }
 

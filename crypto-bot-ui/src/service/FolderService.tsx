@@ -1,6 +1,7 @@
 import {AuthInfo} from "../model/AuthInfo";
 import {SERVER_HOST} from "./Constants";
 import {FolderModel} from "../model/FolderModel";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
 const API_URL = `${SERVER_HOST}/folder`;
 
@@ -17,6 +18,8 @@ export const createFolder = async (auth: AuthInfo, name: string) => {
     });
     if (response.ok) {
         return await response.json();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to create folder');
 }
@@ -32,6 +35,8 @@ export const fetchFolderList = async (auth: AuthInfo) => {
         });
         if (response.ok) {
             return await response.json() as FolderModel[];
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -51,6 +56,8 @@ export const fetchAnalyzerFolders = async (auth: AuthInfo, analyzerId: string) =
         });
         if (response.ok) {
             return await response.json() as FolderModel[];
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -71,6 +78,8 @@ export const deleteFolder = async (auth: AuthInfo, id: string) => {
         });
         if (response.ok) {
             return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -93,6 +102,8 @@ export const removeAnalyzerFromFolder = async (auth: AuthInfo, folderId: string,
         });
         if (response.ok) {
             return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -117,6 +128,8 @@ export const renameFolder = async (auth: AuthInfo, id: string, newName: string) 
             return true;
         } else if (response.status === 409) {
             return false;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -139,6 +152,8 @@ export const addAnalyzersToFolder = async (auth: AuthInfo, id: string, analyzerI
         });
         if (response.ok) {
             return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);

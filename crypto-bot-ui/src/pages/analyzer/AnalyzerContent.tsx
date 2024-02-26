@@ -43,6 +43,7 @@ import CreationSideBar from "./CreationSideBar";
 import {FolderModel} from "../../model/FolderModel";
 import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
+import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -174,7 +175,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const [duplicatedAnalyzer, setDuplicatedAnalyzer] = useState<AnalyzerModel | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [, navigate] = useLocation();
-    const {authInfo} = useAuth();
+    const {authInfo, logout} = useAuth();
     const open = Boolean(anchorEl);
 
     if (pageType === 'FOLDER' && !folders.find(el => el.name === folderName)) {
@@ -195,12 +196,14 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 setDataSize(response.totalSize);
                 setIsLoading(false);
             })
-            .catch(error => {
+            .catch(ex => {
                 setIsLoading(false);
                 errorToast("Failed to fetch analyzers.");
-                console.error(error);
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
-    }, [authInfo]);
+    }, [authInfo, logout]);
 
     useEffect(() => {
         if (pageTypes[folderId] as string !== pageType) {
@@ -342,9 +345,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     setSelectedAnalyzers([]);
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 })
-                .catch(() => {
+                .catch((ex) => {
                     setIsBigLoading(false);
                     errorToast('Failed to delete analyzers.');
+                    if (ex instanceof UnauthorizedError) {
+                        logout();
+                    }
                 });
         }
     }
@@ -359,9 +365,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     setSelectedAnalyzers([]);
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 })
-                .catch(() => {
+                .catch((ex) => {
                     setIsBigLoading(false);
                     errorToast('Failed to updated analyzers.');
+                    if (ex instanceof UnauthorizedError) {
+                        logout();
+                    }
                 });
         }
     }
@@ -383,7 +392,9 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     setIsBigLoading(false);
                     setSelectedAnalyzers([]);
                     errorToast(`Failed to ${status ? 'activate' : 'deactivate'} analyzers.`);
-                    console.error(ex);
+                    if (ex instanceof UnauthorizedError) {
+                        logout();
+                    }
                 });
         }
     }
@@ -398,9 +409,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 }
             })
-            .catch(() => {
+            .catch((ex) => {
                 setIsBigLoading(false)
                 errorToast('Failed to create analyzer');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
     }
 
@@ -414,9 +428,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 }
             })
-            .catch(() => {
+            .catch((ex) => {
                 setIsBigLoading(false)
                 errorToast('Failed to create analyzers');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
     };
 
@@ -714,7 +731,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         {isListPage() &&
                                             <TableCell id="cell"
                                                        align="left">{!!analyzer.money && analyzer.money.toFixed(3)}</TableCell>}
-                                        <TableCell align="center" id="cell">1</TableCell>
+                                        <TableCell align="center" id="cell">{analyzer.stabilityCoef}</TableCell>
                                         <TableCell align="center" id="cell">20 %</TableCell>
                                         <TableCell align="center" id="cell">20 %</TableCell>
                                         <TableCell align="center" id="cell">20 %</TableCell>

@@ -1,7 +1,9 @@
 import {SERVER_HOST} from "./Constants";
 import {AuthInfo} from "../model/AuthInfo";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
 const API_URL = `${SERVER_HOST}/account`;
+
 
 export const requestSalt = async (accountId: string) => {
     const response = await fetch(`${API_URL}/salt`, {
@@ -28,6 +30,8 @@ export const getApiTokens = async (auth: AuthInfo) => {
     });
     if (response.ok) {
         return await response.json();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error(`Failed to fetch tokens, response code: ${response.status}`);
 }
@@ -45,6 +49,8 @@ export const addApiToken = async (body: any, auth: AuthInfo) => {
     });
     if (response.ok) {
         return await response.text();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error(`Failed to create api token, response code: ${response.status}`);
 }
@@ -60,6 +66,8 @@ export const deleteApiToken = async (id: string, auth: AuthInfo) => {
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error(`Failed to delete api token, response code: ${response.status}`);
 }

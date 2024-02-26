@@ -9,6 +9,7 @@ import {useAuth} from "../../context/AuthContext";
 import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
 import loadingSpinner from "../../assets/images/loading-spinner.svga";
 import {errorToast} from "../toast/Toasts";
+import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 const PreviousPath = styled('div')({
     font: plexFont,
@@ -41,10 +42,14 @@ const ApiTokenContent: React.FC = () => {
     const [animation, setAnimation] = useState('');
     const [isApiTokenDialogOpen, setIsApiTokenDialogOpen] = useState(false);
     const [, navigate] = useLocation();
-    const {authInfo} = useAuth();
+    const {authInfo, logout} = useAuth();
     const [data, setData] = useState<ApiToken[]>([]);
 
     document.title = 'Api Tokens';
+
+    if (!authInfo) {
+        navigate('/');
+    }
 
     useEffect(() => {
         setIsLoading(true);
@@ -56,15 +61,23 @@ const ApiTokenContent: React.FC = () => {
             .catch(ex => {
                 setIsLoading(false);
                 errorToast("Failed to get api tokens");
-                console.error(ex);
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
-    }, [authInfo]);
+    }, [authInfo, logout]);
 
     const handleDeleteApiToken = (id: string) => {
         deleteApiToken(id, authInfo!)
             .then(() => {
                 if (data) {
                     setData({...data.filter((token: ApiToken) => token.id !== id)});
+                }
+            })
+            .catch((ex) => {
+                errorToast("Failed to delete api token");
+                if (ex instanceof UnauthorizedError) {
+                    logout();
                 }
             });
     }
@@ -160,7 +173,7 @@ const ApiTokenContent: React.FC = () => {
                 </TableContainer>
             }
             <AddApiTokenDialog open={isApiTokenDialogOpen} onClose={() => setIsApiTokenDialogOpen(false)}
-                               onCreate={handleNewApiToken} authInfo={authInfo!}/>
+                               onCreate={handleNewApiToken} authInfo={authInfo!} logout={logout}/>
         </div>
     );
 }

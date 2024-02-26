@@ -20,6 +20,7 @@ import {FolderModel} from "../../model/FolderModel";
 import {fetchAnalyzerFolders, removeAnalyzerFromFolder} from "../../service/FolderService";
 import {getWebSocketAnalyzerService, WebSocketService} from "../../service/WebSocketService";
 import {AnalyzerRuntimeModel} from "../../model/AnalyzerRuntimeModel";
+import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 interface AnalyzerDetailProps {
     analyzerId: string;
@@ -65,7 +66,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
     const [analyzerRuntimeInfo, setAnalyzerRuntimeInfo] = useState<AnalyzerRuntimeModel | null>(null);
     const [analyzerFolders, setAnalyzerFolders] = useState<FolderModel[]>([]);
     const [webSocket] = useState<WebSocketService>(getWebSocketAnalyzerService());
-    const {authInfo} = useAuth();
+    const {authInfo, logout} = useAuth();
     const [, navigate] = useLocation();
 
     if (!authInfo) {
@@ -75,7 +76,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
     const updateFoldersList = useCallback((analyzerId: string) => {
         fetchAnalyzerFolders(authInfo!, analyzerId)
             .then((folders) => setAnalyzerFolders(folders))
-            .catch(() => errorToast('Failed to fetch folder list'));
+            .catch((ex) => {
+                errorToast('Failed to fetch folder list');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     }, [authInfo]);
 
     useEffect(() => {
@@ -89,10 +95,13 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
             .then((response) => {
                 setAnalyzer(response);
             })
-            .catch(() => {
+            .catch((ex) => {
                 errorToast('Failed to fetch analyzer info');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
-    }, [authInfo, analyzerId]);
+    }, [authInfo, analyzerId, logout]);
 
     useEffect(() => {
         if (!!analyzer && analyzer.isActive && !webSocket.isOpen()) {
@@ -126,7 +135,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                 successToast('Analyzer removed from folder');
                 updateFoldersList(analyzerId);
             })
-            .catch(() => errorToast('Failed to remove analyzer from folder'));
+            .catch((ex) => {
+                errorToast('Failed to remove analyzer from folder');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     }
 
     const copyCurrentAnalyzerId = () => {
@@ -142,7 +156,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
     const resetAnalyzer = () => {
         resetAnalyzerBulk(authInfo!, [analyzerId])
             .then(() => successToast('Analyzer reset successfully.'))
-            .catch(() => errorToast('Failed to reset analyzer'));
+            .catch((ex) => {
+                errorToast('Failed to reset analyzer');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     };
 
     const deleteAnalyzer = () => {
@@ -151,7 +170,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                 navigate('/analyzer');
                 successToast('Analyzer deleted');
             })
-            .catch(() => errorToast('Failed to delete analyzer'));
+            .catch((ex) => {
+                errorToast('Failed to delete analyzer');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     };
 
     const stopAnalyzer = () => {
@@ -160,7 +184,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                 successToast('Analyzer stopped');
                 setAnalyzer({...analyzer as AnalyzerResponse, isActive: false});
             })
-            .catch(() => errorToast('Failed to stop analyzer'))
+            .catch((ex) => {
+                errorToast('Failed to stop analyzer');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            })
     }
 
     const activateAnalyzer = () => {
@@ -169,7 +198,12 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                 successToast('Analyzer stopped');
                 setAnalyzer({...analyzer as AnalyzerResponse, isActive: true});
             })
-            .catch(() => errorToast('Failed to stop analyzer'))
+            .catch((ex) => {
+                errorToast('Failed to stop analyzer');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            })
     }
 
     return (

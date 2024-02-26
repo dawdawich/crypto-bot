@@ -1,10 +1,11 @@
-import {createContext, useContext, useState} from "react";
-import React from "react";
+import React, {Component, createContext, ErrorInfo, useContext, useState} from "react";
 import {AuthInfo} from "../model/AuthInfo";
 import {useSDK} from "@metamask/sdk-react";
 import {requestSalt} from "../service/AccountService";
+import {useLocation} from "wouter";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
-interface AuthContextType {
+export interface AuthContextType {
     authInfo: AuthInfo | undefined;
     login: () => void;
     logout: () => void;
@@ -12,8 +13,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-    const { sdk, provider } = useSDK();
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
+    const [, navigate] = useLocation();
+    const {sdk, provider} = useSDK();
     const [authInfo, setAuthInfo] = useState<AuthInfo | undefined>(() => {
         const info = localStorage.getItem('auth.info');
         return info == null ? undefined : JSON.parse(info) as AuthInfo;
@@ -31,7 +33,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
             let computedAuthInfo = {address, signature};
             setAuthInfo(computedAuthInfo);
             localStorage.setItem('auth.info', JSON.stringify(computedAuthInfo))
-        } catch(err) {
+        } catch (err) {
             console.warn(`failed to connect to wallet`, err);
         }
     };
@@ -55,11 +57,21 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         localStorage.removeItem('auth.info');
     };
 
-    return (
-        <AuthContext.Provider value={{ authInfo, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    try {
+        return (
+            <AuthContext.Provider value={{authInfo, login, logout}}>
+                {children}
+            </AuthContext.Provider>
+        );
+    } catch (e) {
+        if (e instanceof UnauthorizedError) {
+            logout();
+            navigate('/analyzer');
+        } else {
+            throw e;
+        }
+    }
+    return (<div></div>);
 };
 
 export const useAuth = (): AuthContextType => {

@@ -30,6 +30,7 @@ import {RowDiv} from "../../utils/styles/element-styles";
 import loadingSpinner from "../../assets/images/loading-spinner.svga";
 import {ReactComponent as MenuHeaderIcon} from "../../assets/images/analyzer/menu-header-icon.svg";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
+import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 const CurrentPath = styled('div')({
     font: plexFont,
@@ -58,7 +59,7 @@ const ManagersPage: React.FC = () => {
     const spanRef = useRef<HTMLSpanElement>(null);
     const [animation, setAnimation] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const {authInfo} = useAuth();
+    const {authInfo, logout} = useAuth();
     const [managers, setManagers] = useState<ManagerResponse[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
@@ -78,14 +79,29 @@ const ManagersPage: React.FC = () => {
     useEffect(() => {
         getApiTokens(authInfo!)
             .then((tokens) => setApiTokens(tokens))
-            .catch(() => errorToast('Failed to fetch API tokens'));
+            .catch((ex) => {
+                errorToast('Failed to fetch API tokens');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
         fetchFolderList(authInfo!)
             .then((foldersResponse) => setFolders(foldersResponse))
-            .catch(() => errorToast('Failed to fetch folders list'));
+            .catch((ex) => {
+                errorToast('Failed to fetch folders list');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
         fetchManagersList(authInfo!)
             .then((managers) => setManagers(managers))
-            .catch(() => errorToast('Failed to fetch managers'));
-    }, [authInfo]);
+            .catch((ex) => {
+                errorToast('Failed to fetch managers');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
+    }, [authInfo, logout]);
 
     useEffect(() => {
         fetch(loadingSpinner)
@@ -109,9 +125,12 @@ const ManagersPage: React.FC = () => {
                 setManagers([...managers]);
                 successToast(status === 'ACTIVE' ? 'Manager started successfully' : 'Manager stopped successfully');
             })
-            .catch(() => {
+            .catch((ex) => {
                 setIsLoading(false);
                 errorToast(status === 'ACTIVE' ? 'Failed to start manager' : 'Failed to stop manager');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
     }
 
@@ -123,7 +142,12 @@ const ManagersPage: React.FC = () => {
                 setManagers([...managers.filter(el => el.id !== manager.id)])
                 successToast('Manager deleted successfully');
             })
-            .catch(() => errorToast('Failed to delete manager'));
+            .catch((ex) => {
+                errorToast('Failed to delete manager');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     }
 
     const changeActiveFilter = (type: FilterType) => {
@@ -185,7 +209,7 @@ const ManagersPage: React.FC = () => {
 
     return (
         <div className="managers-content">
-            <CreateManagerDialog folders={folders} apiTokens={apiTokens} authInfo={authInfo!} open={isDialogOpen}
+            <CreateManagerDialog folders={folders} apiTokens={apiTokens} authInfo={authInfo!} logout={logout} open={isDialogOpen}
                                  onClose={() => setIsDialogOpen(false)}/>
             <div className="managers-header">
                 <div className="managers-header-path">

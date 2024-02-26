@@ -13,7 +13,7 @@ root.render(
         <MetaMaskProvider debug={true} sdkOptions={{
             dappMetadata: {
                 name: "JOAT",
-                url: window.location.href
+                url: 'http://dawdawich.space'
             }
         }}>
             <div style={{position: 'relative'}}>

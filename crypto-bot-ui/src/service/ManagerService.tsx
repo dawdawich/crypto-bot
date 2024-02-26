@@ -2,6 +2,7 @@ import {SERVER_HOST} from "./Constants";
 import {AuthInfo} from "../model/AuthInfo";
 import {ManagerRequestModel} from "../model/ManagerRequestModel";
 import {ManagerResponse} from "../model/ManagerResponse";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
 const API_URL = `${SERVER_HOST}/manager`;
 
@@ -17,6 +18,8 @@ export const fetchManagersList = async (auth: AuthInfo) => {
         });
         if (response.ok) {
             return await response.json() as ManagerResponse[];
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -24,27 +27,6 @@ export const fetchManagersList = async (auth: AuthInfo) => {
     }
     throw new Error('Failed to fetch managers data');
 }
-
-export const fetchManagerData = async (auth: AuthInfo, managerId: string) => {
-    try {
-        const response = await fetch(`${API_URL}/${managerId}`, {
-            method: "GET",
-            headers: {
-                'Account-Address': btoa(auth.address),
-                'Account-Address-Signature': btoa(auth.signature),
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
-        if (response.ok) {
-            return await response.json();
-        }
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-    throw new Error('Failed to fetch manager data');
-}
-
 export const createManager = async (auth: AuthInfo, manager: ManagerRequestModel) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
@@ -58,6 +40,8 @@ export const createManager = async (auth: AuthInfo, manager: ManagerRequestModel
     });
     if (response.ok) {
         return await response.text();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to create manager data');
 }
@@ -76,6 +60,8 @@ export const updateManagerStatus = async (auth: AuthInfo, managerId: string, sta
         });
         if (response.ok) {
             return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -96,6 +82,8 @@ export const deleteManager = async (auth: AuthInfo, managerId: string) => {
         });
         if (response.status === 204) {
             return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     }  catch (error) {
         console.error(error);
