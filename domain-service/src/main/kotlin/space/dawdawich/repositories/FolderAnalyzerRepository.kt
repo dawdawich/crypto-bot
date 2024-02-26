@@ -10,4 +10,5 @@ interface FolderAnalyzerRepository : MongoRepository<FolderAnalyzerDocument, Str
     fun deleteByAnalyzerIdIn(analyzerIds: Set<String>): Long
     fun deleteByFolderId(folderId: String): Long
     fun deleteByFolderIdAndAnalyzerIdIn(folderId: String, analyzerIds: Set<String>): Long
+    fun countByFolderId(folderId: String): Int
 }

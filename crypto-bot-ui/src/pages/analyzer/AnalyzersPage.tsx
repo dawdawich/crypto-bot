@@ -74,6 +74,8 @@ const AnalyzersPage: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
 
+    document.title = 'Analyzers';
+
     useEffect(() => {
         if (!!authInfo) {
             fetchFolderList(authInfo)

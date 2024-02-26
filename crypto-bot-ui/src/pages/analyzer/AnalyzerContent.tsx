@@ -177,6 +177,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const {authInfo} = useAuth();
     const open = Boolean(anchorEl);
 
+    if (pageType === 'FOLDER' && !folders.find(el => el.name === folderName)) {
+        navigate("/analyzer/folder/all");
+    }
+
     const updateAnalyzersList = useCallback((statusFilter: boolean | null, symbolFilter: string[], sortOption: {
         name: string,
         direction: Order
@@ -227,7 +231,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     console.error(ex);
                 });
         }
-    }, [folderId, pageType, pageName, folderName]);
+    }, [folderId, pageType, folderName]);
 
     useEffect(() => {
         setIsLoading(true);
@@ -368,11 +372,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             changeBulkAnalyzerStatus(authInfo!, analyzers.map(e => e.id), status)
                 .then(() => {
                     setIsBigLoading(false);
-                    analyzers.forEach(e => e.isActive = true);
+                    analyzers.forEach(e => e.isActive = status);
+                    setData([...data]);
                     successToast(`Analyzers ${status ? 'activated' : 'deactivated'} successfully.`);
                     setSelectedAnalyzers([]);
-                    setActiveSize(activeSize + analyzers.length)
-                    setNotActiveSize(notActiveSize - analyzers.length)
+                    setActiveSize(activeSize + (status ? analyzers.length : -analyzers.length))
+                    setNotActiveSize(notActiveSize - (status ? analyzers.length : -analyzers.length))
                 })
                 .catch((ex) => {
                     setIsBigLoading(false);
@@ -475,6 +480,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             setOrderBy(key);
         }
         updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter());
+    }
+
+    const navigateToAnalyzerDetail = (analyzerId: string) => {
+        if (pageType !== "TOP") {
+            navigate(`/analyzer/detail/${analyzerId}`);
+        }
     }
 
     const isListPage = () => pageType === 'LIST' || pageType === 'FOLDER';
@@ -676,7 +687,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                             </TableCell>
                                         }
                                         <TableCell id="cell"
-                                                   onClick={() => navigate(`/analyzer/detail/${analyzer.id}`)}>{getSymbolIcon(analyzer.symbol)}</TableCell>
+                                                   onClick={() => navigateToAnalyzerDetail(analyzer.id)}>{getSymbolIcon(analyzer.symbol)}</TableCell>
                                         {isListPage() && <TableCell align="left" id="cell">
                                             {analyzer.isActive ?
                                                 <div className="analyzer-table-item-status">

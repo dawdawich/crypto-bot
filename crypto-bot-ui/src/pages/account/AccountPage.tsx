@@ -30,6 +30,8 @@ const AccountPage: React.FC = () => {
     const {authInfo, logout} = useAuth();
     const [location, navigate] = useLocation();
 
+    document.title = 'Account';
+
     if (!authInfo) {
         navigate('/');
     }

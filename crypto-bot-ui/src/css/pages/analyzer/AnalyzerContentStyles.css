@@ -88,10 +88,10 @@
     background-color: #262B31;
     padding: 4px;
     border-radius: 4px;
-    cursor: pointer;
 }
 
 .analyzer-folder-menu-hover {
+    cursor: pointer;
     padding: 4px;
 }
 
@@ -115,12 +115,11 @@
 }
 
 .analyzer-big-loading-banner {
-    align-self: center;
-    justify-self: center;
     display: flex;
+    position: relative;
     left: 50%;
     top: 50%;
-    transform: translateX(50%) translateY(50%);
+    transform: translateX(-50%) translateY(-50%);
     width: 500px;
 }
 

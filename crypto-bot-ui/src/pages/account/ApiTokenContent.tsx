@@ -44,6 +44,8 @@ const ApiTokenContent: React.FC = () => {
     const {authInfo} = useAuth();
     const [data, setData] = useState<ApiToken[]>([]);
 
+    document.title = 'Api Tokens';
+
     useEffect(() => {
         setIsLoading(true);
         getApiTokens(authInfo!)

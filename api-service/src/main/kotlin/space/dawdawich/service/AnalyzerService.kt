@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
+import space.dawdawich.constants.ACTIVATE_ANALYZERS_TOPIC
 import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.controller.model.CreateAnalyzerBulkRequest
@@ -69,25 +70,26 @@ class AnalyzerService(
             .map { GridTableAnalyzerResponse(it) }.toList()
     }
 
-    fun getAnalyzersCounters(accountId: String, folderId: String?): Triple<Int, Int, Int> =
+    fun getAnalyzersCounters(accountId: String, folderId: String?, symbols: List<String>): Triple<Int, Int, Int> =
         folderId?.let {
-            val ids = folderService.getAnalyzersByFolderIdAndAccountId(accountId, it).toList()
             Triple(
-                analyzerRepository.countByAccountIdAndIdIn(accountId, ids),
-                analyzerRepository.countByAccountIdAndIdInAndIsActive(accountId, ids),
-                analyzerRepository.countByAccountIdAndIdInAndIsActive(accountId, ids, false),
+                analyzerRepository.countActiveAnalyzersInFolder(it, null, symbols),
+                analyzerRepository.countActiveAnalyzersInFolder(it, true, symbols),
+                analyzerRepository.countActiveAnalyzersInFolder(it, false, symbols),
             )
-        } ?: Triple(
-            analyzerRepository.countByAccountId(accountId),
-            analyzerRepository.countByAccountIdAndIsActive(accountId),
-            analyzerRepository.countByAccountIdAndIsActive(accountId, false),
-        )
-
-    fun updateAnalyzerStatus(accountId: String, id: String, status: Boolean): Unit =
-        analyzerValidationService
-            .validateAnalyzerExistByIdAndAccountId(id, accountId)
-            .let { analyzerRepository.setAnalyzerActiveStatus(id, status) }
-            .let { kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id) }
+        } ?: if (symbols.isNotEmpty()) {
+            Triple(
+                analyzerRepository.countByAccountIdAndSymbolInfoSymbolIn(accountId, symbols),
+                analyzerRepository.countByAccountIdAndSymbolInfoSymbolInAndIsActive(accountId, symbols, true),
+                analyzerRepository.countByAccountIdAndSymbolInfoSymbolInAndIsActive(accountId, symbols, false)
+            )
+        } else {
+            Triple(
+                analyzerRepository.countByAccountId(accountId),
+                analyzerRepository.countByAccountIdAndIsActive(accountId),
+                analyzerRepository.countByAccountIdAndIsActive(accountId, false)
+            )
+        }
 
     fun updateAnalyzersStatus(accountId: String, ids: List<String>, status: Boolean): Unit =
         analyzerValidationService
@@ -214,10 +216,9 @@ class AnalyzerService(
                 )
             }
 
-            analyzersToInsert.filter { it.isActive }.forEach { kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, it.id) }
+            if (request.active) {
+                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, analyzersToInsert.map { it.id }.joinToString { "," })
+            }
         }
     }
-
-    fun changeAllAnalyzersStatus(accountId: String, status: Boolean) =
-        analyzerRepository.setAllAnalyzersActiveStatus(accountId, status)
 }

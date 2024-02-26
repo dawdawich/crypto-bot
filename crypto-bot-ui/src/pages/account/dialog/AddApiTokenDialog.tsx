@@ -7,8 +7,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    styled,
-    Switch
+    styled
 } from "@mui/material";
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
 import loadingSpinner from '../../../assets/images/loading-spinner.svga';

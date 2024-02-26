@@ -1,9 +1,5 @@
 package space.dawdawich.repositories
 
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
@@ -24,18 +20,15 @@ interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String
     @Update("{\$set:  {\"money\": null, middlePrice: null, stabilityCoef: null, updateTime:  ?1}}")
     fun resetAnalyzers(ids: List<String>, updateTime: Long = System.currentTimeMillis())
 
-    @Query("{accountId:  ?0}")
-    @Update("{\$set:  {isActive:  ?1, middlePrice: null, updateTime:  ?2}}")
-    fun setAllAnalyzersActiveStatus(accountId: String, status: Boolean, updateTime: Long = System.currentTimeMillis())
-
-    fun deleteByAccountId(accountId: String)
     fun deleteByIdIn(ids: List<String>)
 
     fun countByAccountId(accountId: String): Int
-    fun countByAccountIdAndIdIn(accountId: String, ids: List<String>): Int
+    fun countByAccountIdAndSymbolInfoSymbolIn(accountId: String, symbols: List<String>): Int
 
     fun countByAccountIdAndIsActive(accountId: String, isActive: Boolean = true): Int
-    fun countByAccountIdAndIdInAndIsActive(accountId: String, ids: List<String>, isActive: Boolean = true): Int
+
+    fun countByAccountIdAndSymbolInfoSymbolInAndIsActive(accountId: String, symbols: List<String>, isActive: Boolean = true): Int
+
 
     fun findByIdAndAccountId(id: String, accountId: String): GridTableAnalyzerDocument?
 

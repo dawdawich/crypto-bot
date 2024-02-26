@@ -198,14 +198,14 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
             <DialogTitle>
                 {title}
             </DialogTitle>
-            <DialogContent style={{ overflow: 'visible'}}>
+            <DialogContent style={{overflow: 'visible'}}>
                 <FieldContainer style={{marginTop: '16px', overflow: 'visible'}}>
                     <div style={{fontSize: '14px', fontWeight: '200'}}>
                         {description}
                     </div>
                     {
                         actionType !== 'delete' &&
-                        actionType === 'addToFolder' ?
+                        (actionType === 'addToFolder' ?
                             <Select
                                 options={currentFolderList.map((folder) => {
                                     return {value: folder.id, label: folder.name}
@@ -217,19 +217,19 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                                 styles={SelectStyle}
                             />
                             :
-                        <input type="text" name="name" style={{
-                            borderRadius: '4px',
-                            height: '34px',
-                            boxShadow: 'none',
-                            border: 0,
-                            backgroundColor: '#262B31',
-                            color: 'white',
-                            padding: '8px',
-                            fontSize: '14px',
-                            fontWeight: '200',
-                        }}
-                               value={nameText}
-                               onChange={(e) => setNameText(e.target.value)}/>}
+                            <input type="text" name="name" style={{
+                                borderRadius: '4px',
+                                height: '34px',
+                                boxShadow: 'none',
+                                border: 0,
+                                backgroundColor: '#262B31',
+                                color: 'white',
+                                padding: '8px',
+                                fontSize: '14px',
+                                fontWeight: '200',
+                            }}
+                                   value={nameText}
+                                   onChange={(e) => setNameText(e.target.value)}/>)}
                 </FieldContainer>
             </DialogContent>
             <DialogActions style={{paddingBottom: '32px', paddingRight: '32px'}}>
