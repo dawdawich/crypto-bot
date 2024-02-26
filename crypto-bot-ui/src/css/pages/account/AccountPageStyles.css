@@ -1,0 +1,55 @@
+.account-page {
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.account-menu-panel {
+    width: 204px;
+    padding: 16px;
+    background: #121417;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.account-menu-panel-tabs {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex-grow: 1;
+}
+
+.account-menu-panel-tabs > #tab {
+    padding: 8px;
+    font-size: 14px;
+    color: white;
+    transition: 0.3s;
+}
+
+.account-menu-panel-tabs > #tab:hover {
+    padding: 8px;
+    font-size: 14px;
+    color: white;
+    background: #1D2024;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.account-metamask-content {
+    display: flex;
+    flex-direction: column;
+    height: 128px;
+}
+
+.account-metamask-content-buttons {
+    width: 100%;
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.account-content {
+    background: #1D2024;
+    flex-grow: 1;
+}

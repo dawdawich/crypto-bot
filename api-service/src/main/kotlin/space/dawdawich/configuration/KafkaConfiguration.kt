@@ -12,8 +12,8 @@ import org.springframework.kafka.core.*
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
-import space.dawdawich.constants.RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import space.dawdawich.constants.RESPONSE_ANALYZER_RUNTIME_DATA
+import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import space.dawdawich.repositories.entity.TradeManagerDocument
 
 @Configuration
@@ -53,11 +53,11 @@ class KafkaConfiguration {
     @Bean
     fun strategyRuntimeDataReplyingTemplate(
         producerFactory: ProducerFactory<String, String>,
-        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, StrategyRuntimeInfoModel?>
+        jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, AnalyzerRuntimeInfoModel?>
     ) = replyingTemplate(
         producerFactory,
         jsonKafkaListenerContainerFactory,
-        RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
+        RESPONSE_ANALYZER_RUNTIME_DATA
     ).apply { setSharedReplyTopic(true) }
 
     private fun <T> producerFactory(bootstrapServer: String, serializerClass: Class<*>): ProducerFactory<String, T> {

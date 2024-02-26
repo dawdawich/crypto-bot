@@ -1,11 +1,15 @@
 export interface AnalyzerModel {
-    public: boolean;
     diapason: number;
     gridSize: number;
-    multiplayer: number;
+    multiplier: number;
     stopLoss: number;
     takeProfit: number;
     symbol: string;
     startCapital: number;
     active: boolean;
+    public: boolean;
+    folders: string[];
+    strategy: string;
+    market: string;
+    demoAccount: boolean;
 }

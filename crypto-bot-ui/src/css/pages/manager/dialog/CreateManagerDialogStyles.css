@@ -1,0 +1,39 @@
+.cross-icon {
+    display: flex;
+    align-self: flex-end;
+    fill: white;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.field-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.field-container-label {
+    font-size: 14px;
+    font-weight: 200;
+    margin-bottom: 4px;
+}
+
+.input-field {
+    border-radius: 4px;
+    height: 34px;
+    box-shadow: none;
+    border: 0;
+    background-color: #262B31;
+    color: white;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 200;
+}
+
+.action-buttons-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between !important;
+    align-self: center;
+    width: 85%;
+}

@@ -1,9 +1,11 @@
 import {SERVER_HOST} from "./Constants";
 import {AuthInfo} from "../model/AuthInfo";
+import {ManagerRequestModel} from "../model/ManagerRequestModel";
+import {ManagerResponse} from "../model/ManagerResponse";
 
-const API_URL = `${SERVER_HOST}/trade-manager`;
+const API_URL = `${SERVER_HOST}/manager`;
 
-export const fetchManagersData = async (auth: AuthInfo) => {
+export const fetchManagersList = async (auth: AuthInfo) => {
     try {
         const response = await fetch(`${API_URL}`, {
             method: "GET",
@@ -14,7 +16,7 @@ export const fetchManagersData = async (auth: AuthInfo) => {
             }
         });
         if (response.ok) {
-            return await response.json();
+            return await response.json() as ManagerResponse[];
         }
     } catch (error) {
         console.error(error);
@@ -43,7 +45,7 @@ export const fetchManagerData = async (auth: AuthInfo, managerId: string) => {
     throw new Error('Failed to fetch manager data');
 }
 
-export const createManager = async (auth: AuthInfo, manager: any) => {
+export const createManager = async (auth: AuthInfo, manager: ManagerRequestModel) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
@@ -73,7 +75,7 @@ export const updateManagerStatus = async (auth: AuthInfo, managerId: string, sta
             body: JSON.stringify({status})
         });
         if (response.ok) {
-            return true;
+            return;
         }
     } catch (error) {
         console.error(error);
@@ -93,7 +95,7 @@ export const deleteManager = async (auth: AuthInfo, managerId: string) => {
             }
         });
         if (response.status === 204) {
-            return true;
+            return;
         }
     }  catch (error) {
         console.error(error);

@@ -11,15 +11,15 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.configuration.WebSocketConfigurator
-import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
+import space.dawdawich.constants.REQUEST_ANALYZER_RUNTIME_DATA
+import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 @Service
 @ServerEndpoint(value = "/ws/analyzer", configurator = WebSocketConfigurator::class)
 class AnalyzerEndpoint(
-    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>
+    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, AnalyzerRuntimeInfoModel?>
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -33,7 +33,7 @@ class AnalyzerEndpoint(
         Json.parseToJsonElement(message).jsonObject["id"]?.let { record ->
             val runtimeInfo = try { strategyRuntimeDataReplyingTemplate.sendAndReceive(
                 ProducerRecord(
-                    REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, record.jsonPrimitive.content
+                    REQUEST_ANALYZER_RUNTIME_DATA, record.jsonPrimitive.content
                 )
             ).get(5, TimeUnit.SECONDS).value() } catch (ex: TimeoutException) { null }
             runtimeInfo?.let { checkedInfo ->

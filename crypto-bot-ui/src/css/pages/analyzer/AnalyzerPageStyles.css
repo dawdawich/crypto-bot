@@ -1,0 +1,123 @@
+.analyzer-page {
+    height: 100vh;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.analyzer-menu-panel {
+    width: 204px;
+    padding: 16px;
+    background: #121417;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.analyzer-menu-panel-tabs {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex-grow: 1;
+}
+
+.analyzer-menu-panel-folder-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    overflow-y: hidden;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.analyzer-menu-panel-folder-container:hover {
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    overflow-y: hidden;
+    background: #1D2024;
+    cursor: pointer;
+}
+
+#folder {
+    width: 100%;
+    height: 34px;
+    color: white;
+    font-size: 14px;
+    font-weight: 400;
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.analyzer-menu-panel-tabs-header {
+    padding-left: 8px;
+    padding-top: 10px;
+    margin-bottom: 18px;
+    height: 28px;
+    display: flex;
+    flex-direction: row;
+    color: white;
+}
+
+.analyzer-menu-panel-tabs-header:hover {
+    padding-left: 8px;
+    padding-top: 10px;
+    margin-bottom: 18px;
+    height: 28px;
+    display: flex;
+    flex-direction: row;
+    color: white;
+    background: #1D2024;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.analyzer-menu-panel-tabs > #tab {
+    padding: 8px;
+    font-size: 14px;
+    color: white;
+    transition: 0.3s;
+}
+
+.analyzer-menu-panel-tabs > #tab:hover {
+    padding: 8px;
+    font-size: 14px;
+    color: white;
+    background: #1D2024;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.analyzer-menu-panel-button {
+    height: 64px;
+    display: flex;
+    align-items: center;
+}
+
+.analyzer-content {
+    background: #1D2024;
+    flex-grow: 1;
+}
+
+.analyzer-folder-menu-hover:hover {
+    background-color: #262B31;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.analyzer-folder-menu-hover {
+    padding: 4px;
+}
+
+.analyzer-menu-panel-folder-container > .analyzer-folder-menu-hover {
+    visibility: hidden;
+}
+
+.analyzer-menu-panel-folder-container:hover > .analyzer-folder-menu-hover {
+    visibility: visible;
+}
