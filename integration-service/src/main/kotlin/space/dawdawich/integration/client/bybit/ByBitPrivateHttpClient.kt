@@ -193,9 +193,13 @@ class ByBitPrivateHttpClient(
 
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
-            when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            return when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
                 0, 110043 -> {
-                    return true
+                    true
+                }
+
+                10001 -> {
+                    false
                 }
 
                 10004 -> throw InvalidSignatureException()

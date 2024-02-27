@@ -176,7 +176,13 @@ class Manager(
     }
 
     private fun setupStrategyRunner(strategyConfig: StrategyConfigModel) {
-        runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+        var result = runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+
+        while (!result) {
+            logger { it.warn { "Failed to set margin, for symbol '${strategyConfig.symbol}' and multiplayer '${strategyConfig.multiplier}. Try again'" } }
+            result = runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+        }
+
         val createOrderFunction: CreateOrderFunction = {
                 inPrice: Double,
                 orderSymbol: String,
