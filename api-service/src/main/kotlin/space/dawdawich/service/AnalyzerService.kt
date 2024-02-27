@@ -171,6 +171,9 @@ class AnalyzerService(
                 val currentPrice = runBlocking {
                     (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice(symbol.symbol)
                 }
+                val instructions = runBlocking {
+                    (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairInstructions(symbol.symbol)
+                }
                 for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
                     for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
                         for (diapason in diapasonMin..diapasonMax step diapasonStep) {
@@ -180,7 +183,7 @@ class AnalyzerService(
                                     val moneyPerOrder = startCapital.plusPercent(-2) / gridSize
                                     val qty = moneyPerOrder * multiplier / currentPrice
 
-                                    if (qty > symbol.minOrderQty) {
+                                    if (qty > symbol.minOrderQty && multiplier <= instructions.maxLeverage) {
                                         analyzersToInsert.add(
                                             GridTableAnalyzerDocument(
                                                 UUID.randomUUID().toString(),

@@ -110,6 +110,7 @@ class Manager(
                     }
                     strategyRunner.position?.let { position ->
                         runBlocking {
+                            logger { it.info { "DEACTIVATION: canceling manager orders and position" } }
                             bybitService.cancelAllOrder(strategyRunner.symbol)
                             bybitService.closePosition(
                                 strategyRunner.symbol,
@@ -126,15 +127,22 @@ class Manager(
             }
         } finally {
             if (initJob.isActive) {
+                logger { it.info { "DEACTIVATION: cancel init job" } }
                 initJob.cancel()
             }
             if (webSocket.isOpen && !onlyStrategy) {
+                logger { it.info { "DEACTIVATION: closing web socket" } }
                 webSocket.close()
             }
             if (listener?.isRunning == true) {
+                logger { it.info { "DEACTIVATION: stopping message listener" } }
                 listener?.stop()
             }
-            logger { it.info { "Manager successfully stopped" } }
+            if (onlyStrategy) {
+                logger { it.info { "Manager strategy stopped" } }
+            } else {
+                logger { it.info { "Manager successfully stopped" } }
+            }
         }
     }
 

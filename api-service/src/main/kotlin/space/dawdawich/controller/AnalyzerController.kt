@@ -1,6 +1,5 @@
 package space.dawdawich.controller
 
-import jakarta.annotation.security.RolesAllowed
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
