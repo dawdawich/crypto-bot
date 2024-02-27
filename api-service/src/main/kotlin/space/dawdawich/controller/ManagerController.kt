@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.ManagerRequest
 import space.dawdawich.controller.model.ManagerResponse.Companion.convert
 import space.dawdawich.controller.model.TradeManagerStatusRequest
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.service.ManagerService
 
 @RestController

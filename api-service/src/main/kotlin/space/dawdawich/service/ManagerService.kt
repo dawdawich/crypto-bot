@@ -6,12 +6,11 @@ import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.controller.model.ManagerRequest
 import space.dawdawich.controller.model.ManagerResponse
-import space.dawdawich.model.constants.AnalyzerChooseStrategy
-import space.dawdawich.repositories.AnalyzerRepository
-import space.dawdawich.repositories.ApiAccessTokenRepository
-import space.dawdawich.repositories.TradeManagerRepository
-import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.repositories.entity.constants.ManagerStatus
+import space.dawdawich.repositories.constants.ManagerStatus
+import space.dawdawich.repositories.mongo.AnalyzerRepository
+import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
+import space.dawdawich.repositories.mongo.TradeManagerRepository
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import java.util.*
 
 @Service

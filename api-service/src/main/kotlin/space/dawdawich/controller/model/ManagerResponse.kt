@@ -1,8 +1,8 @@
 package space.dawdawich.controller.model
 
 import kotlinx.serialization.Serializable
-import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.repositories.entity.constants.ManagerStatus
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
+import space.dawdawich.repositories.constants.ManagerStatus
 
 @Serializable
 data class ManagerResponse(

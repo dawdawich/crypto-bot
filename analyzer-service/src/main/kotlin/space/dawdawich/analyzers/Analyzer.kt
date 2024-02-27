@@ -42,10 +42,9 @@ class Analyzer(
             stabilityCoef = 0.0
             return stabilityCoef
         }
-        val listToProcess = listOfMoneySnapshots.toList()
 
-        val biggestDiapasonOfSnapshots = findLargestRange(listToProcess).size.toDouble()
-        val smallestDiapasonOfSnapshots = findLowestRange(listToProcess).size.toDouble()
+        val biggestDiapasonOfSnapshots = findLargestRange(listOfMoneySnapshots).size.toDouble()
+        val smallestDiapasonOfSnapshots = findLowestRange(listOfMoneySnapshots).size.toDouble()
 
         stabilityCoef = biggestDiapasonOfSnapshots / smallestDiapasonOfSnapshots
         readyToUpdateStability = false
