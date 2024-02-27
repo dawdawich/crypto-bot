@@ -17,6 +17,7 @@ class Analyzer(
     val id: String = UUID.randomUUID().toString()
 ) {
     var previousSnapshotMoney : Double = -1.0
+    var readyToUpdateStability = false
     var stabilityCoef : Double = 0.0
         private set
 
@@ -47,6 +48,7 @@ class Analyzer(
         val smallestDiapasonOfSnapshots = findLowestRange(listToProcess).size.toDouble()
 
         stabilityCoef = biggestDiapasonOfSnapshots / smallestDiapasonOfSnapshots
+        readyToUpdateStability = false
 
         return if (stabilityCoef.isNaN()) {
             stabilityCoef = 0.0

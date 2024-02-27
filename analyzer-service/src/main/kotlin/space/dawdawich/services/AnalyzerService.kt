@@ -158,6 +158,7 @@ class AnalyzerService(
                         .filter { it.getMoney() != it.previousSnapshotMoney }
                         .map {
                             it.previousSnapshotMoney = it.getMoney()
+                            it.readyToUpdateStability = true
                             AnalyzerMoneyModel(it.id, it.getMoney())
                         }
                         .let { analyzerStabilityRepository.saveAll(it.toList()) }
@@ -171,7 +172,7 @@ class AnalyzerService(
         if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
-            val copiedAnalyzers = analyzers.toList()
+            val copiedAnalyzers = analyzers.filter { it.readyToUpdateStability }.toList()
             runBlocking {
                 copiedAnalyzers.forEach { analyzer ->
                     launch {
