@@ -30,7 +30,7 @@ class ByBitWebSocketClient(
             previousCumRealizedPnL = 0.0
             field = value
         }
-    var currentPositionTrend: Trend? = null
+    private var currentPositionTrend: Trend? = null
     var fillOrderCallback: FillOrderCallback? = null
 
     companion object {
@@ -128,7 +128,7 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Web socket closed. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
-        if (remote) {
+        if (code == 1006) {
             logger.info { "Reconnect web socket." }
             GlobalScope.launch { reconnect() }
         }

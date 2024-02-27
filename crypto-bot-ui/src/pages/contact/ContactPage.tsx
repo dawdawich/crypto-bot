@@ -14,6 +14,8 @@ const Header = styled('div')({
 const ContactPage: React.FC = () => {
     const {authInfo, login} = useAuth();
 
+    document.title = 'About Us';
+
     return (
         <div className="contact-page">
             <Header>

@@ -14,6 +14,7 @@ import {errorToast} from "../toast/Toasts";
 import FolderDialog, {FolderActionType} from "./dialog/FolderDialog";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
 import AnalyzerDetailContent from "./AnalyzerDetailContent";
+import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 const topHoverStyle = {
     paddingLeft: '8px',
@@ -70,16 +71,21 @@ const AnalyzersPage: React.FC = () => {
     const [folders, setFolders] = useState<FolderModel[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [location, navigate] = useLocation();
-    const {authInfo, login} = useAuth();
+    const {authInfo, login, logout} = useAuth();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
+
+    document.title = 'Analyzers';
 
     useEffect(() => {
         if (!!authInfo) {
             fetchFolderList(authInfo)
                 .then((folders) => setFolders(folders))
-                .catch(error => {
+                .catch(ex => {
                     errorToast("Failed to load folders list");
+                    if (ex instanceof UnauthorizedError) {
+                        logout();
+                    }
                 });
         }
     }, [authInfo]);
@@ -220,7 +226,7 @@ const AnalyzersPage: React.FC = () => {
                     </div>
                 }
             </div>
-            <FolderDialog actionType={actionType} authInfo={authInfo!} currentFolder={currentFolder}
+            <FolderDialog actionType={actionType} authInfo={authInfo!} logout={logout} currentFolder={currentFolder}
                           currentFolderList={folders} open={isDialogOpen} onClose={() => setIsDialogOpen(false)}
                           onCreate={handleNewFolder} onDelete={handleDeleteFolder} onRename={handleRenameFolder}
                           analyzerIds={analyzerIdsToAdd}/>

@@ -79,6 +79,17 @@ class AnalyzerService(
         }
     }
 
+    @KafkaListener(topics = [ACTIVATE_ANALYZERS_TOPIC])
+    fun activateAnalyzers(analyzerIds: String) {
+        runBlocking {
+            analyzerRepository.findAllById(analyzerIds.split(",")).forEach {
+                if (it.isActive) {
+                    launch { addAnalyzer(it.convert()) }
+                }
+            }
+        }
+    }
+
     @KafkaListener(topics = [DELETE_ANALYZER_TOPIC])
     fun deleteAnalyzer(analyzerId: String) {
         analyzerRepository.deleteById(analyzerId)

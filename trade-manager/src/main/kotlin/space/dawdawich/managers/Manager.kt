@@ -80,16 +80,20 @@ class Manager(
         var strategyConfig: StrategyConfigModel? = null
 
         initJob = GlobalScope.launch {
-            while (strategyConfig == null) {
-                strategyConfig = getAnalyzerConfig()
-                if (strategyConfig == null) {
-                    delay(tradeManagerData.refreshAnalyzerMinutes.minutes)
+            try {
+                while (strategyConfig == null) {
+                    strategyConfig = getAnalyzerConfig()
+                    if (strategyConfig == null) {
+                        delay(tradeManagerData.refreshAnalyzerMinutes.minutes)
+                    }
                 }
-            }
 
-            logger { it.info { "Initialize Manager with analyzer '${strategyConfig!!.id}'" } }
-            setupStrategyRunner(strategyConfig!!)
-            lastRefreshTime = System.currentTimeMillis()
+                logger { it.info { "Initialize Manager with analyzer '${strategyConfig!!.id}'" } }
+                setupStrategyRunner(strategyConfig!!)
+                lastRefreshTime = System.currentTimeMillis()
+            } catch (e: Exception) {
+                crashPostAction(e)
+            }
         }
     }
 
@@ -106,6 +110,7 @@ class Manager(
                     }
                     strategyRunner.position?.let { position ->
                         runBlocking {
+                            logger { it.info { "DEACTIVATION: canceling manager orders and position" } }
                             bybitService.cancelAllOrder(strategyRunner.symbol)
                             bybitService.closePosition(
                                 strategyRunner.symbol,
@@ -122,15 +127,22 @@ class Manager(
             }
         } finally {
             if (initJob.isActive) {
+                logger { it.info { "DEACTIVATION: cancel init job" } }
                 initJob.cancel()
             }
             if (webSocket.isOpen && !onlyStrategy) {
+                logger { it.info { "DEACTIVATION: closing web socket" } }
                 webSocket.close()
             }
             if (listener?.isRunning == true) {
+                logger { it.info { "DEACTIVATION: stopping message listener" } }
                 listener?.stop()
             }
-            logger { it.info { "Manager successfully stopped" } }
+            if (onlyStrategy) {
+                logger { it.info { "Manager strategy stopped" } }
+            } else {
+                logger { it.info { "Manager successfully stopped" } }
+            }
         }
     }
 
@@ -172,7 +184,13 @@ class Manager(
     }
 
     private fun setupStrategyRunner(strategyConfig: StrategyConfigModel) {
-        runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+        var result = runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+
+        while (!result) {
+            logger { it.warn { "Failed to set margin, for symbol '${strategyConfig.symbol}' and multiplayer '${strategyConfig.multiplier}. Try again'" } }
+            result = runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+        }
+
         val createOrderFunction: CreateOrderFunction = {
                 inPrice: Double,
                 orderSymbol: String,
@@ -233,22 +251,26 @@ class Manager(
                         strategyConfig.pricesGrid.map { it.trimToStep(strategyConfig.priceMinStep) }.toSet()
                     )
                     setClosePosition { isStopLoss ->
-                        logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
-                        position?.let { pos ->
-                            runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
-                            position = null
-                        }
-                        webSocket.resetCumRealizedPnL()
-                        if (isStopLoss) {
-                            runBlocking {
-                                listener?.pause()
-                                bybitService.cancelAllOrder(symbol)
-                                logger { it.info { "Wait 5 minutes to continue working" } }
-                                delay(5.minutes)
-                                listener?.resume()
-                                logger { it.info { "Resuming work. Try to find new analyzer" } }
-                                refreshStrategyConfig(true)
+                        try {
+                            logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
+                            position?.let { pos ->
+                                runBlocking { bybitService.closePosition(symbol, pos.trend.directionBoolean, pos.size) }
+                                position = null
                             }
+                            webSocket.resetCumRealizedPnL()
+                            if (isStopLoss) {
+                                runBlocking {
+                                    listener?.pause()
+                                    bybitService.cancelAllOrder(symbol)
+                                    logger { it.info { "Wait 5 minutes to continue working" } }
+                                    delay(5.minutes)
+                                    listener?.resume()
+                                    logger { it.info { "Resuming work. Try to find new analyzer" } }
+                                    refreshStrategyConfig(true)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            crashPostAction(e)
                         }
                     }
                     with(webSocket) {

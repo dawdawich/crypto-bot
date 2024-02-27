@@ -4,37 +4,37 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
+import space.dawdawich.controller.model.ManagerRequest
+import space.dawdawich.controller.model.ManagerResponse
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
-import space.dawdawich.repositories.mongo.TradeManagerRepository
-import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
-import space.dawdawich.repositories.constants.ManagerStatus
+import space.dawdawich.repositories.AnalyzerRepository
+import space.dawdawich.repositories.ApiAccessTokenRepository
+import space.dawdawich.repositories.TradeManagerRepository
+import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.entity.constants.ManagerStatus
 import java.util.*
 
 @Service
-class TradeManagerService(
+class ManagerService(
     private val tradeManagerRepository: TradeManagerRepository,
+    private val apiTokenRepository: ApiAccessTokenRepository,
+    private val analyzerRepository: AnalyzerRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val jsonKafkaTemplate: KafkaTemplate<String, TradeManagerDocument>,
 ) {
 
-    fun createNewTraderManager(
-        apiTokenId: String,
-        status: ManagerStatus,
-        analyzerFindStrategy: AnalyzerChooseStrategy,
-        customAnalyzerId: String,
-        stopLoss: Int?,
-        takeProfit: Int?,
-        accountId: String,
-    ): String = tradeManagerRepository.insert(
+    fun createNewManager(managerRequest: ManagerRequest, accountId: String): String = tradeManagerRepository.insert(
         TradeManagerDocument(
             UUID.randomUUID().toString(),
             accountId,
-            apiTokenId,
-            customAnalyzerId = customAnalyzerId,
-            status = status,
-            stopLoss = stopLoss,
-            takeProfit = takeProfit,
-            chooseStrategy = analyzerFindStrategy
+            managerRequest.customName,
+            managerRequest.apiTokenId,
+            status = managerRequest.status,
+            stopLoss = managerRequest.stopLoss,
+            takeProfit = managerRequest.takeProfit,
+            chooseStrategy = managerRequest.analyzerChooseStrategy,
+            refreshAnalyzerMinutes = managerRequest.refreshAnalyzerTime,
+            folder = managerRequest.folder
         )
     ).apply {
         if (status == ManagerStatus.ACTIVE) {
@@ -42,8 +42,20 @@ class TradeManagerService(
         }
     }.id
 
-    fun findAllByAccountId(accountId: String): List<TradeManagerDocument> =
+    fun findAllByAccountId(accountId: String): List<ManagerResponse> =
         tradeManagerRepository.findAllByAccountId(accountId)
+            .map { document ->
+                val managerMarket = apiTokenRepository.findByIdAndAccountId(document.apiTokenId, accountId).market
+                val folderId = document.folder
+                val analyzersCount =
+                if ("ALL".equals(folderId, true)) {
+                    analyzerRepository.countByAccountIdAndIsActive(accountId, true)
+                } else {
+                    analyzerRepository.countActiveAnalyzersInFolder(folderId, null, emptyList())
+                }
+
+                ManagerResponse(document.id, document.customName, document.status, managerMarket.name, analyzersCount, document.stopLoss, document.takeProfit)
+            }
 
     fun updateTradeManagerStatus(managerId: String, accountId: String, status: ManagerStatus) {
         tradeManagerRepository.findByIdAndAccountId(managerId, accountId)?.let {
@@ -70,5 +82,4 @@ class TradeManagerService(
             kafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, managerId)
         }
     }
-
 }

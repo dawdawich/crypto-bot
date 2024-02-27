@@ -27,6 +27,8 @@ const CurrentPath = styled('div')({
 const SubscriptionContent: React.FC = () => {
     const [, navigate] = useLocation();
 
+    document.title = 'Subscription';
+
     return (
         <div className="account-api-token-content">
             <div className="account-api-token-header">

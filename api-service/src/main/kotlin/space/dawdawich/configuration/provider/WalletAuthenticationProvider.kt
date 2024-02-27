@@ -3,6 +3,7 @@ package space.dawdawich.configuration.provider
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.CredentialsExpiredException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider
 import org.springframework.security.core.authority.AuthorityUtils
@@ -33,15 +34,19 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
         userDetails: UserDetails?,
         authentication: UsernamePasswordAuthenticationToken,
     ) {
-        val walletUserDetails = userDetails as WalletUserDetails?
-        if (walletUserDetails == null || !isSignatureValid(
-                walletUserDetails.address,
-                walletUserDetails.signature,
-                walletUserDetails.salt
-            )
-        ) {
-            log.debug("Authentication failed: signature is not valid");
-            throw BadCredentialsException("Signature is not valid");
+        try {
+            val walletUserDetails = userDetails as WalletUserDetails?
+            if (walletUserDetails == null
+                || !isSignatureValid(walletUserDetails.address, walletUserDetails.signature, walletUserDetails.salt)
+            ) {
+                log.debug("Authentication failed: signature is not valid")
+                throw BadCredentialsException("Signature is not valid")
+            } else if (walletUserDetails.salt > System.currentTimeMillis()) {
+                throw CredentialsExpiredException("Salt has expired")
+            }
+        } catch (ex: ArrayIndexOutOfBoundsException) {
+            log.debug { "Signature size is invalid" }
+            throw BadCredentialsException("Signature is not valid")
         }
     }
 

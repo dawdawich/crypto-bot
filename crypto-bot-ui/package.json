@@ -5,7 +5,8 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@metamask/sdk-react": "^0.14.1",
+    "@metamask/sdk-react": "^0.15.0",
+    "@metamask/utils": "^8.3.0",
     "@mui/icons-material": "^5.14.18",
     "@mui/material": "^5.14.18",
     "@testing-library/jest-dom": "^5.17.0",

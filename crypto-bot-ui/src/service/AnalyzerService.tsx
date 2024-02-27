@@ -3,6 +3,7 @@ import {SERVER_HOST} from "./Constants";
 import {AnalyzerResponse} from "../model/AnalyzerResponse";
 import {AuthInfo} from "../model/AuthInfo";
 import {AnalyzerModelBulk} from "../model/AnalyzerModelBulk";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
 const API_URL = `${SERVER_HOST}/analyzer`;
 
@@ -34,6 +35,8 @@ export const fetchAnalyzerData = async (auth: AuthInfo, analyzerId: string) => {
         });
         if (response.ok) {
             return await response.json();
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -72,6 +75,8 @@ export const fetchAnalyzersList = async (auth: AuthInfo,
         });
         if (response.ok) {
             return await response.json() as {analyzers: AnalyzerResponse[], totalSize: number, activeSize: number, notActiveSize: number};
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -93,6 +98,8 @@ export const createAnalyzer = async (auth: AuthInfo, analyzer: AnalyzerModel) =>
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to create analyzer');
 }
@@ -110,6 +117,8 @@ export const createAnalyzerBulk = async (auth: AuthInfo, analyzer: AnalyzerModel
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to create analyzer');
 }
@@ -128,6 +137,8 @@ export const changeBulkAnalyzerStatus = async (auth: AuthInfo, ids: string[], st
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to change status');
 }
@@ -145,6 +156,8 @@ export const deleteAnalyzerBulk = async (auth: AuthInfo, ids: string[]) => {
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to delete analyzer');
 }
@@ -162,6 +175,8 @@ export const resetAnalyzerBulk = async (auth: AuthInfo, ids: string[]) => {
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to reset analyzer');
 }

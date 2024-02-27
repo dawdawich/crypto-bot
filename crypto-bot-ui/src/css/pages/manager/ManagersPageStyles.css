@@ -1,0 +1,105 @@
+.managers-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.managers-header {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    padding: 16px;
+    height: 32px;
+}
+
+.managers-header-path {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.managers-filters-content {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: row;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-bottom: 16px;
+}
+
+.managers-filters-cell {
+    display: flex;
+    height: 34px;
+    color: white;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 4px;
+    transition: 0.3s;
+    align-items: center;
+    cursor: pointer;
+}
+
+.managers-filters-cell:hover {
+    background-color: #262B31;
+}
+
+.managers-filters-cell-active {
+    display: flex;
+    height: 34px;
+    color: white;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 4px;
+    transition: 0.3s;
+    background-color: #262B31;
+    align-items: center;
+}
+
+.managers-content-body {
+    border-top: 2px solid #262B31;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+#cell {
+    color: white;
+    font-weight: 200;
+    border-bottom: 2px solid #262B31;
+}
+
+.managers-table-item-status {
+    display: flex;
+    height: 34px;
+    color: white;
+    font-size: 14px;
+    align-items: center;
+    font-weight: 400;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.managers-menu-hover:hover {
+    background-color: #262B31;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.managers-menu-hover {
+    cursor: pointer;
+    padding: 4px;
+}
+
+.managers-big-loading-banner {
+    display: flex;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 500px;
+}

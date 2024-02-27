@@ -9,6 +9,7 @@ import {errorToast, successToast} from "../../toast/Toasts";
 import "../../../css/pages/analyzer/dialog/FolderDialogStyles.css"
 import {SelectStyle} from "../../../utils/styles/element-styles";
 import Select, {ActionMeta} from "react-select";
+import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
 
 export type FolderActionType = 'create' | 'rename' | 'delete' | 'addToFolder';
 
@@ -20,6 +21,7 @@ const FieldContainer = styled('div')({
 interface FolderDialogProps {
     actionType: FolderActionType;
     authInfo: AuthInfo;
+    logout: () => void;
     currentFolder: FolderModel | null;
     currentFolderList: FolderModel[];
     analyzerIds: string[],
@@ -33,6 +35,7 @@ interface FolderDialogProps {
 export const FolderDialog: React.FC<FolderDialogProps> = ({
                                                               actionType,
                                                               authInfo,
+                                                              logout,
                                                               currentFolder,
                                                               currentFolderList,
                                                               analyzerIds,
@@ -79,9 +82,12 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                         onClose();
                         successToast(`Folder '${nameText}' created successfully.`);
                     })
-                    .catch(() => {
+                    .catch((ex) => {
                         setIsLoading(false);
                         errorToast(`Failed to create folder '${nameText}'.`);
+                        if (ex instanceof UnauthorizedError) {
+                            logout();
+                        }
                     });
                 break;
             case "delete":
@@ -94,9 +100,12 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                             onClose();
                             successToast(`Folder '${currentFolder.name}' deleted successfully.`);
                         })
-                        .catch(() => {
+                        .catch((ex) => {
                             setIsLoading(false);
                             errorToast(`Failed to delete folder '${currentFolder.name}'.`);
+                            if (ex instanceof UnauthorizedError) {
+                                logout();
+                            }
                         });
                 }
                 break;
@@ -114,9 +123,12 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                                 errorToast(`Failed to rename folder . Folder with the same name already exists.`);
                             }
                         })
-                        .catch(() => {
+                        .catch((ex) => {
                             setIsLoading(false);
                             errorToast(`Failed to rename folder '${currentFolder.name}'.`);
+                            if (ex instanceof UnauthorizedError) {
+                                logout();
+                            }
                         });
                 }
                 break;
@@ -129,9 +141,12 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                             onClose();
                             successToast(`Successfully added analyzer(s) to folder.`);
                         })
-                        .catch(() => {
+                        .catch((ex) => {
                             setIsLoading(false);
                             errorToast(`Failed to add analyzer(s) to folder.`);
+                            if (ex instanceof UnauthorizedError) {
+                                logout();
+                            }
                         });
                 }
         }
@@ -198,14 +213,14 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
             <DialogTitle>
                 {title}
             </DialogTitle>
-            <DialogContent style={{ overflow: 'visible'}}>
+            <DialogContent style={{overflow: 'visible'}}>
                 <FieldContainer style={{marginTop: '16px', overflow: 'visible'}}>
                     <div style={{fontSize: '14px', fontWeight: '200'}}>
                         {description}
                     </div>
                     {
                         actionType !== 'delete' &&
-                        actionType === 'addToFolder' ?
+                        (actionType === 'addToFolder' ?
                             <Select
                                 options={currentFolderList.map((folder) => {
                                     return {value: folder.id, label: folder.name}
@@ -217,19 +232,19 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                                 styles={SelectStyle}
                             />
                             :
-                        <input type="text" name="name" style={{
-                            borderRadius: '4px',
-                            height: '34px',
-                            boxShadow: 'none',
-                            border: 0,
-                            backgroundColor: '#262B31',
-                            color: 'white',
-                            padding: '8px',
-                            fontSize: '14px',
-                            fontWeight: '200',
-                        }}
-                               value={nameText}
-                               onChange={(e) => setNameText(e.target.value)}/>}
+                            <input type="text" name="name" style={{
+                                borderRadius: '4px',
+                                height: '34px',
+                                boxShadow: 'none',
+                                border: 0,
+                                backgroundColor: '#262B31',
+                                color: 'white',
+                                padding: '8px',
+                                fontSize: '14px',
+                                fontWeight: '200',
+                            }}
+                                   value={nameText}
+                                   onChange={(e) => setNameText(e.target.value)}/>)}
                 </FieldContainer>
             </DialogContent>
             <DialogActions style={{paddingBottom: '32px', paddingRight: '32px'}}>

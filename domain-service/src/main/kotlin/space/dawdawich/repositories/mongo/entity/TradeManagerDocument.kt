@@ -10,11 +10,11 @@ data class TradeManagerDocument(
     @Id
     val id: String,
     val accountId: String,
+    val customName: String?,
     var apiTokenId: String,
-    var money: Double = 0.0,
     var chooseStrategy: AnalyzerChooseStrategy,
+    var folder: String = "ALL",
     var refreshAnalyzerMinutes: Int = 30,
-    var customAnalyzerId: String = "",
     var status: ManagerStatus = ManagerStatus.INACTIVE,
     val stopLoss: Int? = null,
     val takeProfit: Int? = null,

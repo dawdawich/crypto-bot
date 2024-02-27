@@ -8,6 +8,7 @@ import space.dawdawich.repositories.mongo.entity.AccountDocument
 import space.dawdawich.repositories.mongo.entity.ApiAccessTokenDocument
 import space.dawdawich.model.constants.Market
 import java.util.UUID
+import kotlin.time.Duration.Companion.days
 
 @Service
 class AccountService(
@@ -16,7 +17,7 @@ class AccountService(
 ) {
 
     fun requestSalt(address: String): Long {
-        val salt = (System.currentTimeMillis() / 1000)
+        val salt = (System.currentTimeMillis() / 1000) + 1.days.inWholeMilliseconds
         return accountRepository.save(
             accountRepository.findByIdOrNull(address)?.apply { saltValidUntil = salt }
                 ?: AccountDocument(address, salt)

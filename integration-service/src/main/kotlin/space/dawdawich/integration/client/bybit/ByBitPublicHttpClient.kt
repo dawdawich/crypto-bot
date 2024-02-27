@@ -42,7 +42,8 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
                     "priceFilter.tickSize",
                     "lotSizeFilter.minOrderQty",
                     "lotSizeFilter.maxOrderQty",
-                    "lotSizeFilter.qtyStep"
+                    "lotSizeFilter.qtyStep",
+                    "leverageFilter.maxLeverage"
                 ).map { parsedJson.read<String>("\$.result.list[0].$it").toDouble() }.toTypedArray()
                 return PairInfo(pairData)
             }

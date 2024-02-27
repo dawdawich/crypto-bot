@@ -8,7 +8,7 @@ import org.springframework.web.socket.server.standard.ServerEndpointRegistration
 import space.dawdawich.socket.AnalyzerEndpoint
 
 @Configuration
-open class WebSocketConfiguration {
+class WebSocketConfiguration {
     @Bean
-    open fun endpointExporter() = ServerEndpointExporter()
+    fun endpointExporter() = ServerEndpointExporter()
 }

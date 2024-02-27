@@ -81,6 +81,8 @@ class FolderService(
         folderAnalyzerRepository.deleteByAnalyzerIdIn(analyzersToRemove)
     }
 
+    fun analyzersCount(folderId: String) = folderAnalyzerRepository.countByFolderId(folderId)
+
     private fun getAnalyzersByFolderId(folderId: String): MutableSet<String> =
         folderAnalyzerRepository
             .findAllByFolderId(folderId).map { it.analyzerId }

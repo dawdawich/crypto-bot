@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import '../../css/pages/account/AccountPageStyles.css';
 import {ReactComponent as MetamaskIcon} from '../../assets/images/account/metamask-icon.svg';
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
@@ -29,6 +29,8 @@ const CurrentPath = styled('div')({
 const AccountPage: React.FC = () => {
     const {authInfo, logout} = useAuth();
     const [location, navigate] = useLocation();
+
+    document.title = 'Account';
 
     if (!authInfo) {
         navigate('/');

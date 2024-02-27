@@ -1,9 +1,12 @@
 import {SERVER_HOST} from "./Constants";
 import {AuthInfo} from "../model/AuthInfo";
+import {ManagerRequestModel} from "../model/ManagerRequestModel";
+import {ManagerResponse} from "../model/ManagerResponse";
+import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
 
-const API_URL = `${SERVER_HOST}/trade-manager`;
+const API_URL = `${SERVER_HOST}/manager`;
 
-export const fetchManagersData = async (auth: AuthInfo) => {
+export const fetchManagersList = async (auth: AuthInfo) => {
     try {
         const response = await fetch(`${API_URL}`, {
             method: "GET",
@@ -14,7 +17,9 @@ export const fetchManagersData = async (auth: AuthInfo) => {
             }
         });
         if (response.ok) {
-            return await response.json();
+            return await response.json() as ManagerResponse[];
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -22,28 +27,7 @@ export const fetchManagersData = async (auth: AuthInfo) => {
     }
     throw new Error('Failed to fetch managers data');
 }
-
-export const fetchManagerData = async (auth: AuthInfo, managerId: string) => {
-    try {
-        const response = await fetch(`${API_URL}/${managerId}`, {
-            method: "GET",
-            headers: {
-                'Account-Address': btoa(auth.address),
-                'Account-Address-Signature': btoa(auth.signature),
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
-        if (response.ok) {
-            return await response.json();
-        }
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-    throw new Error('Failed to fetch manager data');
-}
-
-export const createManager = async (auth: AuthInfo, manager: any) => {
+export const createManager = async (auth: AuthInfo, manager: ManagerRequestModel) => {
     const response = await fetch(`${API_URL}`, {
         method: 'POST',
         headers: {
@@ -56,6 +40,8 @@ export const createManager = async (auth: AuthInfo, manager: any) => {
     });
     if (response.ok) {
         return await response.text();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
     }
     throw new Error('Failed to create manager data');
 }
@@ -73,7 +59,9 @@ export const updateManagerStatus = async (auth: AuthInfo, managerId: string, sta
             body: JSON.stringify({status})
         });
         if (response.ok) {
-            return true;
+            return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     } catch (error) {
         console.error(error);
@@ -93,7 +81,9 @@ export const deleteManager = async (auth: AuthInfo, managerId: string) => {
             }
         });
         if (response.status === 204) {
-            return true;
+            return;
+        } else if (response.status === 401) {
+            throw new UnauthorizedError('Signature is invalid');
         }
     }  catch (error) {
         console.error(error);

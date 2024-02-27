@@ -1,6 +1,5 @@
 package space.dawdawich.controller
 
-import jakarta.annotation.security.RolesAllowed
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -27,7 +26,11 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
         @RequestParam("direction", required = false) direction: String?,
         @RequestParam("folderId", required = false) folderId: String?,
     ): GetAnalyzersResponse {
-        val (total, active, notActive) = analyzerService.getAnalyzersCounters(authentication.name, folderId)
+        val (total, active, notActive) = analyzerService.getAnalyzersCounters(
+            authentication.name,
+            folderId,
+            symbols?.split(",")?.toList() ?: emptyList()
+        )
         return GetAnalyzersResponse(
             analyzerService.getAnalyzers(
                 authentication.name,
@@ -75,12 +78,6 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     @ResponseStatus(HttpStatus.OK)
     fun bulkCreateAnalyzers(user: Authentication, @RequestBody request: CreateAnalyzerBulkRequest) =
         analyzerService.bulkCreate(user.name, request)
-
-    @PutMapping("/status/all")
-    @RolesAllowed("ADMIN")
-    @ResponseStatus(HttpStatus.OK)
-    fun setAllAnalyzerStatus(user: Authentication, request: ActivationRequest) =
-        analyzerService.changeAllAnalyzersStatus(user.name, request.status)
 
     @PutMapping("/activate/bulk")
     fun activateAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =

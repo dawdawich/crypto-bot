@@ -7,8 +7,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    styled,
-    Switch
+    styled
 } from "@mui/material";
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
 import loadingSpinner from '../../../assets/images/loading-spinner.svga';
@@ -17,9 +16,11 @@ import "../../../css/pages/account/dialog/ApiTokenDialogStyles.css";
 import {addApiToken} from "../../../service/AccountService";
 import {errorToast} from "../../toast/Toasts";
 import {AntSwitch, SelectStyle} from "../../../utils/styles/element-styles";
+import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
 
 interface AddApiTokenDialogProps {
     authInfo: AuthInfo;
+    logout: () => void;
     open: boolean;
     onClose: () => void;
     onCreate: (apiToken: ApiToken) => void;
@@ -30,7 +31,7 @@ const FieldContainer = styled('div')({
     flexDirection: 'column'
 });
 
-const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, open, onClose, onCreate}) => {
+const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, onCreate}) => {
     const spanRef = useRef<HTMLSpanElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [animation, setAnimation] = useState('');
@@ -94,7 +95,9 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, open, on
             .catch((ex) => {
                 setIsLoading(false);
                 errorToast("Failed to add API token");
-                console.error(ex);
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
             });
     };
 
