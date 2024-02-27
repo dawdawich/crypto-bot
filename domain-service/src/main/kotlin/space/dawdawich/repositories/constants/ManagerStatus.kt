@@ -1,4 +1,4 @@
-package space.dawdawich.repositories.entity.constants
+package space.dawdawich.repositories.constants
 
 enum class ManagerStatus {
     ACTIVE, INACTIVE, CRASHED

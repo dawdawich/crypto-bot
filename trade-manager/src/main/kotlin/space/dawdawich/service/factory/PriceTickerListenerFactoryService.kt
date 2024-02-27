@@ -6,7 +6,7 @@ import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.BYBIT_TEST_TICKER_TOPIC
 import space.dawdawich.constants.BYBIT_TICKER_TOPIC
-import space.dawdawich.repositories.SymbolRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
 import java.util.UUID
 
 @Service

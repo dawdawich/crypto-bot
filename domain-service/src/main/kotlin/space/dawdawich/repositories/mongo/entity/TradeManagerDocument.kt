@@ -1,9 +1,9 @@
-package space.dawdawich.repositories.entity
+package space.dawdawich.repositories.mongo.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
-import space.dawdawich.repositories.entity.constants.ManagerStatus
+import space.dawdawich.repositories.constants.ManagerStatus
 
 @Document("trade_manager")
 data class TradeManagerDocument(

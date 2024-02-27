@@ -16,8 +16,8 @@ class Analyzer(
     val demoAccount: Boolean,
     val id: String = UUID.randomUUID().toString()
 ) {
-    private var snapshots : Queue<Double> = ArrayDeque()
-    private val maxCountOfSnapshots : Int = 1440
+    var previousSnapshotMoney : Double = -1.0
+    var readyToUpdateStability = false
     var stabilityCoef : Double = 0.0
         private set
 
@@ -37,24 +37,18 @@ class Analyzer(
 
     fun getMoney() = strategyRunner.money
 
-    fun updateSnapshot() {
-        if (snapshots.size >= maxCountOfSnapshots) {
-            snapshots.poll()
-        }
-        snapshots.offer(strategyRunner.money)
-    }
-
-    fun calculateStabilityCoef(): Double {
-        if (snapshots.isEmpty()) {
+    fun calculateStabilityCoef(listOfMoneySnapshots: List<Double>): Double {
+        if (listOfMoneySnapshots.isEmpty()) {
             stabilityCoef = 0.0
             return stabilityCoef
         }
-        val listToProcess = snapshots.toList()
+        val listToProcess = listOfMoneySnapshots.toList()
 
         val biggestDiapasonOfSnapshots = findLargestRange(listToProcess).size.toDouble()
         val smallestDiapasonOfSnapshots = findLowestRange(listToProcess).size.toDouble()
 
         stabilityCoef = biggestDiapasonOfSnapshots / smallestDiapasonOfSnapshots
+        readyToUpdateStability = false
 
         return if (stabilityCoef.isNaN()) {
             stabilityCoef = 0.0

@@ -14,24 +14,24 @@ import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.TradeStrategy
-import space.dawdawich.repositories.AnalyzerRepository
-import space.dawdawich.repositories.SymbolRepository
+import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.custom.model.AnalyzerFilter
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
 import java.util.*
 
 @Service
 class AnalyzerService(
-    private val analyzerRepository: AnalyzerRepository,
-    private val analyzerValidationService: AnalyzerValidationService,
-    private val symbolRepository: SymbolRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>,
-    private val publicBybitClient: ByBitPublicHttpClient,
-    private val publicBybitTestClient: ByBitPublicHttpClient,
-    private val folderService: FolderService,
+        private val analyzerRepository: AnalyzerRepository,
+        private val analyzerValidationService: AnalyzerValidationService,
+        private val symbolRepository: SymbolRepository,
+        private val kafkaTemplate: KafkaTemplate<String, String>,
+        private val publicBybitClient: ByBitPublicHttpClient,
+        private val publicBybitTestClient: ByBitPublicHttpClient,
+        private val folderService: FolderService,
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =

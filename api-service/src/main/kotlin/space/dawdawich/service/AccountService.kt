@@ -2,10 +2,10 @@ package space.dawdawich.service
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import space.dawdawich.repositories.AccountRepository
-import space.dawdawich.repositories.ApiAccessTokenRepository
-import space.dawdawich.repositories.entity.AccountDocument
-import space.dawdawich.repositories.entity.ApiAccessTokenDocument
+import space.dawdawich.repositories.mongo.AccountRepository
+import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
+import space.dawdawich.repositories.mongo.entity.AccountDocument
+import space.dawdawich.repositories.mongo.entity.ApiAccessTokenDocument
 import space.dawdawich.model.constants.Market
 import java.util.UUID
 import kotlin.time.Duration.Companion.days

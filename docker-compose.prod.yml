@@ -43,6 +43,17 @@ services:
       test: mongosh --eval 'try { rs.initiate(); } catch(e) {} rs.status().ok;' || exit 1
       retries: 1
 
+  redis:
+    image: redis:latest
+    hostname: redis
+    restart: always
+    networks:
+      - "crypto-bot-network"
+    ports:
+      - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
   event-listener:
     build:
       context: .
@@ -73,6 +84,8 @@ services:
       event-listener:
         condition: service_started
       logstash:
+        condition: service_started
+      redis:
         condition: service_started
     networks:
       - "crypto-bot-network"

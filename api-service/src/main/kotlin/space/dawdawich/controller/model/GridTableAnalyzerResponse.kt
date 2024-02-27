@@ -3,7 +3,7 @@ package space.dawdawich.controller.model
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.constants.Market
 import space.dawdawich.model.constants.TradeStrategy
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 @Serializable
 data class GridTableAnalyzerResponse(

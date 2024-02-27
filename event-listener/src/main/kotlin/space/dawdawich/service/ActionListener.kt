@@ -11,8 +11,8 @@ import space.dawdawich.client.BybitTickerWebSocketClient
 import space.dawdawich.constants.BYBIT_TEST_TICKER_TOPIC
 import space.dawdawich.constants.SYMBOL_REINITIALIZE_TOPIC
 import space.dawdawich.constants.BYBIT_TICKER_TOPIC
-import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.SymbolInfoDocument
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.SymbolInfoDocument
 import java.util.concurrent.TimeUnit
 
 @Service

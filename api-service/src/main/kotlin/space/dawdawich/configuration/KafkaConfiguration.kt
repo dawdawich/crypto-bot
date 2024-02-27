@@ -14,7 +14,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 import space.dawdawich.constants.RESPONSE_ANALYZER_RUNTIME_DATA
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
-import space.dawdawich.repositories.entity.TradeManagerDocument
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 
 @Configuration
 class KafkaConfiguration {

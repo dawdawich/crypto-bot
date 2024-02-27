@@ -3,7 +3,7 @@ package space.dawdawich.service.validation
 import org.springframework.stereotype.Service
 import space.dawdawich.exception.model.RecordAlreadyExistsException
 import space.dawdawich.exception.model.FolderNotFoundException
-import space.dawdawich.repositories.FolderRepository
+import space.dawdawich.repositories.mongo.FolderRepository
 import kotlin.jvm.Throws
 
 @Service

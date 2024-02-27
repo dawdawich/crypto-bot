@@ -2,12 +2,12 @@ package space.dawdawich.service.validation
 
 import org.springframework.stereotype.Service
 import space.dawdawich.exception.model.AnalyzerNotFoundException
-import space.dawdawich.repositories.AnalyzerRepository
+import space.dawdawich.repositories.mongo.AnalyzerRepository
 import kotlin.jvm.Throws
 
 @Service
 class AnalyzerValidationService(
-    private val analyzerRepository: AnalyzerRepository,
+        private val analyzerRepository: AnalyzerRepository,
 ) {
     @Throws(AnalyzerNotFoundException::class)
     fun validateAnalyzersExistByIdsAndAccountId(analyzerIds: Set<String>, accountId: String) {

@@ -20,11 +20,13 @@ import space.dawdawich.analyzers.Analyzer
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
 import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.repositories.AnalyzerRepository
-import space.dawdawich.repositories.SymbolRepository
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
+import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
+import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.getRightTopic
 import java.util.concurrent.ConcurrentSkipListSet
@@ -32,10 +34,11 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class AnalyzerService(
-    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-    private val symbolRepository: SymbolRepository,
-    private val analyzerRepository: AnalyzerRepository,
-    private val mongoTemplate: MongoTemplate,
+        private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+        private val symbolRepository: SymbolRepository,
+        private val analyzerStabilityRepository: AnalyzerStabilityRepository,
+        private val analyzerRepository: AnalyzerRepository,
+        private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
     companion object {
@@ -146,15 +149,22 @@ class AnalyzerService(
     }
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
-    private fun updateSnapshot() {
+    private fun updateMoneySnapshot() {
+        val calculationStartTime = System.currentTimeMillis()
         if (analyzers.isNotEmpty()) {
-            val copiedAnalyzers = analyzers.toList()
+            val copiedAnalyzers = analyzers.asSequence()
             runBlocking {
-                copiedAnalyzers.forEach { analyzer ->
-                    launch { analyzer.updateSnapshot() }
-                }
+                copiedAnalyzers
+                        .filter { it.getMoney() != it.previousSnapshotMoney }
+                        .map {
+                            it.previousSnapshotMoney = it.getMoney()
+                            it.readyToUpdateStability = true
+                            AnalyzerMoneyModel(it.id, it.getMoney())
+                        }
+                        .let { analyzerStabilityRepository.saveAll(it.toList()) }
             }
         }
+        log.info { "Finish process update money snapshot. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
     }
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
@@ -162,15 +172,20 @@ class AnalyzerService(
         if (analyzers.isNotEmpty()) {
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
-            val copiedAnalyzers = analyzers.toList()
+            val copiedAnalyzers = analyzers.filter { it.readyToUpdateStability }.toList()
             runBlocking {
                 copiedAnalyzers.forEach { analyzer ->
                     launch {
-                        val stabilityCoef = analyzer.calculateStabilityCoef()
-                        ops.updateOne(
-                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                            Update().set("stabilityCoef", stabilityCoef)
-                        )
+                        analyzerStabilityRepository.findAllByAnalyzerId(analyzer.id)
+                                .sortedBy { it.timestamp }
+                                .map { it.money }
+                                .let {
+                                    val stabilityCoef = analyzer.calculateStabilityCoef(it)
+                                    ops.updateOne(
+                                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                                            Update().set("stabilityCoef", stabilityCoef)
+                                    )
+                                }
                     }
                 }
             }

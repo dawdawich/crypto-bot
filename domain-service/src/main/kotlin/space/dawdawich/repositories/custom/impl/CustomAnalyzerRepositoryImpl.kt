@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.isEqualTo
 import space.dawdawich.repositories.custom.CustomAnalyzerRepository
 import space.dawdawich.repositories.custom.model.AnalyzerFilter
-import space.dawdawich.repositories.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 class CustomAnalyzerRepositoryImpl(private val mongoTemplate: MongoTemplate) : CustomAnalyzerRepository {
     override fun findAnalyzersFilteredAndSorted(

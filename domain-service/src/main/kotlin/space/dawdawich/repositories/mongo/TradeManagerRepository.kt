@@ -1,10 +1,10 @@
-package space.dawdawich.repositories
+package space.dawdawich.repositories.mongo
 
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
-import space.dawdawich.repositories.entity.TradeManagerDocument
-import space.dawdawich.repositories.entity.constants.ManagerStatus
+import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
+import space.dawdawich.repositories.constants.ManagerStatus
 
 interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String> {
 

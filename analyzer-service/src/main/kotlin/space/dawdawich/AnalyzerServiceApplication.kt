@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc
 @EnableWebMvc
 @EnableScheduling
 @SpringBootApplication
-open class AnalyzerServiceApplication
+class AnalyzerServiceApplication
 
 fun main() {
     runApplication<AnalyzerServiceApplication>()
