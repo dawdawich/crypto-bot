@@ -744,7 +744,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         {isListPage() &&
                                             <TableCell id="cell"
                                                        align="left">{!!analyzer.money && trimDecimalNumbers(analyzer.money)}</TableCell>}
-                                        <TableCell align="left" id="cell">{analyzer.stabilityCoef}</TableCell>
+                                        <TableCell align="left" id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl1)}}>
                                             {getSignByValue(analyzer.pnl1)}{trimDecimalNumbers(analyzer.pnl1, 1)} %
                                         </TableCell>
