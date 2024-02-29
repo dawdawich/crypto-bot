@@ -163,7 +163,12 @@ class AnalyzerService(
                             it.readyToUpdateStability = true
                             AnalyzerMoneyModel(it.id, it.getMoney())
                         }
-                        .let { analyzerStabilityRepository.saveAll(it.toList()) }
+                        .let {
+                            val list = it.toList()
+                            if (list.isNotEmpty()) {
+                                analyzerStabilityRepository.saveAll(it.toList())
+                            }
+                        }
             }
         }
         log.info { "Finish process update money snapshot. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
@@ -172,6 +177,7 @@ class AnalyzerService(
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES, initialDelay = 2)
     private fun calculateStabilityCoef() {
         if (analyzers.isNotEmpty()) {
+            var isOpsEmpty = true
             val ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, GridTableAnalyzerDocument::class.java)
             val calculationStartTime = System.currentTimeMillis()
             val copiedAnalyzers = analyzers.filter { it.readyToUpdateStability }.toList()
@@ -206,12 +212,15 @@ class AnalyzerService(
                                             Query.query(Criteria.where("_id").`is`(analyzer.id)),
                                             update
                                     )
+                                    isOpsEmpty = false
                                 }
                     }
                 }
             }
             log.info { "Finish process analyzers stability. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
-            ops.execute()
+            if (!isOpsEmpty) {
+                ops.execute()
+            }
         }
     }
 
