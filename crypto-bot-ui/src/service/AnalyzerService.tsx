@@ -4,6 +4,7 @@ import {AnalyzerResponse} from "../model/AnalyzerResponse";
 import {AuthInfo} from "../model/AuthInfo";
 import {AnalyzerModelBulk} from "../model/AnalyzerModelBulk";
 import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
+import {PaymentRequiredError} from "../utils/errors/PaymentRequiredError";
 
 const API_URL = `${SERVER_HOST}/analyzer`;
 
@@ -100,6 +101,8 @@ export const createAnalyzer = async (auth: AuthInfo, analyzer: AnalyzerModel) =>
         return;
     } else if (response.status === 401) {
         throw new UnauthorizedError('Signature is invalid');
+    } else if (response.status === 402) {
+        throw new PaymentRequiredError('Not enough active subscriptions');
     }
     throw new Error('Failed to create analyzer');
 }
@@ -119,6 +122,8 @@ export const createAnalyzerBulk = async (auth: AuthInfo, analyzer: AnalyzerModel
         return;
     } else if (response.status === 401) {
         throw new UnauthorizedError('Signature is invalid');
+    } else if (response.status === 402) {
+        throw new PaymentRequiredError('Not enough active subscriptions');
     }
     throw new Error('Failed to create analyzer');
 }
@@ -139,6 +144,8 @@ export const changeBulkAnalyzerStatus = async (auth: AuthInfo, ids: string[], st
         return;
     } else if (response.status === 401) {
         throw new UnauthorizedError('Signature is invalid');
+    } else if (response.status === 402) {
+        throw new PaymentRequiredError('Not enough active subscriptions');
     }
     throw new Error('Failed to change status');
 }
@@ -175,6 +182,24 @@ export const resetAnalyzerBulk = async (auth: AuthInfo, ids: string[]) => {
     });
     if (response.ok) {
         return;
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
+    }
+    throw new Error('Failed to reset analyzer');
+}
+
+export const getActiveAnalyzersCount = async (auth: AuthInfo) => {
+    const response = await fetch(`${API_URL}/active/count`, {
+        method: 'GET',
+        headers: {
+            'Account-Address': btoa(auth.address),
+            'Account-Address-Signature': btoa(auth.signature),
+            'Access-Control-Allow-Origin': '*'
+        }
+    });
+
+    if (response.ok) {
+        return parseInt(await response.text());
     } else if (response.status === 401) {
         throw new UnauthorizedError('Signature is invalid');
     }

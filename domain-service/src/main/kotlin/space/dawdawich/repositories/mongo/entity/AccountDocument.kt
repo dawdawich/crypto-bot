@@ -11,5 +11,6 @@ class AccountDocument(
     val role: String = "USER",
     val createTime: Long = System.currentTimeMillis(),
     val updateTime: Long = createTime,
-    val accepted: Boolean = false
+    val accepted: Boolean = false,
+    val lastCheckedBlock: Long = 0
 )

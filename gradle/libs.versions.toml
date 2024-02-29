@@ -12,7 +12,7 @@ json = "20231013"
 ktor = "2.3.5"
 logstash = "7.4"
 kotlin-logging = "2.0.11"
-web3 = "5.0.0"
+web3 = "4.11.0"
 
 [libraries]
 spring-boot-mongo = { group = "org.springframework.boot", name = "spring-boot-starter-data-mongodb", version.ref = "spring-boot" }

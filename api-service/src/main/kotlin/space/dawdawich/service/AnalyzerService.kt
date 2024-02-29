@@ -12,6 +12,7 @@ import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.controller.model.CreateAnalyzerBulkRequest
 import space.dawdawich.controller.model.CreateAnalyzerRequest
 import space.dawdawich.controller.model.GridTableAnalyzerResponse
+import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
 import space.dawdawich.repositories.mongo.SymbolRepository
@@ -19,19 +20,22 @@ import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.TradeStrategy
 import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.custom.model.AnalyzerFilter
+import space.dawdawich.repositories.mongo.AccountTransactionRepository
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
 import java.util.*
+import kotlin.jvm.Throws
 
 @Service
 class AnalyzerService(
-        private val analyzerRepository: AnalyzerRepository,
-        private val analyzerValidationService: AnalyzerValidationService,
-        private val symbolRepository: SymbolRepository,
-        private val kafkaTemplate: KafkaTemplate<String, String>,
-        private val publicBybitClient: ByBitPublicHttpClient,
-        private val publicBybitTestClient: ByBitPublicHttpClient,
-        private val folderService: FolderService,
+    private val analyzerRepository: AnalyzerRepository,
+    private val analyzerValidationService: AnalyzerValidationService,
+    private val accountTransactionRepository: AccountTransactionRepository,
+    private val symbolRepository: SymbolRepository,
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val publicBybitClient: ByBitPublicHttpClient,
+    private val publicBybitTestClient: ByBitPublicHttpClient,
+    private val folderService: FolderService,
 ) {
 
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
@@ -91,9 +95,16 @@ class AnalyzerService(
             )
         }
 
+    fun getActiveAnalyzersCount(accountId: String) = analyzerRepository.countByAccountIdAndIsActive(accountId)
+
     fun updateAnalyzersStatus(accountId: String, ids: List<String>, status: Boolean): Unit =
         analyzerValidationService
             .validateAnalyzersExistByIdAndAccountId(ids, accountId)
+            .let {
+                if (status) {
+                    checkIsUserCanCreateAnalyzers(accountId, ids.size)
+                }
+            }
             .let { analyzerRepository.setAnalyzersActiveStatus(ids, status) }
             .let {
                 ids.forEach { id ->
@@ -117,8 +128,13 @@ class AnalyzerService(
                 ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found")
         )
 
+    @Throws(AnalyzerLimitExceededException::class)
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
         analyzerData.apply {
+            if (active) {
+                checkIsUserCanCreateAnalyzers(accountId)
+            }
+
             val analyzerId = UUID.randomUUID().toString()
             val gridTableAnalyzerDocument = GridTableAnalyzerDocument(
                 analyzerId,
@@ -162,8 +178,14 @@ class AnalyzerService(
             }
     }
 
+    @Throws(AnalyzerLimitExceededException::class)
     fun bulkCreate(accountId: String, request: CreateAnalyzerBulkRequest) {
         with(request) {
+
+            if (active) {
+                checkIsUserCanCreateAnalyzers(accountId, request.calculateSize())
+            }
+
             val symbols = symbolRepository.findAllById(symbols)
             val analyzersToInsert = mutableListOf<GridTableAnalyzerDocument>()
 
@@ -222,6 +244,16 @@ class AnalyzerService(
             if (request.active) {
                 kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, analyzersToInsert.map { it.id }.joinToString { "," })
             }
+        }
+    }
+
+    private fun checkIsUserCanCreateAnalyzers(accountId: String, analyzersToCreate: Int = 1) {
+        val activeAnalyzers = analyzerRepository.countByAccountIdAndIsActive(accountId)
+        val activeSubs =
+            accountTransactionRepository.getActiveTransactionsForTimeRange(accountId).sumOf { it.value } * 100
+
+        if (activeAnalyzers + analyzersToCreate > activeSubs) {
+            throw AnalyzerLimitExceededException()
         }
     }
 }

@@ -1,4 +1,4 @@
-package space.dawdawich.controller.model
+package space.dawdawich.controller.model.account
 
 import kotlinx.serialization.Serializable
 

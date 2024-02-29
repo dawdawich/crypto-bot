@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import AnalyzersPage from "./pages/analyzer/AnalyzersPage";
 import {Route, Switch} from "wouter";
 import SymbolsPage from "./pages/symbol/SymbolsPage";

@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.*
+import space.dawdawich.controller.model.CreateAnalyzerRequest
+import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.service.AnalyzerService
 
@@ -60,6 +62,10 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         }
 
+    @GetMapping("/active/count")
+    fun getActiveAnalyzerCount(authentication: Authentication) =
+        ResponseEntity(analyzerService.getActiveAnalyzersCount(authentication.name), HttpStatus.OK)
+
     @DeleteMapping
     fun deleteAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
@@ -70,14 +76,23 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
         }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.OK)
     fun createAnalyzer(authentication: Authentication, @RequestBody request: CreateAnalyzerRequest) =
-        analyzerService.createAnalyzer(authentication.name, request)
+        try {
+            analyzerService.createAnalyzer(authentication.name, request)
+            ResponseEntity<Unit>(HttpStatus.OK)
+        } catch (ex: AnalyzerLimitExceededException) {
+            ResponseEntity<Unit>(HttpStatus.PAYMENT_REQUIRED)
+        }
 
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.OK)
     fun bulkCreateAnalyzers(user: Authentication, @RequestBody request: CreateAnalyzerBulkRequest) =
-        analyzerService.bulkCreate(user.name, request)
+        try {
+            analyzerService.bulkCreate(user.name, request)
+            ResponseEntity<Unit>(HttpStatus.OK)
+        } catch (ex: AnalyzerLimitExceededException) {
+            ResponseEntity<Unit>(HttpStatus.PAYMENT_REQUIRED)
+        }
 
     @PutMapping("/activate/bulk")
     fun activateAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
@@ -86,6 +101,8 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
             ResponseEntity(HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
+        } catch (ex: AnalyzerLimitExceededException) {
+            ResponseEntity<Unit>(HttpStatus.PAYMENT_REQUIRED)
         }
 
     @PutMapping("/deactivate/bulk")

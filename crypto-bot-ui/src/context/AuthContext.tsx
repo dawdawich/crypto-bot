@@ -1,9 +1,10 @@
-import React, {Component, createContext, ErrorInfo, useContext, useState} from "react";
+import React, {createContext, useCallback, useContext, useEffect, useState} from "react";
 import {AuthInfo} from "../model/AuthInfo";
-import {useSDK} from "@metamask/sdk-react";
+import "@metamask/sdk-react";
 import {requestSalt} from "../service/AccountService";
-import {useLocation} from "wouter";
-import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
+import Web3 from 'web3';
+import {formatDateForSignature} from "../utils/date-utils";
+import {errorToast} from "../pages/toast/Toasts";
 
 export interface AuthContextType {
     authInfo: AuthInfo | undefined;
@@ -13,65 +14,63 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const web3 = new Web3((window as any).ethereum);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
-    const [, navigate] = useLocation();
-    const {sdk, provider} = useSDK();
     const [authInfo, setAuthInfo] = useState<AuthInfo | undefined>(() => {
-        const info = localStorage.getItem('auth.info');
-        return info == null ? undefined : JSON.parse(info) as AuthInfo;
+        const auth = localStorage.getItem('auth.info');
+        if (auth !== null) {
+            return JSON.parse(auth);
+        }
+        return undefined;
     });
 
-    const login = async () => {
-        try {
-            const address = (await sdk?.connect() as string[])?.[0];
-            const salt = await requestSalt(address!);
-            const message = `Signature will be valid until:\n${formatDate(parseInt(salt))}`;
-            const signature = await provider?.request({
-                method: 'personal_sign',
-                params: [message, address]
-            }) as string;
-            let computedAuthInfo = {address, signature};
-            setAuthInfo(computedAuthInfo);
-            localStorage.setItem('auth.info', JSON.stringify(computedAuthInfo))
-        } catch (err) {
-            console.warn(`failed to connect to wallet`, err);
+    const connect = useCallback((): void => {
+        web3.eth.getAccounts()
+            .then(async (accounts) => {
+                if (accounts.length > 0) {
+                    const salt = await requestSalt(accounts[0]);
+                    const message = `Signature will be valid until:\n${formatDateForSignature(parseInt(salt))}`;
+                    const signature = await web3.eth.personal.sign(message, accounts[0], '') as string;
+                    const auth = {address: accounts[0], signature: signature};
+                    setAuthInfo(auth);
+                    localStorage.setItem('auth.info', JSON.stringify(auth));
+                }
+            })
+            .catch(() => {
+                errorToast("Failed to connect to metamask");
+            });
+    }, []);
+
+    const login = useCallback(async () => {
+        await window.ethereum?.request({ method: 'eth_requestAccounts' });
+        connect();
+    }, [connect]);
+
+    useEffect(() => {
+        window.ethereum?.on('accountsChanged', function (accounts) {
+            logout();
+        });
+        if (!authInfo) {
+            connect();
+        } else {
+            web3.eth.getAccounts().then(accounts => {
+                if (accounts[0] !== authInfo.address) {
+                    logout();
+                }
+            })
         }
-    };
-
-    const formatDate = (seconds: number) => {
-        const date = new Date(0);
-        date.setUTCSeconds(seconds);
-
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const hours = String(date.getUTCHours()).padStart(2, '0');
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-        const secondsFormatted = String(date.getUTCSeconds()).padStart(2, '0');
-
-        return `${year}-${month}-${day} ${hours}:${minutes}:${secondsFormatted}`;
-    }
+    }, [authInfo, connect]);
 
     const logout = () => {
         setAuthInfo(undefined);
         localStorage.removeItem('auth.info');
     };
 
-    try {
-        return (
-            <AuthContext.Provider value={{authInfo, login, logout}}>
-                {children}
-            </AuthContext.Provider>
-        );
-    } catch (e) {
-        if (e instanceof UnauthorizedError) {
-            logout();
-            navigate('/analyzer');
-        } else {
-            throw e;
-        }
-    }
-    return (<div></div>);
+    return (
+        <AuthContext.Provider value={{authInfo, login: login, logout}}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = (): AuthContextType => {

@@ -35,8 +35,8 @@ class SecurityConfiguration {
         authenticationManager: AuthenticationManager
     ): SecurityFilterChain {
         val authenticationFilter = AuthenticationFilter(authenticationManager) { request ->
-            val address = request.getHeader("Account-Address")?.baseDecode() ?: ""
-            val signature = request.getHeader("Account-Address-Signature")?.baseDecode() ?: ""
+            val address = request.getHeader("Account-Address")?.baseDecode()?.lowercase() ?: ""
+            val signature = request.getHeader("Account-Address-Signature")?.baseDecode()?.lowercase() ?: ""
 
             if (address.isNotBlank() && signature.isNotBlank()) {
                 WalletAuthenticationRequest(address, signature)

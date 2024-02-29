@@ -44,6 +44,7 @@ import {FolderModel} from "../../model/FolderModel";
 import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
+import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -178,6 +179,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const {authInfo, logout} = useAuth();
     const open = Boolean(anchorEl);
 
+    if (!authInfo) {
+        navigate("/analyzer/folder/top");
+    }
+
     if (pageType === 'FOLDER' && !folders.find(el => el.name === folderName)) {
         navigate("/analyzer/folder/all");
     }
@@ -244,12 +249,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     .then(data => {
                         setIsLoading(false);
                         if (Array.isArray(data)) {
-                            setData(oldData => {
-                                let newVar = [...oldData, ...data];
-                                setDataSize(newVar.length);
-                                setRowsCount(data.length);
-                                return newVar;
-                            });
+                            setData(data);
+                            setDataSize(data.length)
                         }
                     })
                     .catch((ex) => {
@@ -394,6 +395,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     errorToast(`Failed to ${status ? 'activate' : 'deactivate'} analyzers.`);
                     if (ex instanceof UnauthorizedError) {
                         logout();
+                    } else if (ex instanceof PaymentRequiredError) {
+                        errorToast('Not enough active subscriptions');
                     }
                 });
         }
@@ -414,6 +417,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 errorToast('Failed to create analyzer');
                 if (ex instanceof UnauthorizedError) {
                     logout();
+                } else if (ex instanceof PaymentRequiredError) {
+                    errorToast('Not enough active subscriptions');
                 }
             });
     }
@@ -433,6 +438,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 errorToast('Failed to create analyzers');
                 if (ex instanceof UnauthorizedError) {
                     logout();
+                } else if (ex instanceof PaymentRequiredError) {
+                    errorToast('Not enough active subscriptions');
                 }
             });
     };

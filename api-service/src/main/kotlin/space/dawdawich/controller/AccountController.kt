@@ -5,14 +5,15 @@ import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.controller.model.ApiTokenResponse
-import space.dawdawich.controller.model.CreateApiTokenRequest
+import space.dawdawich.controller.model.account.api_token.ApiTokenResponse
+import space.dawdawich.controller.model.account.api_token.CreateApiTokenRequest
 import space.dawdawich.service.AccountService
+import space.dawdawich.service.AccountTransactionService
 import space.dawdawich.utils.baseDecode
 
 @RestController
 @RequestMapping("/account")
-class AccountController(private val accountService: AccountService) {
+class AccountController(private val accountService: AccountService, private val accountTransactionService: AccountTransactionService) {
 
     @GetMapping("/api-token")
     fun getApiTokens(user: Authentication): ResponseEntity<List<ApiTokenResponse>> = ResponseEntity.ok(
@@ -40,8 +41,11 @@ class AccountController(private val accountService: AccountService) {
 
     @GetMapping("/salt")
     fun requestSalt(@RequestHeader("Account-Address") address: String): ResponseEntity<String> = try {
-        ResponseEntity.ok(accountService.requestSalt(address.baseDecode()).toString())
+        ResponseEntity.ok(accountService.requestSalt(address.baseDecode().lowercase()).toString())
     } catch (ex : IllegalArgumentException){
         ResponseEntity(HttpStatus.BAD_REQUEST)
     }
+
+    @GetMapping("/transactions")
+    fun getUserTransactions(user: Authentication) = accountTransactionService.getTransactions(user.name)
 }

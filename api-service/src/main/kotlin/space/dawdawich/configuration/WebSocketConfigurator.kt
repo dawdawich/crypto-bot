@@ -1,8 +1,6 @@
 package space.dawdawich.configuration
 
 import jakarta.websocket.server.ServerEndpointConfig
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import space.dawdawich.configuration.provider.ApplicationContextProvider
 

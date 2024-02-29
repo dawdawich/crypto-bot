@@ -21,6 +21,7 @@ import {fetchAnalyzerFolders, removeAnalyzerFromFolder} from "../../service/Fold
 import {getWebSocketAnalyzerService, WebSocketService} from "../../service/WebSocketService";
 import {AnalyzerRuntimeModel} from "../../model/AnalyzerRuntimeModel";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
+import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
 
 interface AnalyzerDetailProps {
     analyzerId: string;
@@ -202,6 +203,8 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                 errorToast('Failed to stop analyzer');
                 if (ex instanceof UnauthorizedError) {
                     logout();
+                } else if (ex instanceof PaymentRequiredError) {
+                    errorToast('Not enough active subscriptions');
                 }
             })
     }

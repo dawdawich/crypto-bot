@@ -71,3 +71,20 @@ export const deleteApiToken = async (id: string, auth: AuthInfo) => {
     }
     throw new Error(`Failed to delete api token, response code: ${response.status}`);
 }
+
+export const getAccountTransaction = async (auth: AuthInfo) => {
+    const response = await fetch(`${API_URL}/transactions`, {
+        method: 'GET',
+        headers: {
+            'Account-Address': btoa(auth.address),
+            'Account-Address-Signature': btoa(auth.signature),
+            'Access-Control-Allow-Origin': '*'
+        }
+    });
+    if (response.ok) {
+        return await response.json();
+    } else if (response.status === 401) {
+        throw new UnauthorizedError('Signature is invalid');
+    }
+    throw new Error(`Failed to delete api token, response code: ${response.status}`);
+}

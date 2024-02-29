@@ -1,18 +1,40 @@
-.subscription-api-token-content {
+.account-subscription-content {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
 }
 
-.subscription-api-token-header {
+.account-subscription-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     flex-direction: row;
-    border-bottom: 1px solid #262B31;
-    height: 72px;
+    height: 36px;
+    padding: 16px 16px 4px;
 }
 
-.subscription-api-token-header-path {
+.account-subscription-header-path {
     display: flex;
     flex-direction: row;
 }
+
+#cell {
+    color: white;
+    font-weight: 200;
+    border-bottom: 2px solid #262B31;
+    border-top: 2px solid #262B31;
+}
+
+.token-table-headers > #cell {
+    color: #868F9C;
+}
+
+.big-loading-banner {
+    display: flex;
+    position: relative;
+    left: 30%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 500px;
+}
+

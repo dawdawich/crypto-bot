@@ -29,4 +29,13 @@ data class CreateAnalyzerBulkRequest(
     val public: Boolean,
     val strategy: TradeStrategy,
     val folders: List<String>,
-)
+) {
+    fun calculateSize() =
+        symbols.size *
+                ((stopLossMax - stopLossMin) / stopLossStep) *
+                ((takeProfitMax - takeProfitMin) / takeProfitStep) *
+                ((diapasonMax - diapasonMin) / diapasonStep) *
+                ((gridSizeMax - gridSizeMin) / gridSizeStep) *
+                ((multiplierMax - multiplierMin) / multiplierStep);
+
+}
