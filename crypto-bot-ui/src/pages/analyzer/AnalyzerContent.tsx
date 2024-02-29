@@ -515,7 +515,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     });
 
     const getPnLColorByValue = (value: number) => value < 0 ? '#E7323B' : value > 0 ? '#16C079' : 'white';
-    const getSignByValue = (value: number) => value < 0 ? '-' : value > 0 ? '+' : '';
+    const getSignByValue = (value: number) => value > 0 ? '+' :  '';
 
     const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => ({
         diapason: analyzer.diapason,
