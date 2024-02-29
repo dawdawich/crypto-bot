@@ -44,6 +44,7 @@ import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
 import HideBox from "./HideBox";
+import {trimDecimalNumbers} from "../../utils/number-utils";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -742,16 +743,16 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                             <TableCell id="cell" align="left">{analyzer.startCapital}</TableCell>}
                                         {isListPage() &&
                                             <TableCell id="cell"
-                                                       align="left">{!!analyzer.money && analyzer.money.toFixed(3)}</TableCell>}
+                                                       align="left">{!!analyzer.money && trimDecimalNumbers(analyzer.money)}</TableCell>}
                                         <TableCell align="left" id="cell">{analyzer.stabilityCoef}</TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl1)}}>
-                                            {getSignByValue(analyzer.pnl1)}{analyzer.pnl1} %
+                                            {getSignByValue(analyzer.pnl1)}{trimDecimalNumbers(analyzer.pnl1, 1)} %
                                         </TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
-                                            {getSignByValue(analyzer.pnl12)}{analyzer.pnl12} %
+                                            {getSignByValue(analyzer.pnl12)}{trimDecimalNumbers(analyzer.pnl12, 1)} %
                                         </TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
-                                            {getSignByValue(analyzer.pnl24)}{analyzer.pnl24} %
+                                            {getSignByValue(analyzer.pnl24)}{trimDecimalNumbers(analyzer.pnl24, 1)} %
                                         </TableCell>
                                         <TableCell align={isListPage() ? "center" : "right"} id="cell">
                                             {
