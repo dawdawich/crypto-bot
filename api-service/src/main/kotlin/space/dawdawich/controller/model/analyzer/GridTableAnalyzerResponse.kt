@@ -1,4 +1,4 @@
-package space.dawdawich.controller.model
+package space.dawdawich.controller.model.analyzer
 
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.constants.Market
@@ -24,6 +24,9 @@ data class GridTableAnalyzerResponse(
     val createTime: Long,
     val updateTime: Long,
     var stabilityCoef: Double? = 0.0,
+    var pNl1: Int? = 0,
+    var pNl12: Int? = 0,
+    var pNl24: Int? = 0,
 ) {
     constructor(documentAnalyzer: GridTableAnalyzerDocument) : this(
         documentAnalyzer.id,
@@ -43,5 +46,8 @@ data class GridTableAnalyzerResponse(
         documentAnalyzer.createTime,
         documentAnalyzer.updateTime,
         documentAnalyzer.stabilityCoef,
+        documentAnalyzer.pNl1,
+        documentAnalyzer.pNl12,
+        documentAnalyzer.pNl24,
     )
 }

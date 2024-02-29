@@ -17,20 +17,22 @@ import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
-import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.constants.*
-import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.repositories.mongo.SymbolRepository
-import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
-import space.dawdawich.repositories.mongo.AnalyzerRepository
+import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
+import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.repositories.mongo.AnalyzerRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import space.dawdawich.utils.calculatePercentageChange
 import space.dawdawich.utils.getRightTopic
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.hours
 
 @Service
 class AnalyzerService(
@@ -178,12 +180,31 @@ class AnalyzerService(
                     launch {
                         analyzerStabilityRepository.findAllByAnalyzerId(analyzer.id)
                                 .sortedBy { it.timestamp }
-                                .map { it.money }
-                                .let {
-                                    val stabilityCoef = analyzer.calculateStabilityCoef(it)
+                                .let { snapshots ->
+                                    val update = Update()
+                                    val now = System.currentTimeMillis()
+                                    val oneOurBefore = now - 1.hours.inWholeMilliseconds
+                                    val twelveOurBefore = now - 12.hours.inWholeMilliseconds
+                                    val twentyFourOurBefore = now - 24.hours.inWholeMilliseconds
+                                    analyzer.calculateStabilityCoef(snapshots.map { snap -> snap.money }).let {
+                                        update.set("stabilityCoef", it)
+                                    }
+                                    snapshots.firstOrNull { it.timestamp > oneOurBefore }?.let { snapshot ->
+                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                        update.set("pNl1", pNl)
+                                    }
+                                    snapshots.firstOrNull { it.timestamp > twelveOurBefore }?.let { snapshot ->
+                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                        update.set("pNl12", pNl)
+                                    }
+                                    snapshots.firstOrNull { it.timestamp > twentyFourOurBefore }?.let { snapshot ->
+                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                        update.set("pNl24", pNl)
+                                    }
+
                                     ops.updateOne(
                                             Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                                            Update().set("stabilityCoef", stabilityCoef)
+                                            update
                                     )
                                 }
                     }

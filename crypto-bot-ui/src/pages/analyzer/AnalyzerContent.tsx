@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useLocation} from "wouter";
 import {
-    Box,
     Button,
     Checkbox,
     Menu,
@@ -20,7 +19,6 @@ import "../../css/pages/analyzer/AnalyzerContentStyles.css";
 import "../../css/pages/analyzer/SideBlock.css";
 import {AnalyzerResponse} from "../../model/AnalyzerResponse";
 import loadingSpinner from "../../assets/images/loading-spinner.svga";
-import {ReactComponent as RocketIcon} from "../../assets/images/analyzer/rocket-icon.svg";
 import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-icon.svg";
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import {ReactComponent as MenuHeaderIcon} from "../../assets/images/analyzer/menu-header-icon.svg";
@@ -45,6 +43,7 @@ import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
+import HideBox from "./HideBox";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -71,24 +70,6 @@ const CurrentPath = styled('div')({
     paddingLeft: '4px',
     userSelect: 'none',
     pointerEvents: 'none'
-});
-
-const HideBox = styled(Box)({
-    position: 'absolute',
-    marginTop: '3px',
-    height: '50px', // Adjust as needed
-    left: '150px', // Adjust based on your table's layout
-    width: '500px', // Adjust to span over the desired number of columns
-    backgroundColor: 'rgba(29,32,36,0.8)',
-    color: '#868F9C',
-    fontSize: '14px',
-    fontWeight: 400,
-    backdropFilter: 'blur(3px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1, // Ensure it's above table cells,
-    overflowY: 'auto'
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -144,7 +125,10 @@ type SortHeaders =
     | 'positionTakeProfit'
     | 'startCapital'
     | 'money'
-    | 'stabilityCoef'; // corresponding to fields in data base
+    | 'stabilityCoef'
+    | 'pNl1'
+    | 'pNl12'
+    | 'pNl24'; // corresponding to fields in data base
 
 type SortData = {
     name: SortHeaders;
@@ -155,6 +139,8 @@ type SortData = {
 const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, addAnalyzersToFolder, folders}) => {
     const spanRef = useRef<HTMLSpanElement>(null);
     const sideRef = useRef<HTMLDivElement>(null);
+    const diapasonHeaderRef = useRef<HTMLDivElement>(null);
+    const stabilityHeaderRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isBigLoading, setIsBigLoading] = useState(false);
     const [order, setOrder] = React.useState<Order>('desc');
@@ -487,8 +473,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             setSymbolFilter([]);
             updateAnalyzersList(identifyStatus(selectedStatusFilter), [], getSortObject(), getFolderFilter());
         }
-    };
 
+    };
     const handleSortChange = (key: SortHeaders) => {
         let data: SortData | null = {name: key, direction: 'asc'};
         if (key === orderBy && order === 'desc') {
@@ -504,14 +490,14 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             setOrderBy(key);
         }
         updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter());
-    }
 
+    }
     const navigateToAnalyzerDetail = (analyzerId: string) => {
         if (pageType !== "TOP") {
             navigate(`/analyzer/detail/${analyzerId}`);
         }
-    }
 
+    }
     const isListPage = () => pageType === 'LIST' || pageType === 'FOLDER';
     const isSelected = (id: number) => selectedAnalyzers.indexOf(id) !== -1;
     const allSelectedActive = () => selectedAnalyzers.filter((index) => data[index].isActive).length;
@@ -523,9 +509,12 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             cursor: isListPage() ? 'pointer' : 'inherit'
         }
     });
+
     const HeaderCellIcon = styled(StyledTableSortLabel)({
         transition: '0.3s'
     });
+
+    const getPnLColorByValue = (value: number) => value < 0 ? '#E7323B' : value > 0 ? '#16C079' : 'white';
 
     const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => ({
         diapason: analyzer.diapason,
@@ -637,62 +626,77 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         />
                                     </TableCell>
                                 }
-                                <TableCell width="82px" id="cell">Symbol</TableCell>
+                                <TableCell id="cell">Symbol</TableCell>
                                 {isListPage() && <TableCell width="82px" align="center" id="cell">Status</TableCell>}
-                                <TableCell width="82px" id="cell">
+                                <TableCell id="cell" ref={diapasonHeaderRef}>
                                     <HeaderCellContent onClick={() => handleSortChange('diapason')}>
                                         Diapason {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'diapason'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
-                                <TableCell width="82px" id="cell">
+                                <TableCell id="cell">
                                     <HeaderCellContent onClick={() => handleSortChange('gridSize')}>
                                         Grid Size {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'gridSize'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
-                                <TableCell width="82px" id="cell">
+                                <TableCell id="cell">
                                     <HeaderCellContent onClick={() => handleSortChange('multiplier')}>
                                         Multiplier {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'multiplier'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
-                                <TableCell width="25px" id="cell">
+                                <TableCell id="cell">
                                     <HeaderCellContent onClick={() => handleSortChange('positionStopLoss')}>
                                         SL {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'positionStopLoss'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
-                                <TableCell width="25px" align="left" id="cell">
+                                <TableCell align="left" id="cell">
                                     <HeaderCellContent onClick={() => handleSortChange('positionTakeProfit')}>
                                         TP {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'positionTakeProfit'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
                                 {isListPage() &&
-                                    <TableCell width="100px" id="cell">
+                                    <TableCell id="cell">
                                         <HeaderCellContent onClick={() => handleSortChange('startCapital')}>
                                             Start Capital <HeaderCellIcon direction={order}
                                                                           active={orderBy === 'startCapital'}/>
                                         </HeaderCellContent>
                                     </TableCell>}
                                 {isListPage() &&
-                                    <TableCell width="80px" id="cell">
+                                    <TableCell id="cell">
                                         <HeaderCellContent onClick={() => handleSortChange('money')}>
                                             Total Equity <HeaderCellIcon direction={order}
                                                                          active={orderBy === 'money'}/>
                                         </HeaderCellContent>
                                     </TableCell>}
-                                <TableCell width="50px" align="center" id="cell">
+                                <TableCell align="center" id="cell" ref={stabilityHeaderRef}>
                                     <HeaderCellContent onClick={() => handleSortChange('stabilityCoef')}>
                                         Stability {isListPage() &&
                                         <HeaderCellIcon direction={order} active={orderBy === 'stabilityCoef'}/>}
                                     </HeaderCellContent>
                                 </TableCell>
-                                <TableCell width="50px" align="center" id="cell">1h %</TableCell>
-                                <TableCell width="50px" align="center" id="cell">12h %</TableCell>
-                                <TableCell width="50px" align="center" id="cell">24h %</TableCell>
-                                <TableCell width="60px" align="center" id="cell">
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl1')}>
+                                        1h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl1'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl12')}>
+                                        12h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl12'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl24')}>
+                                        24h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl24'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
                                     {isListPage() && <MenuHeaderIcon/>}
                                 </TableCell>
                             </TableRow>
@@ -738,10 +742,16 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         {isListPage() &&
                                             <TableCell id="cell"
                                                        align="left">{!!analyzer.money && analyzer.money.toFixed(3)}</TableCell>}
-                                        <TableCell align="center" id="cell">{analyzer.stabilityCoef}</TableCell>
-                                        <TableCell align="center" id="cell">20 %</TableCell>
-                                        <TableCell align="center" id="cell">20 %</TableCell>
-                                        <TableCell align="center" id="cell">20 %</TableCell>
+                                        <TableCell align="left" id="cell">{analyzer.stabilityCoef}</TableCell>
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl1)}}>
+                                            {analyzer.pNl1} %
+                                        </TableCell>
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl12)}}>
+                                            {analyzer.pNl12} %
+                                        </TableCell>
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl12)}}>
+                                            {analyzer.pNl24} %
+                                        </TableCell>
                                         <TableCell align={isListPage() ? "center" : "right"} id="cell">
                                             {
                                                 isListPage() ?
@@ -762,10 +772,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         </TableCell>
                                         {
                                             !authInfo &&
-                                            <HideBox>
-                                                <RocketIcon style={{marginRight: '8px', fill: '#868F9C'}}/>
-                                                Connect your wallet to unlock full access!
-                                            </HideBox>
+                                            <HideBox diapasonRef={diapasonHeaderRef} stabilityRef={stabilityHeaderRef} />
                                         }
                                     </TableRow>
                                 );

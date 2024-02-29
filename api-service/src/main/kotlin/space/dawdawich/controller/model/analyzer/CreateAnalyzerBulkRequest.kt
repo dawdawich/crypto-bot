@@ -1,4 +1,4 @@
-package space.dawdawich.controller.model
+package space.dawdawich.controller.model.analyzer
 
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.constants.Market

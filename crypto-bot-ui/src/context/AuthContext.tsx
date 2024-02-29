@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
     }, []);
 
     const login = useCallback(async () => {
-        await window.ethereum?.request({ method: 'eth_requestAccounts' });
+        await window.ethereum?.request({method: 'eth_requestAccounts'});
         connect();
     }, [connect]);
 
@@ -50,9 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
         window.ethereum?.on('accountsChanged', function (accounts) {
             logout();
         });
-        if (!authInfo) {
-            connect();
-        } else {
+        if (authInfo) {
             web3.eth.getAccounts().then(accounts => {
                 if (accounts[0] !== authInfo.address) {
                     logout();

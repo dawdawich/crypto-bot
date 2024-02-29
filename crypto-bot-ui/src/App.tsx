@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import AnalyzersPage from "./pages/analyzer/AnalyzersPage";
 import {Route, Switch} from "wouter";
 import SymbolsPage from "./pages/symbol/SymbolsPage";
@@ -8,27 +8,36 @@ import {AuthProvider} from "./context/AuthContext";
 import LeftNavPanel from "./pages/LeftNavPanel";
 import ContactPage from "./pages/contact/ContactPage";
 import ManagersPage from "./pages/manager/ManagersPage";
+import {createTheme, ThemeProvider} from "@mui/material";
 
 const App: React.FC = () => {
+    const theme = createTheme({
+        typography: {
+            fontFamily: 'PlexSans'
+        }
+    });
+
     return (
-        <AuthProvider>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'row'
-            }}>
-                <LeftNavPanel/>
-                <div style={{flexGrow: '1', backgroundColor: '#1D2024'}}>
-                    <Switch>
-                        <Route path="/about-us" component={ContactPage}/>
-                        <Route path="/analyzer/:path*" component={AnalyzersPage} />
-                        <Route path="/account/:path*" component={AccountPage}/>
-                        <Route path="/manager" component={ManagersPage}/>
-                        <Route path="/symbols" component={SymbolsPage}/>
-                        <Route path="/monitoring" component={MonitoringPage}/>
-                    </Switch>
+        <ThemeProvider theme={theme}>
+            <AuthProvider>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row'
+                }}>
+                    <LeftNavPanel/>
+                    <div style={{flexGrow: '1', backgroundColor: '#1D2024'}}>
+                        <Switch>
+                            <Route path="/about-us" component={ContactPage}/>
+                            <Route path="/analyzer/:path*" component={AnalyzersPage}/>
+                            <Route path="/account/:path*" component={AccountPage}/>
+                            <Route path="/manager" component={ManagersPage}/>
+                            <Route path="/symbols" component={SymbolsPage}/>
+                            <Route path="/monitoring" component={MonitoringPage}/>
+                        </Switch>
+                    </div>
                 </div>
-            </div>
-        </AuthProvider>
+            </AuthProvider>
+        </ThemeProvider>
     );
 }
 

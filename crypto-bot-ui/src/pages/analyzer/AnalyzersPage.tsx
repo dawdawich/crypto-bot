@@ -88,7 +88,7 @@ const AnalyzersPage: React.FC = () => {
                     }
                 });
         }
-    }, [authInfo]);
+    }, [authInfo, logout]);
 
     const handleNewFolder = (folder: FolderModel) => {
         setFolders([...folders, folder]);

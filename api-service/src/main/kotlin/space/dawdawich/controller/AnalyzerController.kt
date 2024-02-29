@@ -5,7 +5,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.*
-import space.dawdawich.controller.model.CreateAnalyzerRequest
+import space.dawdawich.controller.model.analyzer.CreateAnalyzerRequest
+import space.dawdawich.controller.model.analyzer.CreateAnalyzerBulkRequest
+import space.dawdawich.controller.model.analyzer.GetAnalyzersResponse
+import space.dawdawich.controller.model.analyzer.GridTableAnalyzerResponse
 import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.service.AnalyzerService

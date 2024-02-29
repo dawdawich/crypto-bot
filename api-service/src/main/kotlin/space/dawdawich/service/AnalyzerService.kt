@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_ANALYZERS_TOPIC
 import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
-import space.dawdawich.controller.model.CreateAnalyzerBulkRequest
-import space.dawdawich.controller.model.CreateAnalyzerRequest
-import space.dawdawich.controller.model.GridTableAnalyzerResponse
+import space.dawdawich.controller.model.analyzer.CreateAnalyzerBulkRequest
+import space.dawdawich.controller.model.analyzer.CreateAnalyzerRequest
+import space.dawdawich.controller.model.analyzer.GridTableAnalyzerResponse
 import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
