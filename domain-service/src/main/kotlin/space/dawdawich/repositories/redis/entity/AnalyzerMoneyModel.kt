@@ -24,5 +24,5 @@ class AnalyzerMoneyModel(
     @TimeToLive(unit = TimeUnit.MINUTES)
     var timeToLive: Long = 1440
 
-    var timestamp: Long = Instant.now().epochSecond
+    var timestamp: Long = System.currentTimeMillis()
 }
