@@ -24,9 +24,9 @@ data class GridTableAnalyzerResponse(
     val createTime: Long,
     val updateTime: Long,
     var stabilityCoef: Double? = 0.0,
-    var pNl1: Int? = 0,
-    var pNl12: Int? = 0,
-    var pNl24: Int? = 0,
+    var pnl1: Int? = 0,
+    var pnl12: Int? = 0,
+    var pnl24: Int? = 0,
 ) {
     constructor(documentAnalyzer: GridTableAnalyzerDocument) : this(
         documentAnalyzer.id,

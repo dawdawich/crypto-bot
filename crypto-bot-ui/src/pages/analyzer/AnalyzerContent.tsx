@@ -743,14 +743,14 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                             <TableCell id="cell"
                                                        align="left">{!!analyzer.money && analyzer.money.toFixed(3)}</TableCell>}
                                         <TableCell align="left" id="cell">{analyzer.stabilityCoef}</TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl1)}}>
-                                            {analyzer.pNl1} %
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl1)}}>
+                                            {analyzer.pnl1} %
                                         </TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl12)}}>
-                                            {analyzer.pNl12} %
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
+                                            {analyzer.pnl12} %
                                         </TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pNl12)}}>
-                                            {analyzer.pNl24} %
+                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
+                                            {analyzer.pnl24} %
                                         </TableCell>
                                         <TableCell align={isListPage() ? "center" : "right"} id="cell">
                                             {

@@ -16,7 +16,7 @@ export type AnalyzerResponse = {
     createTime: number;
     updateTime: number;
     stabilityCoef: number;
-    pNl1: number;
-    pNl12: number;
-    pNl24: number;
+    pnl1: number;
+    pnl12: number;
+    pnl24: number;
 }
