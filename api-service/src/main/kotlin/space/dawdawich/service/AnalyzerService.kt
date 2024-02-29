@@ -242,7 +242,7 @@ class AnalyzerService(
             }
 
             if (request.active) {
-                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, analyzersToInsert.map { it.id }.joinToString { "," })
+                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, analyzersToInsert.joinToString(separator = ",") { it.id })
             }
         }
     }
