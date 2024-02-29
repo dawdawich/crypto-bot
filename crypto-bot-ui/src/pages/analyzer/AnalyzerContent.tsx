@@ -515,6 +515,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     });
 
     const getPnLColorByValue = (value: number) => value < 0 ? '#E7323B' : value > 0 ? '#16C079' : 'white';
+    const getSignByValue = (value: number) => value < 0 ? '-' : value > 0 ? '+' : '';
 
     const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => ({
         diapason: analyzer.diapason,
@@ -744,13 +745,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                        align="left">{!!analyzer.money && analyzer.money.toFixed(3)}</TableCell>}
                                         <TableCell align="left" id="cell">{analyzer.stabilityCoef}</TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl1)}}>
-                                            {analyzer.pnl1} %
+                                            {getSignByValue(analyzer.pnl1)}{analyzer.pnl1} %
                                         </TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
-                                            {analyzer.pnl12} %
+                                            {getSignByValue(analyzer.pnl12)}{analyzer.pnl12} %
                                         </TableCell>
                                         <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
-                                            {analyzer.pnl24} %
+                                            {getSignByValue(analyzer.pnl24)}{analyzer.pnl24} %
                                         </TableCell>
                                         <TableCell align={isListPage() ? "center" : "right"} id="cell">
                                             {
