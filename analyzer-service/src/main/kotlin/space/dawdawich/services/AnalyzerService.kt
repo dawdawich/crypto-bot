@@ -166,7 +166,7 @@ class AnalyzerService(
                         .let {
                             val list = it.toList()
                             if (list.isNotEmpty()) {
-                                analyzerStabilityRepository.saveAll(it.toList())
+                                analyzerStabilityRepository.saveAll(list)
                             }
                         }
             }
