@@ -8,12 +8,7 @@ import {FolderModel} from "../../model/FolderModel";
 import {errorToast} from "../../shared/toast/Toasts";
 import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
-import {
-    getMarketOptionFromValue,
-    getStrategyOptionFromValue,
-    MarketTypes,
-    StrategyTypes
-} from "../../model/AnalyzerConstants";
+import {getMarketOptionFromValue, getStrategyOptionFromValue, StrategyTypes} from "../../model/AnalyzerConstants";
 
 const SideBody = styled('div')({
     padding: '16px',
@@ -206,7 +201,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
 
     const validateField = (name: string) => {
         if (creationMode === 'SINGLE') {
-            return (singleAnalyzerModel as any)[name] !== undefined;
+            return (singleAnalyzerModel as any)[name] !== undefined && (singleAnalyzerModel as any)[name] !== '';
         } else {
             return validateDiapasonableField((multiAnalyzerModel as any)[name]);
         }
@@ -239,7 +234,9 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     const validateMultiplierField = () => validateField('multiplier');
     const validateStopLossField = () => validateField('stopLoss');
     const validateTakeProfitField = () => validateField('takeProfit');
-    const validateStartCapitalField = () => creationMode === 'SINGLE' ? singleAnalyzerModel.startCapital !== undefined : multiAnalyzerModel.startCapital !== undefined;
+    const validateStartCapitalField = () => creationMode === 'SINGLE' ?
+        (singleAnalyzerModel.startCapital !== undefined && singleAnalyzerModel.startCapital.toString() !== '') :
+        (multiAnalyzerModel.startCapital !== undefined && multiAnalyzerModel.startCapital.toString() !== '');
     const validateMarketField = () => creationMode === 'SINGLE' ? singleAnalyzerModel.market !== undefined : multiAnalyzerModel.market !== undefined;
     const validateDemoField = () => creationMode === 'SINGLE' ? singleAnalyzerModel.demo !== undefined : multiAnalyzerModel.market !== undefined;
     const validateDiapasonStepField = () => validateRangeFields('diapason');
@@ -255,6 +252,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     const validateAllFieldsMulti = () => validateSymbolField() && validateStrategyField() && validateDiapasonStepField() &&
         validateGridSizeStepField() && validateMultiplierStepField() && validateStopLossStepField() && validateTakeProfitStepField() &&
         validateStartCapitalField() && validateMarketField() && validateDemoField();
+
+    const validatingDependingOnType = () => creationMode === 'SINGLE' ? validateAllFieldsSingle() : validateAllFieldsMulti();
 
     const calculateDiapasonFieldWithStepCount = (fieldName: string) => {
         if (validateRangeFields(fieldName)) {
@@ -274,7 +273,10 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         multiAnalyzerModel.symbol.length;
 
 
-    const getDemoOptionFromValue = (value: boolean | undefined) => value !== undefined ? value ? {value: true, label: 'True'} : {value: false, label: 'False'} : undefined;
+    const getDemoOptionFromValue = (value: boolean | undefined) => value !== undefined ? value ? {
+        value: true,
+        label: 'True'
+    } : {value: false, label: 'False'} : undefined;
 
     const createAnalyzer = () => {
         if ((creationMode === 'SINGLE' && validateAllFieldsSingle()) || (creationMode === 'MULTI' && validateAllFieldsMulti())) {
@@ -544,11 +546,12 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     </div>
                     <Button variant='contained'
                             onClick={createAnalyzer}
-                            disabled={creationMode === 'SINGLE' ? !validateAllFieldsSingle() : !validateAllFieldsMulti()}
+                            disabled={!validatingDependingOnType()}
                             style={{
-                                backgroundColor: '#D0FF12',
-                                color: '#121417',
-                                textTransform: 'none'
+                                backgroundColor: validatingDependingOnType() ? '#D0FF12' : '#121417',
+                                color: validatingDependingOnType() ? '#121417' : '#D0FF12',
+                                textTransform: 'none',
+                                transition: '0.3s'
                             }}>Create</Button>
                 </div>
             </SideBody>
