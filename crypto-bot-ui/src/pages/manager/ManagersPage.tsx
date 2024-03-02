@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import "../../css/pages/manager/ManagersPageStyles.css";
 import {
     Button,
@@ -18,7 +18,7 @@ import CreateManagerDialog from "./dialog/CreateManagerDialog";
 import {ApiToken} from "../../model/ApiToken";
 import {getApiTokens} from "../../service/AccountService";
 import {useLocation} from "wouter";
-import {errorToast, successToast} from "../toast/Toasts";
+import {errorToast, successToast} from "../../shared/toast/Toasts";
 import {FolderModel} from "../../model/FolderModel";
 import {fetchFolderList} from "../../service/FolderService";
 import {ManagerResponse} from "../../model/ManagerResponse";
@@ -27,10 +27,11 @@ import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import {ReactComponent as CrossActiveIcon} from "../../assets/images/action-icon/cross-icon.svg";
 import {RowDiv} from "../../utils/styles/element-styles";
-import loadingSpinner from "../../assets/images/loading-spinner.svga";
 import {ReactComponent as MenuHeaderIcon} from "../../assets/images/analyzer/menu-header-icon.svg";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
+import {useLoader} from "../../context/LoaderContext";
+import loadingTableRows from "../../shared/LoadingTableRows";
 
 const CurrentPath = styled('div')({
     font: plexFont,
@@ -56,10 +57,9 @@ const StyledMenuItem = styled(MenuItem)(
 type FilterType = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'CRASHED';
 
 const ManagersPage: React.FC = () => {
-    const spanRef = useRef<HTMLSpanElement>(null);
-    const [animation, setAnimation] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const {authInfo, logout} = useAuth();
+    const [isTableLoading, setIsTableLoading] = useState(false);
+    const {showLoader, hideLoader} = useLoader();
     const [managers, setManagers] = useState<ManagerResponse[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
@@ -93,9 +93,14 @@ const ManagersPage: React.FC = () => {
                     logout();
                 }
             });
+        setIsTableLoading(true);
         fetchManagersList(authInfo!)
-            .then((managers) => setManagers(managers))
+            .then((managers) => {
+                setIsTableLoading(false);
+                setManagers(managers);
+            })
             .catch((ex) => {
+                setIsTableLoading(false);
                 errorToast('Failed to fetch managers');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -103,30 +108,19 @@ const ManagersPage: React.FC = () => {
             });
     }, [authInfo, logout]);
 
-    useEffect(() => {
-        fetch(loadingSpinner)
-            .then(response => response.text())
-            .then(text => {
-                setAnimation(text)
-                if (spanRef.current) {
-                    spanRef.current.innerHTML = animation
-                }
-            });
-    }, [animation, isLoading]);
-
     const getFilterStyleClass = (type: FilterType) => type === activeFilter ? 'managers-filters-cell-active' : 'managers-filters-cell';
 
     const changeManagerStatus = (manager: ManagerResponse, status: FilterType) => {
-        setIsLoading(true);
+        showLoader();
         updateManagerStatus(authInfo!, manager.id, status)
             .then(() => {
-                setIsLoading(false);
+                hideLoader();
                 manager.status = status;
                 setManagers([...managers]);
                 successToast(status === 'ACTIVE' ? 'Manager started successfully' : 'Manager stopped successfully');
             })
             .catch((ex) => {
-                setIsLoading(false);
+                hideLoader();
                 errorToast(status === 'ACTIVE' ? 'Failed to start manager' : 'Failed to stop manager');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -135,14 +129,15 @@ const ManagersPage: React.FC = () => {
     }
 
     const removeManager = (manager: ManagerResponse) => {
-        setIsLoading(true);
+        showLoader();
         deleteManager(authInfo!, manager.id)
             .then(() => {
-                setIsLoading(false);
+                hideLoader();
                 setManagers([...managers.filter(el => el.id !== manager.id)])
                 successToast('Manager deleted successfully');
             })
             .catch((ex) => {
+                hideLoader();
                 errorToast('Failed to delete manager');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -209,7 +204,8 @@ const ManagersPage: React.FC = () => {
 
     return (
         <div className="managers-content">
-            <CreateManagerDialog folders={folders} apiTokens={apiTokens} authInfo={authInfo!} logout={logout} open={isDialogOpen}
+            <CreateManagerDialog folders={folders} apiTokens={apiTokens} authInfo={authInfo!} logout={logout}
+                                 open={isDialogOpen}
                                  onClose={() => setIsDialogOpen(false)}/>
             <div className="managers-header">
                 <div className="managers-header-path">
@@ -272,7 +268,7 @@ const ManagersPage: React.FC = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {
+                            {   isTableLoading ? loadingTableRows({rows: 13, columns: 6}) :
                                 getManagers().map((manager, index) =>
                                     (
                                         <TableRow>
@@ -286,31 +282,6 @@ const ManagersPage: React.FC = () => {
                                             <TableCell align="center" id="cell">
                                                 <MenuIcon className="managers-menu-hover"
                                                           onClick={(event: React.MouseEvent<HTMLElement>) => handleMenuClick(event, index)}/>
-                                                {
-                                                    // manager.status !== 'ACTIVE' ?
-                                                    //     <Button onClick={() => changeManagerStatus(manager, 'ACTIVE')}
-                                                    //             variant='contained'
-                                                    //             style={{
-                                                    //                 textTransform: 'none',
-                                                    //                 backgroundColor: '#16C079',
-                                                    //                 color: 'white',
-                                                    //                 fontWeight: 700
-                                                    //             }}
-                                                    //     >
-                                                    //         Start
-                                                    //     </Button> :
-                                                    //     <Button onClick={() => changeManagerStatus(manager, 'INACTIVE')}
-                                                    //             variant='contained'
-                                                    //             style={{
-                                                    //                 textTransform: 'none',
-                                                    //                 backgroundColor: '#E7323B',
-                                                    //                 color: 'white',
-                                                    //                 fontWeight: 700
-                                                    //             }}
-                                                    //     >
-                                                    //         Stop
-                                                    //     </Button>
-                                                }
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -348,17 +319,6 @@ const ManagersPage: React.FC = () => {
                         Delete
                     </StyledMenuItem>
                 </Menu>
-            }
-            {isLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 3,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    height: '100%',
-                    width: '100%',
-                }}>
-                    <span className="managers-big-loading-banner" ref={spanRef}/>
-                </div>
             }
         </div>
     );

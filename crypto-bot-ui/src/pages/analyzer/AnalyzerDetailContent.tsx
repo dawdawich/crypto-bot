@@ -13,7 +13,7 @@ import {
     resetAnalyzerBulk
 } from "../../service/AnalyzerService";
 import {useAuth} from "../../context/AuthContext";
-import {errorToast, successToast} from "../toast/Toasts";
+import {errorToast, successToast} from "../../shared/toast/Toasts";
 import {formatDate} from "../../utils/date-utils";
 import {getMarketOptionFromValue, getStrategyOptionFromValue} from "../../model/AnalyzerConstants";
 import {FolderModel} from "../../model/FolderModel";
@@ -83,7 +83,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                     logout();
                 }
             });
-    }, [authInfo]);
+    }, [authInfo, logout]);
 
     useEffect(() => {
         if (!folderDialogStatus) {

@@ -3,12 +3,12 @@ import {Button, Dialog, DialogContent, DialogTitle, Slider, Stack, styled} from 
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
 import {ReactComponent as Logo} from '../../../assets/images/nav-panel/joatNavLogo.svg';
 import {sendToken} from "../../../utils/token-data";
-import {errorToast} from "../../toast/Toasts";
+import {errorToast} from "../../../shared/toast/Toasts";
+import {useLoader} from "../../../context/LoaderContext";
 
 interface BuyTokensDialogProps {
     open: boolean;
     onClose: () => void;
-    setIsLoading: (value: boolean) => void;
 }
 
 const StyledSlider = styled(Slider)({
@@ -18,26 +18,26 @@ const StyledSlider = styled(Slider)({
     }
 })
 
-const BuyTokensDialog: React.FC<BuyTokensDialogProps> = ({open, onClose, setIsLoading}) => {
+const BuyTokensDialog: React.FC<BuyTokensDialogProps> = ({open, onClose}) => {
+    const {showBannerLoader, hideLoader} = useLoader();
     const [value, setValue] = React.useState<number>(0);
 
-    const handleChange = (event: Event, newValue: number | number[]) => {
+    const handleChange = (_: Event, newValue: number | number[]) => {
         setValue(newValue as number);
     };
 
     const makePurchase = () => {
-        setIsLoading(true);
+        onClose();
+        showBannerLoader();
         sendToken(value / 100)
             .then(() => {
-
                 setTimeout(() => {
-                    setIsLoading(false);
-                    onClose();
+                    hideLoader();
                     window.location.reload();
                 }, 6000);
             })
             .catch(() => {
-                setIsLoading(false);
+                hideLoader();
                 errorToast('Failed to make a transaction');
             });
     };

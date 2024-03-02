@@ -8,7 +8,7 @@ import {sanitizeMiddle} from "../../utils/string-utils";
 import {Route, Switch, useLocation} from "wouter";
 import ApiTokenContent from "./ApiTokenContent";
 import SubscriptionContent from "./SubscriptionContent";
-import {successToast} from "../toast/Toasts";
+import {successToast} from "../../shared/toast/Toasts";
 
 const hoverStyle = {
     borderRadius: '4px',

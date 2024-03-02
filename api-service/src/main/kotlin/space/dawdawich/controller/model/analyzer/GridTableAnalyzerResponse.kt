@@ -27,13 +27,13 @@ data class GridTableAnalyzerResponse(
     val createTime: Long,
     val updateTime: Long,
     @EncodeDefault
-    var stabilityCoef: Double? = 0.0,
+    var stabilityCoef: Double = 0.0,
     @EncodeDefault
-    var pnl1: Int? = 0,
+    var pnl1: Int = 0,
     @EncodeDefault
-    var pnl12: Int? = 0,
+    var pnl12: Int = 0,
     @EncodeDefault
-    var pnl24: Int? = 0,
+    var pnl24: Int = 0,
 ) {
     constructor(documentAnalyzer: GridTableAnalyzerDocument) : this(
         documentAnalyzer.id,
@@ -52,9 +52,9 @@ data class GridTableAnalyzerResponse(
         documentAnalyzer.public,
         documentAnalyzer.createTime,
         documentAnalyzer.updateTime,
-        documentAnalyzer.stabilityCoef,
-        documentAnalyzer.pNl1,
-        documentAnalyzer.pNl12,
-        documentAnalyzer.pNl24,
+        documentAnalyzer.stabilityCoef ?: 0.0,
+        documentAnalyzer.pNl1 ?: 0,
+        documentAnalyzer.pNl12 ?: 0,
+        documentAnalyzer.pNl24 ?: 0,
     )
 }

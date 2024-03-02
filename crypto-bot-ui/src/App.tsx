@@ -8,7 +8,9 @@ import {AuthProvider} from "./context/AuthContext";
 import LeftNavPanel from "./pages/LeftNavPanel";
 import ContactPage from "./pages/contact/ContactPage";
 import ManagersPage from "./pages/manager/ManagersPage";
-import {createTheme, ThemeProvider} from "@mui/material";
+import {createTheme, Stack, ThemeProvider} from "@mui/material";
+import {LoaderProvider} from "./context/LoaderContext";
+import Loader from "./shared/Loader";
 
 const App: React.FC = () => {
     const theme = createTheme({
@@ -20,22 +22,22 @@ const App: React.FC = () => {
     return (
         <ThemeProvider theme={theme}>
             <AuthProvider>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row'
-                }}>
-                    <LeftNavPanel/>
-                    <div style={{flexGrow: '1', backgroundColor: '#1D2024'}}>
-                        <Switch>
-                            <Route path="/about-us" component={ContactPage}/>
-                            <Route path="/analyzer/:path*" component={AnalyzersPage}/>
-                            <Route path="/account/:path*" component={AccountPage}/>
-                            <Route path="/manager" component={ManagersPage}/>
-                            <Route path="/symbols" component={SymbolsPage}/>
-                            <Route path="/monitoring" component={MonitoringPage}/>
-                        </Switch>
-                    </div>
-                </div>
+                <LoaderProvider>
+                    <Loader />
+                    <Stack direction="row">
+                        <LeftNavPanel/>
+                        <div style={{flexGrow: '1', backgroundColor: '#1D2024'}}>
+                            <Switch>
+                                <Route path="/about-us" component={ContactPage}/>
+                                <Route path="/analyzer/:path*" component={AnalyzersPage}/>
+                                <Route path="/account/:path*" component={AccountPage}/>
+                                <Route path="/manager" component={ManagersPage}/>
+                                <Route path="/symbols" component={SymbolsPage}/>
+                                <Route path="/monitoring" component={MonitoringPage}/>
+                            </Switch>
+                        </div>
+                    </Stack>
+                </LoaderProvider>
             </AuthProvider>
         </ThemeProvider>
     );

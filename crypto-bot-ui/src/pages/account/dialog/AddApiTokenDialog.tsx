@@ -1,22 +1,15 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {AuthInfo} from "../../../model/AuthInfo";
 import {ApiToken} from "../../../model/ApiToken";
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    styled
-} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, styled} from "@mui/material";
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
-import loadingSpinner from '../../../assets/images/loading-spinner.svga';
 import Select from 'react-select';
 import "../../../css/pages/account/dialog/ApiTokenDialogStyles.css";
 import {addApiToken} from "../../../service/AccountService";
-import {errorToast} from "../../toast/Toasts";
+import {errorToast} from "../../../shared/toast/Toasts";
 import {AntSwitch, SelectStyle} from "../../../utils/styles/element-styles";
 import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
+import {useLoader} from "../../../context/LoaderContext";
 
 interface AddApiTokenDialogProps {
     authInfo: AuthInfo;
@@ -32,9 +25,7 @@ const FieldContainer = styled('div')({
 });
 
 const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, onCreate}) => {
-    const spanRef = useRef<HTMLSpanElement>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [animation, setAnimation] = useState('');
+    const {showBannerLoader, hideLoader} = useLoader();
     const [apiTokenData, setData] = useState<{
         market: string;
         apiKey: string;
@@ -58,17 +49,6 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, 
         }
     }, [onClose]);
 
-    useEffect(() => {
-        fetch(loadingSpinner)
-            .then(response => response.text())
-            .then(text => {
-                setAnimation(text)
-                if (spanRef.current) {
-                    spanRef.current.innerHTML = animation
-                }
-            });
-    }, [animation, isLoading]);
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value, type, checked} = e.target;
         setData({
@@ -78,22 +58,20 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, 
     };
 
     const handleSubmit = () => {
-        setIsLoading(true);
+        onClose();
+        showBannerLoader();
         addApiToken(apiTokenData, authInfo)
             .then((id) => {
-                setTimeout(() => {
-                    setIsLoading(false);
-                    onCreate({
-                        id: id as string,
-                        apiKey: apiTokenData.apiKey as string,
-                        market: apiTokenData.market,
-                        test: apiTokenData.demo as boolean
-                    })
-                    onClose();
-                }, 500);
+                hideLoader();
+                onCreate({
+                    id: id as string,
+                    apiKey: apiTokenData.apiKey as string,
+                    market: apiTokenData.market,
+                    test: apiTokenData.demo as boolean
+                })
             })
             .catch((ex) => {
-                setIsLoading(false);
+                hideLoader();
                 errorToast("Failed to add API token");
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -203,19 +181,6 @@ const AddApiTokenDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, 
                     Create
                 </Button>
             </DialogActions>
-            {isLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    width: '100%',
-                    height: '100%'
-                }}>
-                    <span style={{
-                        width: '200px'
-                    }} ref={spanRef}/>
-                </div>
-            }
         </Dialog>
     );
 }

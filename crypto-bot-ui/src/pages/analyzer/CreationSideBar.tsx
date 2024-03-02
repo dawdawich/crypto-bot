@@ -5,7 +5,7 @@ import {ReactComponent as CrossIcon} from '../../assets/images/action-icon/cross
 import Select from "react-select";
 import {AntSwitch, MultiSelectStyle, SelectStyle} from "../../utils/styles/element-styles";
 import {FolderModel} from "../../model/FolderModel";
-import {errorToast} from "../toast/Toasts";
+import {errorToast} from "../../shared/toast/Toasts";
 import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
 import {

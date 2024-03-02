@@ -1,15 +1,15 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle, styled} from "@mui/material";
 import {AuthInfo} from "../../../model/AuthInfo";
 import {FolderModel} from "../../../model/FolderModel";
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
-import loadingSpinner from "../../../assets/images/loading-spinner.svga";
 import {addAnalyzersToFolder, createFolder, deleteFolder, renameFolder} from "../../../service/FolderService";
-import {errorToast, successToast} from "../../toast/Toasts";
+import {errorToast, successToast} from "../../../shared/toast/Toasts";
 import "../../../css/pages/analyzer/dialog/FolderDialogStyles.css"
 import {SelectStyle} from "../../../utils/styles/element-styles";
 import Select, {ActionMeta} from "react-select";
 import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
+import {useLoader} from "../../../context/LoaderContext";
 
 export type FolderActionType = 'create' | 'rename' | 'delete' | 'addToFolder';
 
@@ -47,9 +47,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                                                           }) => {
     const [choosedFolder, setChoosedFolder] = useState<FolderModel | null>();
     const [nameText, setNameText] = useState('');
-    const spanRef = useRef<HTMLSpanElement>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [animation, setAnimation] = useState('');
+    const {showBannerLoader, hideLoader} = useLoader();
 
     useEffect(() => {
         if (!!currentFolder) {
@@ -57,33 +55,20 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
         }
     }, [currentFolder]);
 
-    useEffect(() => {
-        if (isLoading) {
-            fetch(loadingSpinner)
-                .then(response => response.text())
-                .then(text => {
-                    setAnimation(text)
-                    if (spanRef.current) {
-                        spanRef.current.innerHTML = animation
-                    }
-                });
-        }
-    }, [animation, isLoading]);
-
     const handleSubmit = () => {
         switch (actionType) {
             case "create":
-                setIsLoading(true);
+                showBannerLoader();
                 createFolder(authInfo, nameText)
                     .then((folder) => {
-                        setIsLoading(false);
+                        hideLoader();
                         setNameText('');
                         onCreate(folder);
                         onClose();
                         successToast(`Folder '${nameText}' created successfully.`);
                     })
                     .catch((ex) => {
-                        setIsLoading(false);
+                        hideLoader();
                         errorToast(`Failed to create folder '${nameText}'.`);
                         if (ex instanceof UnauthorizedError) {
                             logout();
@@ -92,16 +77,16 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                 break;
             case "delete":
                 if (!!currentFolder) {
-                    setIsLoading(true);
+                    showBannerLoader();
                     deleteFolder(authInfo, currentFolder.id)
                         .then(() => {
-                            setIsLoading(false);
+                            hideLoader();
                             onDelete(currentFolder);
                             onClose();
                             successToast(`Folder '${currentFolder.name}' deleted successfully.`);
                         })
                         .catch((ex) => {
-                            setIsLoading(false);
+                            hideLoader();
                             errorToast(`Failed to delete folder '${currentFolder.name}'.`);
                             if (ex instanceof UnauthorizedError) {
                                 logout();
@@ -111,10 +96,10 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                 break;
             case "rename":
                 if (!!currentFolder) {
-                    setIsLoading(true);
+                    showBannerLoader();
                     renameFolder(authInfo, currentFolder.id, nameText)
                         .then((result) => {
-                            setIsLoading(false);
+                            hideLoader();
                             if (result) {
                                 onRename({id: currentFolder.id, name: nameText});
                                 onClose();
@@ -124,7 +109,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                             }
                         })
                         .catch((ex) => {
-                            setIsLoading(false);
+                            hideLoader();
                             errorToast(`Failed to rename folder '${currentFolder.name}'.`);
                             if (ex instanceof UnauthorizedError) {
                                 logout();
@@ -134,15 +119,15 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                 break;
             case "addToFolder":
                 if (!!choosedFolder && analyzerIds.length > 0) {
-                    setIsLoading(true);
+                    showBannerLoader();
                     addAnalyzersToFolder(authInfo, choosedFolder.id, analyzerIds)
                         .then(() => {
-                            setIsLoading(false);
+                            hideLoader();
                             onClose();
                             successToast(`Successfully added analyzer(s) to folder.`);
                         })
                         .catch((ex) => {
-                            setIsLoading(false);
+                            hideLoader();
                             errorToast(`Failed to add analyzer(s) to folder.`);
                             if (ex instanceof UnauthorizedError) {
                                 logout();
@@ -152,7 +137,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
         }
     };
 
-    const selectedFolderChange = (option: any, actionMeta: ActionMeta<unknown>) => {
+    const selectedFolderChange = (option: any, _: ActionMeta<unknown>) => {
         setChoosedFolder({id: option.value, name: option.label});
     };
 
@@ -260,18 +245,6 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                     {actionButtonText}
                 </Button>
             </DialogActions>
-            {isLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 4,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    width: '100%',
-                    height: '100%',
-                    alignSelf: "center"
-                }}>
-                    <span className="dialog-loading-banner" ref={spanRef}/>
-                </div>
-            }
         </Dialog>
     );
 }

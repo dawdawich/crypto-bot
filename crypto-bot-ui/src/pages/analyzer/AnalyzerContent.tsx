@@ -18,7 +18,6 @@ import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import "../../css/pages/analyzer/AnalyzerContentStyles.css";
 import "../../css/pages/analyzer/SideBlock.css";
 import {AnalyzerResponse} from "../../model/AnalyzerResponse";
-import loadingSpinner from "../../assets/images/loading-spinner.svga";
 import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-icon.svg";
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import {ReactComponent as MenuHeaderIcon} from "../../assets/images/analyzer/menu-header-icon.svg";
@@ -30,9 +29,10 @@ import {
     createAnalyzerBulk,
     deleteAnalyzerBulk,
     fetchAnalyzersList,
-    fetchTopAnalyzersData, resetAnalyzerBulk
+    fetchTopAnalyzersData,
+    resetAnalyzerBulk
 } from "../../service/AnalyzerService";
-import {errorToast, successToast} from "../toast/Toasts";
+import {errorToast, successToast} from "../../shared/toast/Toasts";
 import {useAuth} from "../../context/AuthContext";
 import {MultiSelectStyle, RowDiv} from "../../utils/styles/element-styles";
 import Select, {ActionMeta, components, OptionProps} from "react-select";
@@ -45,6 +45,8 @@ import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
 import HideBox from "./HideBox";
 import {trimDecimalNumbers} from "../../utils/number-utils";
+import {useLoader} from "../../context/LoaderContext";
+import loadingTableRows from "../../shared/LoadingTableRows";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -138,20 +140,17 @@ type SortData = {
 
 
 const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, addAnalyzersToFolder, folders}) => {
-    const spanRef = useRef<HTMLSpanElement>(null);
     const sideRef = useRef<HTMLDivElement>(null);
     const diapasonHeaderRef = useRef<HTMLDivElement>(null);
     const stabilityHeaderRef = useRef<HTMLDivElement>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isBigLoading, setIsBigLoading] = useState(false);
+    const [isTableLoading, setIsTableLoading] = useState(false);
     const [order, setOrder] = React.useState<Order>('desc');
     const [orderBy, setOrderBy] = React.useState<SortHeaders>('none');
-    const [animation, setAnimation] = useState('');
     const [pageName, setPageName] = useState('Unknown');
     const [pageType, setPageType] = useState<'TOP' | 'LIST' | 'FOLDER' | 'NONE'>('NONE');
     const [processedFolderId, setProcessedFolderId] = useState<string | null>(null);
-    const [selectedStatusFilter, setStatusFilter] = useState<ActiveStatus>('ALL')
-    const [selectedSymbolFilter, setSymbolFilter] = useState<string[]>([])
+    const [selectedStatusFilter, setSelectedStatusFilter] = useState<ActiveStatus>('ALL')
+    const [selectedSymbolFilter, setSelectedSymbolFilter] = useState<string[]>([])
     const [selectedAnalyzers, setSelectedAnalyzers] = useState<readonly number[]>([]);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [symbols, setSymbols] = useState<string[]>([]);
@@ -164,6 +163,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [, navigate] = useLocation();
     const {authInfo, logout} = useAuth();
+    const {showLoader, hideLoader} = useLoader();
     const open = Boolean(anchorEl);
 
     if (!authInfo) {
@@ -178,7 +178,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         name: string,
         direction: Order
     } | null, folderId: string | null) => {
-        setIsLoading(true);
+        setIsTableLoading(true);
         fetchAnalyzersList(authInfo!, 0, 20, statusFilter, symbolFilter, sortOption, folderId)
             .then(response => {
                 setData([...response.analyzers]);
@@ -186,10 +186,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 setActiveSize(response.activeSize);
                 setNotActiveSize(response.notActiveSize);
                 setDataSize(response.totalSize);
-                setIsLoading(false);
+                setIsTableLoading(false);
             })
             .catch(ex => {
-                setIsLoading(false);
+                setIsTableLoading(false);
                 errorToast("Failed to fetch analyzers.");
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -210,7 +210,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     setPageName("All Analyzers");
                     break;
                 default:
-                    if (!!folderName) {
+                    if (folderName) {
                         setPageType('FOLDER');
                         setPageName(folderName);
                         setProcessedFolderId(folderId);
@@ -229,19 +229,19 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     }, [folderId, pageType, folderName]);
 
     useEffect(() => {
-        setIsLoading(true);
+        setIsTableLoading(true);
         switch (pageType) {
             case 'TOP':
                 fetchTopAnalyzersData()
                     .then(data => {
-                        setIsLoading(false);
+                        setIsTableLoading(false);
                         if (Array.isArray(data)) {
                             setData(data);
                             setDataSize(data.length)
                         }
                     })
                     .catch((ex) => {
-                        setIsLoading(false);
+                        setIsTableLoading(false);
                         errorToast("Failed to fetch top analyzers");
                         console.error(ex);
                     });
@@ -254,17 +254,6 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 break;
         }
     }, [authInfo, processedFolderId, pageType, updateAnalyzersList]);
-
-    useEffect(() => {
-        fetch(loadingSpinner)
-            .then(response => response.text())
-            .then(text => {
-                setAnimation(text)
-                if (spanRef.current) {
-                    spanRef.current.innerHTML = animation
-                }
-            });
-    }, [animation, isLoading, isBigLoading]);
 
     const handleMenuClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
         setCurrentIndex(index);
@@ -325,16 +314,16 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     const deleteAnalyzers = (analyzers: AnalyzerResponse[]) => {
         if (analyzers.length > 0) {
-            setIsBigLoading(true);
+            showLoader();
             deleteAnalyzerBulk(authInfo!, analyzers.map(e => e.id))
                 .then(() => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     successToast('Analyzers deleted successfully.');
                     setSelectedAnalyzers([]);
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 })
                 .catch((ex) => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     errorToast('Failed to delete analyzers.');
                     if (ex instanceof UnauthorizedError) {
                         logout();
@@ -345,16 +334,16 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     const resetAnalyzers = (analyzers: AnalyzerResponse[]) => {
         if (analyzers.length > 0) {
-            setIsBigLoading(true);
+            showLoader();
             resetAnalyzerBulk(authInfo!, analyzers.map(e => e.id))
                 .then(() => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     successToast('Analyzers updated successfully.');
                     setSelectedAnalyzers([]);
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 })
                 .catch((ex) => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     errorToast('Failed to updated analyzers.');
                     if (ex instanceof UnauthorizedError) {
                         logout();
@@ -365,10 +354,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     const setCurrentAnalyzerStatus = (analyzers: AnalyzerResponse[], status: boolean) => {
         if (analyzers.length > 0) {
-            setIsBigLoading(true);
+            showLoader();
             changeBulkAnalyzerStatus(authInfo!, analyzers.map(e => e.id), status)
                 .then(() => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     analyzers.forEach(e => e.isActive = status);
                     setData([...data]);
                     successToast(`Analyzers ${status ? 'activated' : 'deactivated'} successfully.`);
@@ -377,7 +366,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     setNotActiveSize(notActiveSize - (status ? analyzers.length : -analyzers.length))
                 })
                 .catch((ex) => {
-                    setIsBigLoading(false);
+                    hideLoader();
                     setSelectedAnalyzers([]);
                     errorToast(`Failed to ${status ? 'activate' : 'deactivate'} analyzers.`);
                     if (ex instanceof UnauthorizedError) {
@@ -390,17 +379,17 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     }
 
     const addAnalyzer = (analyzer: AnalyzerModel) => {
-        setIsBigLoading(true);
+        showLoader();
         createAnalyzer(authInfo!, analyzer)
             .then(() => {
-                setIsBigLoading(false);
+                hideLoader();
                 successToast("Analyzer created");
                 if (pageType === 'LIST' || (pageType === 'FOLDER' && analyzer.folders.indexOf(folderId) > -1)) {
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 }
             })
             .catch((ex) => {
-                setIsBigLoading(false)
+                hideLoader()
                 errorToast('Failed to create analyzer');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -411,17 +400,17 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     }
 
     const addAnalyzersBulk = (analyzers: AnalyzerModelBulk) => {
-        setIsBigLoading(true);
+        showLoader();
         createAnalyzerBulk(authInfo!, analyzers)
             .then(() => {
-                setIsBigLoading(false);
+                hideLoader();
                 successToast("Analyzers created");
                 if (pageType === 'LIST' || (pageType === 'FOLDER' && analyzers.folders.indexOf(folderId) > -1)) {
                     updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
                 }
             })
             .catch((ex) => {
-                setIsBigLoading(false)
+                hideLoader()
                 errorToast('Failed to create analyzers');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -433,11 +422,11 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     const closeRightDrawer = () => {
         setDuplicatedAnalyzer(null);
-        return sideRef.current!.style.width = '0px';
+        sideRef.current!.style.width = '0px';
     };
 
     const openRightDrawer = () => {
-        return sideRef.current!.style.width = '320px';
+        sideRef.current!.style.width = '320px';
     };
 
     const copyCurrentAnalyzerId = () => {
@@ -447,7 +436,16 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         handleMenuClose();
     };
 
-    const identifyStatus = (status: string) => status === 'ACTIVE' ? true : status === 'NOT_ACTIVE' ? false : null;
+    const identifyStatus = (status: ActiveStatus) => {
+        switch (status) {
+            case "ACTIVE":
+                return true;
+            case "NOT_ACTIVE":
+                return false;
+            case "ALL":
+                return null;
+        }
+    };
     const getFolderFilter = () => pageType === 'FOLDER' ? folderId : null;
 
 
@@ -460,22 +458,22 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     const changeActiveFilter = (status: ActiveStatus) => {
         if (status !== selectedStatusFilter) {
-            setStatusFilter(status);
+            setSelectedStatusFilter(status);
             updateAnalyzersList(identifyStatus(status), selectedSymbolFilter, getSortObject(), getFolderFilter());
         }
     }
 
-    const selectedSymbolsChange = (options: unknown, actionMeta: ActionMeta<unknown>) => {
+    const selectedSymbolsChange = (options: unknown, _: ActionMeta<unknown>) => {
         if (Array.isArray(options) && options.length > 0) {
-            const symbols = options.map(element => (element as any).value);
-            setSymbolFilter(symbols);
+            const symbols = options.map(element => element.value);
+            setSelectedSymbolFilter(symbols);
             updateAnalyzersList(identifyStatus(selectedStatusFilter), symbols, getSortObject(), getFolderFilter());
         } else if (selectedSymbolFilter.length > 0) {
-            setSymbolFilter([]);
+            setSelectedSymbolFilter([]);
             updateAnalyzersList(identifyStatus(selectedStatusFilter), [], getSortObject(), getFolderFilter());
         }
-
     };
+
     const handleSortChange = (key: SortHeaders) => {
         let data: SortData | null = {name: key, direction: 'asc'};
         if (key === orderBy && order === 'desc') {
@@ -515,8 +513,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         transition: '0.3s'
     });
 
-    const getPnLColorByValue = (value: number) => value < 0 ? '#E7323B' : value > 0 ? '#16C079' : 'white';
-    const getSignByValue = (value: number) => value > 0 ? '+' :  '';
+    const getPnLColorByValue = (value: number) => {
+        if (value === 0) {
+            return 'white';
+        }
+        return value < 0 ? '#E7323B' : '#16C079';
+    };
+    const getSignByValue = (value: number) => value > 0 ? '+' : '';
 
     const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => ({
         diapason: analyzer.diapason,
@@ -533,6 +536,17 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         market: analyzer.market,
         demoAccount: analyzer.demoAccount
     });
+
+    const getLoadingRows = () => {
+        const columnsNumber = pageType === 'TOP' ? 10 : 13;
+        const preFixCells = pageType === 'TOP' ? undefined : 1;
+        return loadingTableRows({
+            rows: 13,
+            columns: columnsNumber,
+            prefixSkipColumns: preFixCells,
+            postfixSkipColumns: 1
+        });
+    };
 
     return (
         <div className="analyzer-content-body">
@@ -568,11 +582,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     <div className="analyzer-header-container" style={{minHeight: '50px', marginBottom: '8px'}}>
                         <RowDiv>
                             <div
+                                role="button"
                                 onClick={() => changeActiveFilter('ALL')}
                                 className={selectedStatusFilter === 'ALL' ? "analyzer-active-header-items-count" : "analyzer-header-items-count"}>
                                 <div>{dataSize} Analyzers</div>
                             </div>
                             <div
+                                role="button"
                                 onClick={() => changeActiveFilter('ACTIVE')}
                                 className={selectedStatusFilter === 'ACTIVE' ? "analyzer-active-header-items-count" : "analyzer-header-items-count"}
                                 style={{marginLeft: '4px'}}>
@@ -580,6 +596,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                 <div>{activeSize} Active</div>
                             </div>
                             <div
+                                role="button"
                                 onClick={() => changeActiveFilter('NOT_ACTIVE')}
                                 className={selectedStatusFilter === 'NOT_ACTIVE' ? "analyzer-active-header-items-count" : "analyzer-header-items-count"}
                                 style={{marginLeft: '4px'}}>
@@ -606,105 +623,97 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     </div>
                 }
             </div>
-            {isLoading ?
-                <div style={{
-                    flexGrow: 1,
-                    width: '50%',
-                    height: '50%',
-                    alignSelf: "center"
-                }}>
-                    <span ref={spanRef}/>
-                </div> :
-                dataSize > 0 &&
-                <TableContainer style={{overflowY: 'auto'}}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow id="analyzer-table-headers">
-                                {isListPage() &&
-                                    <TableCell id="cell" padding="checkbox">
-                                        <StyledCheckbox
-                                            onChange={handleSelectAllClick}
-                                            checked={rowsCount > 0 && selectedAnalyzers.length === rowsCount}
-                                        />
-                                    </TableCell>
-                                }
-                                <TableCell id="cell">Symbol</TableCell>
-                                {isListPage() && <TableCell width="82px" align="center" id="cell">Status</TableCell>}
-                                <TableCell id="cell" ref={diapasonHeaderRef}>
-                                    <HeaderCellContent onClick={() => handleSortChange('diapason')}>
-                                        Diapason {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'diapason'}/>}
-                                    </HeaderCellContent>
+            <TableContainer style={{overflowY: 'auto'}}>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow id="analyzer-table-headers">
+                            {isListPage() &&
+                                <TableCell id="cell" padding="checkbox">
+                                    <StyledCheckbox
+                                        onChange={handleSelectAllClick}
+                                        checked={rowsCount > 0 && selectedAnalyzers.length === rowsCount}
+                                    />
                                 </TableCell>
+                            }
+                            <TableCell id="cell">Symbol</TableCell>
+                            {isListPage() && <TableCell width="82px" align="center" id="cell">Status</TableCell>}
+                            <TableCell id="cell" ref={diapasonHeaderRef}>
+                                <HeaderCellContent onClick={() => handleSortChange('diapason')}>
+                                    Diapason {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'diapason'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('gridSize')}>
+                                    Grid Size {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'gridSize'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('multiplier')}>
+                                    Multiplier {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'multiplier'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('positionStopLoss')}>
+                                    SL {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'positionStopLoss'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell align="left" id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('positionTakeProfit')}>
+                                    TP {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'positionTakeProfit'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            {isListPage() &&
                                 <TableCell id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('gridSize')}>
-                                        Grid Size {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'gridSize'}/>}
+                                    <HeaderCellContent onClick={() => handleSortChange('startCapital')}>
+                                        Start Capital <HeaderCellIcon direction={order}
+                                                                      active={orderBy === 'startCapital'}/>
                                     </HeaderCellContent>
-                                </TableCell>
+                                </TableCell>}
+                            {isListPage() &&
                                 <TableCell id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('multiplier')}>
-                                        Multiplier {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'multiplier'}/>}
+                                    <HeaderCellContent onClick={() => handleSortChange('money')}>
+                                        Total Equity <HeaderCellIcon direction={order}
+                                                                     active={orderBy === 'money'}/>
                                     </HeaderCellContent>
-                                </TableCell>
-                                <TableCell id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('positionStopLoss')}>
-                                        SL {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'positionStopLoss'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                <TableCell align="left" id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('positionTakeProfit')}>
-                                        TP {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'positionTakeProfit'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                {isListPage() &&
-                                    <TableCell id="cell">
-                                        <HeaderCellContent onClick={() => handleSortChange('startCapital')}>
-                                            Start Capital <HeaderCellIcon direction={order}
-                                                                          active={orderBy === 'startCapital'}/>
-                                        </HeaderCellContent>
-                                    </TableCell>}
-                                {isListPage() &&
-                                    <TableCell id="cell">
-                                        <HeaderCellContent onClick={() => handleSortChange('money')}>
-                                            Total Equity <HeaderCellIcon direction={order}
-                                                                         active={orderBy === 'money'}/>
-                                        </HeaderCellContent>
-                                    </TableCell>}
-                                <TableCell align="center" id="cell" ref={stabilityHeaderRef}>
-                                    <HeaderCellContent onClick={() => handleSortChange('stabilityCoef')}>
-                                        Stability {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'stabilityCoef'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                <TableCell align="center" id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('pNl1')}>
-                                        1h % {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl1'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                <TableCell align="center" id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('pNl12')}>
-                                        12h % {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl12'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                <TableCell align="center" id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('pNl24')}>
-                                        24h % {isListPage() &&
-                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl24'}/>}
-                                    </HeaderCellContent>
-                                </TableCell>
-                                <TableCell align="center" id="cell">
-                                    {isListPage() && <MenuHeaderIcon/>}
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody style={{position: 'relative'}}>
-                            {!!data && Array.isArray(data) && data.map((analyzer, index) => {
+                                </TableCell>}
+                            <TableCell align="center" id="cell" ref={stabilityHeaderRef}>
+                                <HeaderCellContent onClick={() => handleSortChange('stabilityCoef')}>
+                                    Stability {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'stabilityCoef'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell align="center" id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('pNl1')}>
+                                    1h % {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl1'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell align="center" id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('pNl12')}>
+                                    12h % {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl12'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell align="center" id="cell">
+                                <HeaderCellContent onClick={() => handleSortChange('pNl24')}>
+                                    24h % {isListPage() &&
+                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl24'}/>}
+                                </HeaderCellContent>
+                            </TableCell>
+                            <TableCell align="center" id="cell">
+                                {isListPage() && <MenuHeaderIcon/>}
+                            </TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody style={{position: 'relative'}}>
+                        {!!data &&
+                        isTableLoading ? getLoadingRows() :
+                            Array.isArray(data) && data.map((analyzer, index) => {
                                 const isItemSelected = isSelected(index);
                                 return (
                                     <TableRow key={analyzer.id} id="analyzer-table-content">
@@ -735,23 +744,25 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         <TableCell id="cell">{analyzer.diapason}%</TableCell>
                                         <TableCell id="cell">{analyzer.gridSize}</TableCell>
                                         <TableCell id="cell">x{analyzer.multiplier}</TableCell>
-                                        <TableCell id="cell"
-                                                   style={{color: 'red'}}>{analyzer.positionStopLoss}%</TableCell>
-                                        <TableCell id="cell" align="left"
-                                                   style={{color: '#D0FF12'}}>{analyzer.positionTakeProfit}%</TableCell>
+                                        <TableCell id="cell">{analyzer.positionStopLoss}%</TableCell>
+                                        <TableCell id="cell" align="left">{analyzer.positionTakeProfit}%</TableCell>
                                         {isListPage() &&
                                             <TableCell id="cell" align="left">{analyzer.startCapital}</TableCell>}
                                         {isListPage() &&
                                             <TableCell id="cell"
                                                        align="left">{!!analyzer.money && trimDecimalNumbers(analyzer.money)}</TableCell>}
-                                        <TableCell align="left" id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl1)}}>
+                                        <TableCell align="left"
+                                                   id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
+                                        <TableCell align="left" id="cell"
+                                                   style={{color: getPnLColorByValue(analyzer.pnl1)}}>
                                             {getSignByValue(analyzer.pnl1)}{trimDecimalNumbers(analyzer.pnl1, 1)} %
                                         </TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
+                                        <TableCell align="left" id="cell"
+                                                   style={{color: getPnLColorByValue(analyzer.pnl12)}}>
                                             {getSignByValue(analyzer.pnl12)}{trimDecimalNumbers(analyzer.pnl12, 1)} %
                                         </TableCell>
-                                        <TableCell align="left" id="cell" style={{color: getPnLColorByValue(analyzer.pnl12)}}>
+                                        <TableCell align="left" id="cell"
+                                                   style={{color: getPnLColorByValue(analyzer.pnl24)}}>
                                             {getSignByValue(analyzer.pnl24)}{trimDecimalNumbers(analyzer.pnl24, 1)} %
                                         </TableCell>
                                         <TableCell align={isListPage() ? "center" : "right"} id="cell">
@@ -774,15 +785,15 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         </TableCell>
                                         {
                                             !authInfo &&
-                                            <HideBox diapasonRef={diapasonHeaderRef} stabilityRef={stabilityHeaderRef} />
+                                            <HideBox diapasonRef={diapasonHeaderRef} stabilityRef={stabilityHeaderRef}/>
                                         }
                                     </TableRow>
                                 );
                             })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            }
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
             {isListPage() && currentIndex > -1 &&
                 <Menu
                     anchorEl={anchorEl}
@@ -905,17 +916,6 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                             }
                         </div>
                     </div>
-                </div>
-            }
-            {isBigLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 3,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    height: '100%',
-                    width: '100%',
-                }}>
-                    <span className="analyzer-big-loading-banner" ref={spanRef}/>
                 </div>
             }
         </div>

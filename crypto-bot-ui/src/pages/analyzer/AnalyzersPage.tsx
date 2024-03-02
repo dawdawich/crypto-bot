@@ -10,7 +10,7 @@ import AnalyzerContent from "./AnalyzerContent";
 import {useAuth} from "../../context/AuthContext";
 import {FolderModel} from "../../model/FolderModel";
 import {fetchFolderList} from "../../service/FolderService";
-import {errorToast} from "../toast/Toasts";
+import {errorToast} from "../../shared/toast/Toasts";
 import FolderDialog, {FolderActionType} from "./dialog/FolderDialog";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
 import AnalyzerDetailContent from "./AnalyzerDetailContent";

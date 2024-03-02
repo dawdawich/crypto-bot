@@ -67,6 +67,7 @@ class AccountTransactionService(
                         .asSequence()
                         .filterIsInstance<Transaction>()
                         .filter { tx -> JOAT_CONTRACT_ADDRESS.equals(tx.to, true) }
+                        .filter { tx -> web3Client.ethGetTransactionReceipt(tx.hash).send().transactionReceipt.isPresent }
                         .map { tx ->
                             tx to FunctionReturnDecoder.decode(
                                 tx.input.substring(SHIFT_TX_INPUT_VALUE),

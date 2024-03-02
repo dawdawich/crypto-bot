@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Slider, styled, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import {useLocation} from "wouter";
@@ -8,11 +8,11 @@ import {useAuth} from "../../context/AuthContext";
 import {TransactionResponse} from "../../model/TransactionResponse";
 import {getAccountTransaction} from "../../service/AccountService";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
-import {errorToast} from "../toast/Toasts";
+import {errorToast} from "../../shared/toast/Toasts";
 import {getActiveAnalyzersCount} from "../../service/AnalyzerService";
 import {formatDate} from "../../utils/date-utils";
 import BuyTokensDialog from "./dialog/BuyTokensDialog";
-import loadingSpinner from "../../assets/images/loading-spinner.svga";
+import loadingTableRows from "../../shared/LoadingTableRows";
 
 const PreviousPath = styled('div')({
     font: plexFont,
@@ -39,10 +39,8 @@ const Circle = styled('span')({
 const thirtyDaysInSeconds = 2_592_000;
 
 const SubscriptionContent: React.FC = () => {
-    const [animation, setAnimation] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const spanRef = useRef<HTMLSpanElement>(null);
     const {authInfo, logout} = useAuth();
+    const [isTableLoading, setIsTableLoading] = useState(false);
     const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
     const [activeAnalyzersCount, setActiveAnalyzersCount] = useState(0);
     const [possibleAnalyzersCount, setPossibleAnalyzersCount] = useState(0);
@@ -56,20 +54,14 @@ const SubscriptionContent: React.FC = () => {
     document.title = 'Subscription';
 
     useEffect(() => {
-        fetch(loadingSpinner)
-            .then(response => response.text())
-            .then(text => {
-                setAnimation(text)
-                if (spanRef.current) {
-                    spanRef.current.innerHTML = animation
-                }
-            });
-    }, [animation, isLoading]);
-
-    useEffect(() => {
+        setIsTableLoading(true);
         getAccountTransaction(authInfo!)
-            .then(response => setTransactions(response))
+            .then(response => {
+                setIsTableLoading(false);
+                setTransactions(response);
+            })
             .catch(ex => {
+                setIsTableLoading(false);
                 if (ex instanceof UnauthorizedError) {
                     logout();
                 }
@@ -102,7 +94,7 @@ const SubscriptionContent: React.FC = () => {
             return (<div style={{color: '#E7323B'}}>Expired</div>);
         }
     };
-    
+
     const getNextMonth = (time: number) => formatDate(time + thirtyDaysInSeconds * 1000);
 
     return (
@@ -157,31 +149,24 @@ const SubscriptionContent: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {transactions
-                            .sort((a, b) => b.operationDate - a.operationDate)
-                            .map((transaction) => (
-                            <TableRow key={transaction.operationDate}>
-                                <TableCell id="cell">{identifyStatus(transaction.operationDate)}</TableCell>
-                                <TableCell id="cell">{transaction.amount * 100} Analyzers</TableCell>
-                                <TableCell id="cell">{formatDate(transaction.operationDate * 1000)}</TableCell>
-                                <TableCell id="cell">{getNextMonth(transaction.operationDate * 1000)}</TableCell>
-                            </TableRow>
-                        ))}
+                        {
+                            isTableLoading ? loadingTableRows({rows: 13, columns: 4, postfixSkipColumns: 1}) :
+                                transactions
+                                    .sort((a, b) => b.operationDate - a.operationDate)
+                                    .map((transaction) => (
+                                        <TableRow key={transaction.operationDate}>
+                                            <TableCell id="cell">{identifyStatus(transaction.operationDate)}</TableCell>
+                                            <TableCell id="cell">{transaction.amount * 100} Analyzers</TableCell>
+                                            <TableCell
+                                                id="cell">{formatDate(transaction.operationDate * 1000)}</TableCell>
+                                            <TableCell
+                                                id="cell">{getNextMonth(transaction.operationDate * 1000)}</TableCell>
+                                        </TableRow>
+                                    ))}
                     </TableBody>
                 </Table>
             </TableContainer>
-            <BuyTokensDialog open={isDialogOpen} setIsLoading={setIsLoading} onClose={() => setIsDialogOpen(false)} />
-            {isLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 2300,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    height: '100%',
-                    width: '100%',
-                }}>
-                    <span className="big-loading-banner" ref={spanRef} />
-                </div>
-            }
+            <BuyTokensDialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}/>
         </div>
     );
 }

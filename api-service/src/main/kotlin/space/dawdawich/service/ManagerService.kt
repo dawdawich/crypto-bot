@@ -4,8 +4,8 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
-import space.dawdawich.controller.model.ManagerRequest
-import space.dawdawich.controller.model.ManagerResponse
+import space.dawdawich.controller.model.manager.ManagerRequest
+import space.dawdawich.controller.model.manager.ManagerResponse
 import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.mongo.ApiAccessTokenRepository

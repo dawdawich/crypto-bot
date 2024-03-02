@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useState} from "react";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
 import {AuthInfo} from "../../../model/AuthInfo";
 import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
@@ -8,9 +8,9 @@ import {AntSwitch, SelectStyle} from "../../../utils/styles/element-styles";
 import "../../../css/pages/manager/dialog/CreateManagerDialogStyles.css";
 import {FolderModel} from "../../../model/FolderModel";
 import {createManager} from "../../../service/ManagerService";
-import {errorToast, successToast} from "../../toast/Toasts";
-import loadingSpinner from "../../../assets/images/loading-spinner.svga";
+import {errorToast, successToast} from "../../../shared/toast/Toasts";
 import {UnauthorizedError} from "../../../utils/errors/UnauthorizedError";
+import {useLoader} from "../../../context/LoaderContext";
 
 interface AddApiTokenDialogProps {
     authInfo: AuthInfo;
@@ -41,9 +41,6 @@ const AnalyzerStrategyOption = [
 ];
 
 const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, apiTokens, folders}) => {
-    const spanRef = useRef<HTMLSpanElement>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [animation, setAnimation] = useState('');
     const [managerData, setManagerData] = useState<ManagerModel>({
         apiTokenId: undefined,
         customName: undefined,
@@ -54,17 +51,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
         takeProfit: undefined,
         activate: false,
     });
-
-    useEffect(() => {
-        fetch(loadingSpinner)
-            .then(response => response.text())
-            .then(text => {
-                setAnimation(text)
-                if (spanRef.current) {
-                    spanRef.current.innerHTML = animation
-                }
-            });
-    }, [animation, isLoading]);
+    const {showBannerLoader, hideLoader} = useLoader();
 
     const convertTokensToOptions = () =>
         apiTokens.map((token) => ({
@@ -82,7 +69,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
     };
 
     const submitData = () => {
-        setIsLoading(true);
+        showBannerLoader();
         createManager(authInfo!, {
             apiTokenId: managerData.apiTokenId as string,
             customName: !managerData.customName ? null : managerData.customName,
@@ -94,12 +81,12 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
             folder: !managerData.analyzerFolderId ? 'ALL' : managerData.analyzerFolderId
         })
             .then((id) => {
-                setIsLoading(false);
+                hideLoader();
                 successToast('Manager created successfully');
                 onClose();
             })
             .catch((ex) => {
-                setIsLoading(false);
+                hideLoader();
                 errorToast('Failed to create manager');
                 if (ex instanceof UnauthorizedError) {
                     logout();
@@ -218,19 +205,6 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
                     Create
                 </Button>
             </DialogActions>
-            {isLoading &&
-                <div style={{
-                    position: 'absolute',
-                    zIndex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    width: '100%',
-                    height: '100%'
-                }}>
-                    <span style={{
-                        width: '200px'
-                    }} ref={spanRef}/>
-                </div>
-            }
         </Dialog>
     );
 }

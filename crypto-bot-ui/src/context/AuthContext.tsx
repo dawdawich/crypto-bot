@@ -4,7 +4,7 @@ import "@metamask/sdk-react";
 import {requestSalt} from "../service/AccountService";
 import Web3 from 'web3';
 import {formatDateForSignature} from "../utils/date-utils";
-import {errorToast} from "../pages/toast/Toasts";
+import {errorToast} from "../shared/toast/Toasts";
 
 export interface AuthContextType {
     authInfo: AuthInfo | undefined;
