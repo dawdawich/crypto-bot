@@ -475,21 +475,22 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     };
 
     const handleSortChange = (key: SortHeaders) => {
-        let data: SortData | null = {name: key, direction: 'asc'};
-        if (key === orderBy && order === 'desc') {
-            data.direction = 'asc';
-            setOrder('asc');
-        } else if (key === orderBy && order === 'asc') {
-            data = null;
-            setOrder('desc');
-            setOrderBy('none');
-        } else if (key !== orderBy) {
-            setOrder('desc');
-            data.direction = 'desc';
-            setOrderBy(key);
+        if (isListPage()) {
+            let data: SortData | null = {name: key, direction: 'asc'};
+            if (key === orderBy && order === 'desc') {
+                data.direction = 'asc';
+                setOrder('asc');
+            } else if (key === orderBy && order === 'asc') {
+                data = null;
+                setOrder('desc');
+                setOrderBy('none');
+            } else if (key !== orderBy) {
+                setOrder('desc');
+                data.direction = 'desc';
+                setOrderBy(key);
+            }
+            updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter());
         }
-        updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter());
-
     }
     const navigateToAnalyzerDetail = (analyzerId: string) => {
         if (pageType !== "TOP") {
