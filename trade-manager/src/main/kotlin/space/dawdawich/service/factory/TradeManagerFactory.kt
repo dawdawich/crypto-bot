@@ -45,7 +45,7 @@ class TradeManagerFactory(
                 apiToken.apiKey,
                 encryptor,
                 jsonPath
-            ),
+            ).apply { connect() },
             priceListenerFactoryService,
             apiToken.market,
             apiToken.demoAccount

@@ -23,14 +23,7 @@ class ByBitWebSocketClient(
     private val jsonPath: ParseContext,
 ) : WebSocketClient(URI(if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL)) {
 
-    private var previousCumRealizedPnL: Double = 0.0
-
     var positionUpdateCallback: PositionUpdateCallback? = null
-        set(value) {
-            previousCumRealizedPnL = 0.0
-            field = value
-        }
-    private var currentPositionTrend: Trend? = null
     var fillOrderCallback: FillOrderCallback? = null
 
     companion object {
@@ -76,30 +69,18 @@ class ByBitWebSocketClient(
                             }
                             .let { position ->
                                 val side = position["side"].toString()
-                                val cumRealizedPnL = position["cumRealisedPnl"].toString().toDouble()
-                                if (previousCumRealizedPnL == 0.0) {
-                                    previousCumRealizedPnL = cumRealizedPnL
-                                }
+                                val curRealizedPnL = position["curRealisedPnl"].toString().toDouble()
                                 if (side.isNotBlank()) {
                                     val trend = Trend.fromDirection(side)
-                                    if (currentPositionTrend == null) {
-                                        currentPositionTrend = trend
-                                    } else if (currentPositionTrend != trend) {
-                                        resetCumRealizedPnL()
-                                        currentPositionTrend = trend
-                                    }
                                     Position(
                                         position["entryPrice"].toString().toDouble(),
                                         position["size"].toString().toDouble(),
                                         trend,
-                                        cumRealizedPnL - previousCumRealizedPnL
+                                        curRealizedPnL
                                     )
                                 } else null
                             }
                         logger.info { "Get position data to update: $positionsToUpdate" }
-                        if (positionsToUpdate == null) {
-                            previousCumRealizedPnL = 0.0
-                        }
                         positionUpdateCallback?.invoke(positionsToUpdate)
                     } else if (topic == "order.linear") {
                         response.read<List<Map<String, Any>>>("\$.data")
@@ -147,11 +128,6 @@ class ByBitWebSocketClient(
             )
         ).toString()
         send(operationRequest)
-    }
-
-    fun resetCumRealizedPnL() {
-        previousCumRealizedPnL = 0.0
-        currentPositionTrend = null
     }
 
     private fun getAuthData(): Pair<String, Long> {

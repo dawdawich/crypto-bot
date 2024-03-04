@@ -1,13 +1,12 @@
 package space.dawdawich.strategy.strategies
 
-import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent
+import space.dawdawich.utils.trimToStep
 import java.util.*
-import kotlin.math.absoluteValue
 import kotlin.properties.Delegates
 
 class GridTableStrategyRunner(
@@ -71,6 +70,16 @@ class GridTableStrategyRunner(
         this.orderPriceGrid += orderPrices.map { it to null }
     }
 
+    fun setDiapasonConfigs(config: GridStrategyConfigModel) {
+        setDiapasonConfigs(
+            config.middlePrice,
+            config.minPrice,
+            config.maxPrice,
+            config.step,
+            config.pricesGrid.map { it.trimToStep(config.priceMinStep) }.toSet()
+        )
+    }
+
     fun isPriceInBounds(price: Double) = price in minPrice..maxPrice
 
     fun getPriceBounds() = minPrice to maxPrice
@@ -121,8 +130,9 @@ class GridTableStrategyRunner(
 
             position?.let { position ->
                 if (position.size > 0.0) {
-                    val moneyWithProfit =
+                    moneyWithProfit =
                         money + position.calculateProfit(currentPrice)
+                    moneyChangeFunction(0.0, moneyWithProfit)
                     val isTakeProfitExceeded = moneyWithProfit > money.plusPercent(takeProfit)
                     val isStopLossExceeded = moneyWithProfit < money.plusPercent(-stopLoss)
                     if (isTakeProfitExceeded || isStopLossExceeded) {
@@ -225,7 +235,11 @@ class GridTableStrategyRunner(
             .map { it.value }
             .filterNotNull()
             .forEach {
-                if (it.isFilled || cancelOrderFunction(it.pair, it.id)) { // If order did not filled, then need to cancel order
+                if (it.isFilled || cancelOrderFunction(
+                        it.pair,
+                        it.id
+                    )
+                ) { // If order did not filled, then need to cancel order
                     orderPriceGrid[it.inPrice] = null
                 }
             }

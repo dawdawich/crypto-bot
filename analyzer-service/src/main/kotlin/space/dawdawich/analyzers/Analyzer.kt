@@ -10,6 +10,7 @@ import kotlin.properties.Delegates
 class Analyzer(
     private val strategyRunner: StrategyRunner,
     currentPrice: Double,
+    val startCapital: Double,
     val symbol: String,
     val accountId: String,
     val market: Market,
@@ -35,7 +36,7 @@ class Analyzer(
 
     fun getStrategyConfig() = strategyRunner.getStrategyConfig()
 
-    fun getMoney() = strategyRunner.money
+    fun getMoney() = strategyRunner.moneyWithProfit
 
     fun calculateStabilityCoef(listOfMoneySnapshots: List<Double>): Double {
         if (listOfMoneySnapshots.isEmpty()) {

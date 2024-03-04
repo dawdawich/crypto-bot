@@ -22,6 +22,7 @@ import {getWebSocketAnalyzerService, WebSocketService} from "../../service/WebSo
 import {AnalyzerRuntimeModel} from "../../model/AnalyzerRuntimeModel";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 import {PaymentRequiredError} from "../../utils/errors/PaymentRequiredError";
+import {trimDecimalNumbers} from "../../utils/number-utils";
 
 interface AnalyzerDetailProps {
     analyzerId: string;
@@ -403,7 +404,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                 Current equity
                             </LeftItemDiv>
                             <RightItemDiv>
-                                {analyzer?.isActive && !!analyzerRuntimeInfo ? `$ ${analyzerRuntimeInfo.money}` : '-'}
+                                {analyzer?.isActive && !!analyzerRuntimeInfo ? `$ ${trimDecimalNumbers(analyzerRuntimeInfo.money)}` : '-'}
                             </RightItemDiv>
                         </div>
                         <div className="analyzer-detail-card-content-item">

@@ -36,11 +36,11 @@ import kotlin.time.Duration.Companion.hours
 
 @Service
 class AnalyzerService(
-        private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-        private val symbolRepository: SymbolRepository,
-        private val analyzerStabilityRepository: AnalyzerStabilityRepository,
-        private val analyzerRepository: AnalyzerRepository,
-        private val mongoTemplate: MongoTemplate,
+    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
+    private val symbolRepository: SymbolRepository,
+    private val analyzerStabilityRepository: AnalyzerStabilityRepository,
+    private val analyzerRepository: AnalyzerRepository,
+    private val mongoTemplate: MongoTemplate,
 ) : ConsumerSeekAware {
 
     companion object {
@@ -107,15 +107,15 @@ class AnalyzerService(
         return analyzers.find { analyzerId == it.id }?.let { analyzer ->
             val money = analyzer.getMoney()
             val stability = analyzerRepository.findByIdOrNull(analyzerId)?.stabilityCoef
-                analyzer.getRuntimeInfo().position?.let { position ->
-                    AnalyzerRuntimeInfoModel(
-                        money,
-                        stability,
-                        if (position.long) "Buy" else "Sell",
-                        position.entryPrice,
-                        position.size
-                    )
-                } ?: AnalyzerRuntimeInfoModel(money, stability)
+            analyzer.getRuntimeInfo().position?.let { position ->
+                AnalyzerRuntimeInfoModel(
+                    money,
+                    stability,
+                    if (position.long) "Buy" else "Sell",
+                    position.entryPrice,
+                    position.size
+                )
+            } ?: AnalyzerRuntimeInfoModel(money, stability)
         }
     }
 
@@ -157,18 +157,18 @@ class AnalyzerService(
             val copiedAnalyzers = analyzers.asSequence()
             runBlocking {
                 copiedAnalyzers
-                        .filter { it.getMoney() != it.previousSnapshotMoney }
-                        .map {
-                            it.previousSnapshotMoney = it.getMoney()
-                            it.readyToUpdateStability = true
-                            AnalyzerMoneyModel(it.id, it.getMoney())
+                    .filter { it.getMoney() != it.previousSnapshotMoney }
+                    .map {
+                        it.previousSnapshotMoney = it.getMoney()
+                        it.readyToUpdateStability = true
+                        AnalyzerMoneyModel(it.id, it.getMoney())
+                    }
+                    .let {
+                        val list = it.toList()
+                        if (list.isNotEmpty()) {
+                            analyzerStabilityRepository.saveAll(list)
                         }
-                        .let {
-                            val list = it.toList()
-                            if (list.isNotEmpty()) {
-                                analyzerStabilityRepository.saveAll(list)
-                            }
-                        }
+                    }
             }
         }
         log.info { "Finish process update money snapshot. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
@@ -185,35 +185,35 @@ class AnalyzerService(
                 copiedAnalyzers.forEach { analyzer ->
                     launch {
                         analyzerStabilityRepository.findAllByAnalyzerId(analyzer.id)
-                                .sortedBy { it.timestamp }
-                                .let { snapshots ->
-                                    val update = Update()
-                                    val now = System.currentTimeMillis()
-                                    val oneOurBefore = now - 1.hours.inWholeMilliseconds
-                                    val twelveOurBefore = now - 12.hours.inWholeMilliseconds
-                                    val twentyFourOurBefore = now - 24.hours.inWholeMilliseconds
-                                    analyzer.calculateStabilityCoef(snapshots.map { snap -> snap.money }).let {
-                                        update.set("stabilityCoef", it)
-                                    }
-                                    snapshots.firstOrNull { it.timestamp > oneOurBefore }?.let { snapshot ->
-                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                        update.set("pNl1", pNl)
-                                    }
-                                    snapshots.firstOrNull { it.timestamp > twelveOurBefore }?.let { snapshot ->
-                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                        update.set("pNl12", pNl)
-                                    }
-                                    snapshots.firstOrNull { it.timestamp > twentyFourOurBefore }?.let { snapshot ->
-                                        val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                        update.set("pNl24", pNl)
-                                    }
-
-                                    ops.updateOne(
-                                            Query.query(Criteria.where("_id").`is`(analyzer.id)),
-                                            update
-                                    )
-                                    isOpsEmpty = false
+                            .sortedBy { it.timestamp }
+                            .let { snapshots ->
+                                val update = Update()
+                                val now = System.currentTimeMillis()
+                                val oneOurBefore = now - 1.hours.inWholeMilliseconds
+                                val twelveOurBefore = now - 12.hours.inWholeMilliseconds
+                                val twentyFourOurBefore = now - 24.hours.inWholeMilliseconds
+                                analyzer.calculateStabilityCoef(snapshots.map { snap -> snap.money }).let {
+                                    update.set("stabilityCoef", it)
                                 }
+                                snapshots.firstOrNull { it.timestamp > oneOurBefore }?.let { snapshot ->
+                                    val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                    update.set("pNl1", pNl)
+                                }
+                                snapshots.firstOrNull { it.timestamp > twelveOurBefore }?.let { snapshot ->
+                                    val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                    update.set("pNl12", pNl)
+                                }
+                                snapshots.firstOrNull { it.timestamp > twentyFourOurBefore }?.let { snapshot ->
+                                    val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                    update.set("pNl24", pNl)
+                                }
+
+                                ops.updateOne(
+                                    Query.query(Criteria.where("_id").`is`(analyzer.id)),
+                                    update
+                                )
+                                isOpsEmpty = false
+                            }
                     }
                 }
             }
@@ -286,6 +286,7 @@ class AnalyzerService(
             id = id
         ),
         0.0,
+        startCapital,
         symbolInfo.symbol,
         accountId,
         market,
@@ -309,9 +310,8 @@ class AnalyzerService(
 
         return if (mostStableAnalyzers.none { it.id == request.currentAnalyzerId }) {
             mostStableAnalyzers
-                .map { it.getStrategyConfig() }
-                .filter { analyzerRepository.findByIdOrNull(it.id)!!.startCapital < it.money }
-                .maxByOrNull { it.money }
+                .filter { it.startCapital < it.getStrategyConfig().money }
+                .maxByOrNull { it.getMoney() }?.getStrategyConfig()
         } else null
     }
 

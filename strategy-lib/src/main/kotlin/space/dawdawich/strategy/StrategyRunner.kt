@@ -12,7 +12,7 @@ import kotlin.properties.Delegates
 
 
 abstract class StrategyRunner(
-    money: Double,
+    var money: Double,
     protected val multiplier: Int,
     protected val moneyChangeFunction: MoneyChangePostProcessFunction,
     protected val priceMinStep: Double,
@@ -24,8 +24,10 @@ abstract class StrategyRunner(
     protected var currentPrice = 0.0
     var position: Position? = null
 
-    var money: Double  by Delegates.observable(money) { _, oldValue, newValue ->
-        moneyChangeFunction(oldValue, newValue)
+    var moneyWithProfit: Double  by Delegates.observable(money) { _, oldValue, newValue ->
+        if (oldValue != newValue) {
+            moneyChangeFunction(oldValue, newValue)
+        }
     }
         protected set
 

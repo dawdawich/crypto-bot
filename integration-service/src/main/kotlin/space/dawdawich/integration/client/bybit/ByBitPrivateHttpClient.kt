@@ -10,6 +10,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mu.KotlinLogging
 import space.dawdawich.exception.InsufficientBalanceException
+import space.dawdawich.exception.InvalidMarginProvided
 import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.utils.bytesToHex
@@ -63,22 +64,18 @@ class ByBitPrivateHttpClient(
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
                 0 -> return true
-                10001, 10002 -> {
+                10002 -> createOrder(symbol, entryPrice, qty, isLong, orderId, positionIdx, repeatCount)
+                10001 -> {
                     logger.info { "Failed to create order. Reason:\n${parsedJson.jsonString()}" }
                     return false
                 }
-
                 10004 -> throw InvalidSignatureException()
                 110009 -> {
                     cancelAllOrder(symbol)
                     return createOrder(symbol, entryPrice, qty, isLong, orderId)
                 }
-
                 110007 -> throw InsufficientBalanceException()
-
-                else -> {
-                    throw UnknownRetCodeException(returnCode)
-                }
+                else -> throw UnknownRetCodeException(returnCode)
             }
         } catch (e: Exception) {
             logger.warn(e) { "Failed to create order on bybit server" }
@@ -97,7 +94,9 @@ class ByBitPrivateHttpClient(
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
             val returnCode = parsedJson.read<Int>("$.retCode")
-            if (returnCode != 0) {
+            if (returnCode == 10002) {
+                cancelAllOrder(symbol, repeatCount)
+            } else if (returnCode != 0) {
                 throw UnknownRetCodeException(returnCode)
             }
         } catch (e: Exception) {
@@ -116,14 +115,11 @@ class ByBitPrivateHttpClient(
             val response = repeatCount repeatTry { post(CANCEL_ORDER, request, getByBitHeadersWithSign(request)) }
 
             val parsedJson = jsonPath.parse(response.bodyAsText())
-            return when(val returnCode = parsedJson.read<Int>("$.retCode")) {
+            return when (val returnCode = parsedJson.read<Int>("$.retCode")) {
                 0, 110001 -> true
-                10004 -> {
-                    throw InvalidSignatureException()
-                }
-                else -> {
-                    throw UnknownRetCodeException(returnCode)
-                }
+                10002 -> return cancelOrder(symbol, orderId, repeatCount)
+                10004 -> throw InvalidSignatureException()
+                else -> throw UnknownRetCodeException(returnCode)
             }
         } catch (e: Exception) {
             throw e
@@ -136,80 +132,55 @@ class ByBitPrivateHttpClient(
             repeatCount repeatTry { get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query)) }
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
-        when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
-            0 -> {
-                return parsedJson.read<String>("$.result.list[0].coin[0].equity").toDouble()
-            }
-
-            10002 -> {
-                return getAccountBalance(repeatCount)
-            }
-
+        return when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            0 -> parsedJson.read<String>("$.result.list[0].coin[0].equity").toDouble()
+            10002 -> getAccountBalance(repeatCount)
             10004 -> throw InvalidSignatureException()
-
-            else -> {
-                throw UnknownRetCodeException(returnCode)
-            }
+            else -> throw UnknownRetCodeException(returnCode)
         }
     }
 
 
-    suspend fun getPositionInfo(symbol: String): List<PositionInfo> {
+    suspend fun getPositionInfo(symbol: String, retryCount: Int = 2): List<PositionInfo> {
         val query = "category=linear&symbol=$symbol"
         val headers = getByBitHeadersWithSign(query)
-        val response = get(GET_POSITIONS, query, headers)
+        val response = retryCount repeatTry { get(GET_POSITIONS, query, headers) }
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
-        when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
-            0 -> {
-                return parsedJson.read<List<Map<String, Any>>>("\$.result.list").map { position ->
-                    PositionInfo(
-                        position["symbol"].toString(),
-                        position["side"].toString().equals("buy", true),
-                        position["size"].toString().toDouble(),
-                        position["positionValue"].toString().let { if (it.isBlank()) 0.0 else it.toDouble() },
-                        position["positionIdx"].toString().toInt(),
-                        position["updatedTime"].toString().let { if (it.isBlank()) 0 else it.toLong() }
-                    )
-                }
+        return when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            0 -> parsedJson.read<List<Map<String, Any>>>("\$.result.list").map { position ->
+                PositionInfo(
+                    position["symbol"].toString(),
+                    position["side"].toString().equals("buy", true),
+                    position["size"].toString().toDouble(),
+                    position["positionValue"].toString().let { if (it.isBlank()) 0.0 else it.toDouble() },
+                    position["positionIdx"].toString().toInt(),
+                    position["updatedTime"].toString().let { if (it.isBlank()) 0 else it.toLong() }
+                )
             }
-
-            else -> {
-                throw UnknownRetCodeException(returnCode)
-            }
+            10002 -> getPositionInfo(symbol, retryCount)
+            10004 -> throw InvalidSignatureException()
+            else -> throw UnknownRetCodeException(returnCode)
         }
     }
 
-    suspend fun setMarginMultiplier(symbol: String, multiplier: Int, retryCount: Int = 2): Boolean {
+    suspend fun setMarginMultiplier(symbol: String, multiplier: Int, retryCount: Int = 2) {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)
             put("buyLeverage", multiplier.toString())
             put("sellLeverage", multiplier.toString())
         }.toString()
-        try {
-            val response: HttpResponse =
-                retryCount repeatTry { post(SET_MARGIN, request, getByBitHeadersWithSign(request)) }
+        val response: HttpResponse =
+            retryCount repeatTry { post(SET_MARGIN, request, getByBitHeadersWithSign(request)) }
 
-
-            val parsedJson = jsonPath.parse(response.bodyAsText())
-            return when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
-                0, 110043 -> {
-                    true
-                }
-
-                10001 -> {
-                    false
-                }
-
-                10004 -> throw InvalidSignatureException()
-
-                else -> {
-                    throw UnknownRetCodeException(returnCode)
-                }
-            }
-        } catch (e: Exception) {
-            throw e
+        val parsedJson = jsonPath.parse(response.bodyAsText())
+        when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            0, 110043 -> return
+            10001 -> throw InvalidMarginProvided()
+            10002 -> setMarginMultiplier(symbol, multiplier, retryCount)
+            10004 -> throw InvalidSignatureException()
+            else -> throw UnknownRetCodeException(returnCode)
         }
     }
 
@@ -232,20 +203,17 @@ class ByBitPrivateHttpClient(
             put("timeInForce", "IOC")
         }.toString()
 
-        try {
-            val response: HttpResponse =
-                repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
+        val response: HttpResponse =
+            repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
 
-            val parsedJson = jsonPath.parse(response.bodyAsText())
-            when (val returnCode = parsedJson.read<Int>("$.retCode")) {
-                0, 110017 -> return
-                10004 -> throw InvalidSignatureException()
-                else -> {
-                    throw UnknownRetCodeException(returnCode)
-                }
+        val parsedJson = jsonPath.parse(response.bodyAsText())
+        when (val returnCode = parsedJson.read<Int>("$.retCode")) {
+            0, 110017 -> return
+            10002 -> closePosition(symbol, isLong, size, positionIdx, repeatCount)
+            10004 -> throw InvalidSignatureException()
+            else -> {
+                throw UnknownRetCodeException(returnCode)
             }
-        } catch (e: Exception) {
-            throw e
         }
     }
 
