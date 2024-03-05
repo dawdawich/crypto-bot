@@ -136,6 +136,7 @@ class AnalyzerService(
         return when (request.chooseStrategy) {
             AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)
+            AnalyzerChooseStrategy.TEST -> getFilteredAnalyzerConfig(request)
             AnalyzerChooseStrategy.CUSTOM -> throw NotImplementedError("No such analyzer strategy : %s".format(request.chooseStrategy))
         }
     }
@@ -331,5 +332,28 @@ class AnalyzerService(
                 .minByOrNull { it.multiplier }
         }
         return null
+    }
+
+    private fun getFilteredAnalyzerConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        val analyzersDocs =
+        analyzerRepository.findAllById(analyzers
+            .asSequence()
+            .filter { it.demoAccount == request.demoAccount }
+            .filter { it.market == request.market }
+            .filter { it.accountId == request.accountId }
+            .map { it.id }
+            .toList())
+        val neededAnalyzer = analyzersDocs
+            .asSequence()
+            .filter { (it.stabilityCoef ?: 0.0) > 4 } // sortedStabilityHigherThanFour
+            .sortedByDescending { it.pNl24 }
+            .take(40) // take 40 analyzers by pnl24
+            .sortedByDescending { it.pNl12 }
+            .take(20) // take 20 analyzers by pnl12
+            .sortedByDescending { it.pNl1 }
+            .take(10) // take 10 analyzers by pnl12
+            .maxByOrNull { it.money }?.id
+
+        return neededAnalyzer?.let { analyzers.first { analyzer -> analyzer.id == it }.getStrategyConfig() }
     }
 }
