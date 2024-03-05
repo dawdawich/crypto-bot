@@ -210,7 +210,6 @@ class Manager(
                         fillOrderCallback = { orderId ->
                             this@apply.fillOrder(orderId)
                         }
-//                        setInitialCumRealizedPnL()
                         logger { it.info { "Complete initializing websocket" } }
                     }
                 }
@@ -253,6 +252,7 @@ class Manager(
                             if (strategyRuntimeInfo.middlePrice != strategyRunner.middlePrice) {
                                 logger { it.info { "Reinitializing strategy bound" } }
                                 closeOrdersAndPosition()
+                                strategyRunner.setDiapasonConfigs(strategyRuntimeInfo)
                             }
                         }
                     }
@@ -267,7 +267,7 @@ class Manager(
                 bybitService.cancelAllOrder(strategy.symbol, 10)
                 do {
                     strategy.position?.let { position ->
-                        bybitService.closePosition(strategy.symbol, position.trend.directionBoolean, position.size)
+                        bybitService.closePosition(strategy.symbol, position.trend.directionBoolean, position.size, repeatCount = 10)
                     }
                 } while (!isPositionEmpty())
                 strategy.position = null
@@ -277,5 +277,5 @@ class Manager(
 
     private fun isPositionEmpty() = strategyRunner?.let { strategy ->
         runBlocking { bybitService.getPositionInfo(strategy.symbol).sumOf { position -> position.size } == 0.0 }
-    } ?: false
+    } ?: true
 }

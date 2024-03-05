@@ -345,7 +345,7 @@ class AnalyzerService(
             .toList())
         val neededAnalyzer = analyzersDocs
             .asSequence()
-            .filter { (it.stabilityCoef ?: 0.0) > 4 } // sortedStabilityHigherThanFour
+            .filter { (it.stabilityCoef ?: 0.0) >= 2 } // sortedStabilityHigherThanFour
             .sortedByDescending { it.pNl24 }
             .take(40) // take 40 analyzers by pnl24
             .sortedByDescending { it.pNl12 }

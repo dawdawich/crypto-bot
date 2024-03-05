@@ -80,6 +80,16 @@ class GridTableStrategyRunner(
         )
     }
 
+    fun setDiapasonConfigs(config: GridTableStrategyRuntimeInfoModel) {
+        setDiapasonConfigs(
+            config.middlePrice,
+            config.minPrice,
+            config.maxPrice,
+            config.step,
+            config.prices.map { it.trimToStep(priceMinStep) }.toSet()
+        )
+    }
+
     fun isPriceInBounds(price: Double) = price in minPrice..maxPrice
 
     fun getPriceBounds() = minPrice to maxPrice
