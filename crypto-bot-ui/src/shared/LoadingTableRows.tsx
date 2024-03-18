@@ -1,5 +1,6 @@
 import {TableCell, TableRow} from "@mui/material";
 import React from "react";
+import "../css/shared/LoadingTableRows.css";
 
 export type LoadingTableConfig = {
     rows: number;
@@ -9,14 +10,13 @@ export type LoadingTableConfig = {
 }
 
 const loadingTableRows = (params: LoadingTableConfig) => {
-    console.log('TESTETSETSTETST')
     return Array.from({length: params.rows}, (_, index) => {
         return (
             <TableRow key={'loading-row-' + index}>
                 {params.prefixSkipColumns && Array.from({length: params.prefixSkipColumns}, (_, cellIndex) => (
-                    <TableCell id="cell" key={'prefix-loading-cell-' + index + '-' + cellIndex} />))}
+                    <TableCell id="load-cell" key={'prefix-loading-cell-' + index + '-' + cellIndex} />))}
                 {Array.from({length: params.columns}, (_, cellIndex) => (
-                    <TableCell id="cell" key={'loading-cell-' + index + '-' + cellIndex}>
+                    <TableCell id="load-cell" key={'loading-cell-' + index + '-' + cellIndex}>
                         <div className="row-loading"/>
                     </TableCell>))}
                 {params.postfixSkipColumns && Array.from({length: params.postfixSkipColumns}, (_, cellIndex) => (

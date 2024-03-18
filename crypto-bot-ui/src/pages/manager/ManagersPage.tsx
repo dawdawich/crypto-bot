@@ -255,7 +255,7 @@ const ManagersPage: React.FC = () => {
             </div>
             <div className="managers-content-body">
                 <TableContainer style={{overflowY: 'auto'}}>
-                    <Table size="small">
+                    <Table size="small" stickyHeader>
                         <TableHead>
                             <TableRow>
                                 <TableCell id="cell">Name</TableCell>

@@ -12,7 +12,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TableSortLabel
+    TableSortLabel,
+    Tooltip
 } from "@mui/material";
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import "../../css/pages/analyzer/AnalyzerContentStyles.css";
@@ -20,7 +21,6 @@ import "../../css/pages/analyzer/SideBlock.css";
 import {AnalyzerResponse} from "../../model/AnalyzerResponse";
 import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-icon.svg";
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
-import {ReactComponent as MenuHeaderIcon} from "../../assets/images/analyzer/menu-header-icon.svg";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
 import {getSymbolIcon} from "../../utils/symbols-utils";
 import {
@@ -61,7 +61,6 @@ const PreviousPath = styled('div')({
     fontSize: 20,
     fontWeight: '100',
     paddingTop: '24px',
-    cursor: 'pointer'
 });
 
 const CurrentPath = styled('div')({
@@ -558,7 +557,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             <div className="analyzer-header">
                 <div className="analyzer-header-container">
                     <div className="analyzer-header-path">
-                        <PreviousPath onClick={() => navigate("/analyzer")}>
+                        <PreviousPath>
                             Analyzer /
                         </PreviousPath>
                         <CurrentPath>{pageName}</CurrentPath>
@@ -605,7 +604,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                 <div>{notActiveSize} Not Active</div>
                             </div>
                         </RowDiv>
-                        <RowDiv>
+                        <RowDiv style={{position: 'relative', zIndex: '3'}}>
                             <div style={{color: 'white', marginRight: '8px'}}>Symbol</div>
                             <div style={{width: '500px'}}>
                                 <Select
@@ -624,8 +623,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     </div>
                 }
             </div>
-            <TableContainer style={{overflowY: 'auto'}}>
-                <Table size="small">
+            <TableContainer style={{overflowY: 'auto', overflowX: 'auto', maxWidth: '100%'}}>
+                <Table size="small" stickyHeader>
                     <TableHead>
                         <TableRow id="analyzer-table-headers">
                             {isListPage() &&
@@ -707,7 +706,6 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                 </HeaderCellContent>
                             </TableCell>
                             <TableCell align="center" id="cell">
-                                {isListPage() && <MenuHeaderIcon/>}
                             </TableCell>
                         </TableRow>
                     </TableHead>
@@ -726,8 +724,11 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                 />
                                             </TableCell>
                                         }
-                                        <TableCell id="cell"
-                                                   onClick={() => navigateToAnalyzerDetail(analyzer.id)}>{getSymbolIcon(analyzer.symbol)}</TableCell>
+                                        <TableCell id="cell" onClick={() => navigateToAnalyzerDetail(analyzer.id)}>
+                                            <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200} placement={"right"} arrow>
+                                                {getSymbolIcon(analyzer.symbol)}
+                                            </Tooltip>
+                                        </TableCell>
                                         {isListPage() && <TableCell align="left" id="cell">
                                             {analyzer.isActive ?
                                                 <div className="analyzer-table-item-status">
@@ -748,10 +749,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         <TableCell id="cell">{analyzer.positionStopLoss}%</TableCell>
                                         <TableCell id="cell" align="left">{analyzer.positionTakeProfit}%</TableCell>
                                         {isListPage() &&
-                                            <TableCell id="cell" align="left">{analyzer.startCapital}</TableCell>}
+                                            <TableCell id="cell" align="left">${analyzer.startCapital}</TableCell>}
                                         {isListPage() &&
                                             <TableCell id="cell"
-                                                       align="left">{!!analyzer.money && trimDecimalNumbers(analyzer.money)}</TableCell>}
+                                                       align="left">{!!analyzer.money && '$' + trimDecimalNumbers(analyzer.money)}</TableCell>}
                                         <TableCell align="left"
                                                    id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
                                         <TableCell align="left" id="cell"

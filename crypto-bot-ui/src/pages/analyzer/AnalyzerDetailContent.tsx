@@ -436,7 +436,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                 Stability
                             </LeftItemDiv>
                             <RightItemDiv>
-                                {analyzer?.isActive && !!analyzerRuntimeInfo && analyzerRuntimeInfo.stability ? `${analyzerRuntimeInfo.stability}` : '-'}
+                                {analyzer?.isActive && !!analyzerRuntimeInfo && analyzerRuntimeInfo.stability ? `${trimDecimalNumbers(analyzerRuntimeInfo.stability, 1)}` : '-'}
                             </RightItemDiv>
                         </div>
                         <div className="analyzer-detail-card-content-item">
@@ -452,7 +452,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                 Position Entry Price
                             </LeftItemDiv>
                             <RightItemDiv>
-                                {analyzer?.isActive && !!analyzerRuntimeInfo ? !!analyzerRuntimeInfo.positionEntryPrice ? analyzerRuntimeInfo.positionEntryPrice : 'Not open' : '-'}
+                                {analyzer?.isActive && !!analyzerRuntimeInfo ? !!analyzerRuntimeInfo.positionEntryPrice ? trimDecimalNumbers(analyzerRuntimeInfo.positionEntryPrice, 3) : 'Not open' : '-'}
                             </RightItemDiv>
                         </div>
                         <div className="analyzer-detail-card-content-item">
@@ -460,7 +460,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                 Position Size
                             </LeftItemDiv>
                             <RightItemDiv>
-                                {analyzer?.isActive && !!analyzerRuntimeInfo ? !!analyzerRuntimeInfo.positionSize ? analyzerRuntimeInfo.positionSize : 'Not open' : '-'}
+                                {analyzer?.isActive && !!analyzerRuntimeInfo ? !!analyzerRuntimeInfo.positionSize ? trimDecimalNumbers(analyzerRuntimeInfo.positionSize) : 'Not open' : '-'}
                             </RightItemDiv>
                         </div>
                     </div>

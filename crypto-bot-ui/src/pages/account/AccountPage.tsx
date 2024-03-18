@@ -36,6 +36,10 @@ const AccountPage: React.FC = () => {
         navigate('/');
     }
 
+    if (location === '/account') {
+        navigate('/account/subscription');
+    }
+
     const copyWalletId = () => {
         if (!!authInfo) {
             navigator.clipboard.writeText(authInfo!.address).then(() => {
@@ -59,18 +63,20 @@ const AccountPage: React.FC = () => {
                 </div>
                 <div className="account-metamask-content">
                     <Divider color="#1D2024"/>
-                    <MetamaskIcon style={{marginTop: '12px'}}/>
+                    <MetamaskIcon style={{ width: '24px', marginTop: '12px'}}/>
                     {!!authInfo &&
-                        <Typography style={{marginTop: '8px', fontFamily: plexFont}}
+                        <Typography style={{marginTop: '8px', fontFamily: plexFont, fontSize: '14px'}}
                                     color="white">{sanitizeMiddle(authInfo!.address, 22)}
                         </Typography>}
                     <div className="account-metamask-content-buttons">
                         <Button variant="outlined" onClick={copyWalletId}
-                                style={{color: '#868F9C', borderColor: '#868F9C', textTransform: 'none'}}>Copy
-                            ID</Button>
+                                style={{color: '#868F9C', borderColor: '#868F9C', fontWeight: '700', fontSize: '14px', textTransform: 'none'}}>
+                            Copy ID
+                        </Button>
                         <Button variant="contained" onClick={logout}
-                                style={{color: 'white', backgroundColor: '#E7323B', textTransform: 'none'}}>Log
-                            Out</Button>
+                                style={{color: 'white', backgroundColor: '#E7323B', fontWeight: '700', fontSize: '14px', textTransform: 'none'}}>
+                            Log Out
+                        </Button>
                     </div>
                 </div>
             </div>

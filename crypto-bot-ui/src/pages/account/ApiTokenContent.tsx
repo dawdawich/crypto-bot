@@ -9,7 +9,6 @@ import {useAuth} from "../../context/AuthContext";
 import AddApiTokenDialog from "./dialog/AddApiTokenDialog";
 import {errorToast} from "../../shared/toast/Toasts";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
-import {useLoader} from "../../context/LoaderContext";
 import loadingTableRows from "../../shared/LoadingTableRows";
 
 const PreviousPath = styled('div')({
@@ -110,7 +109,7 @@ const ApiTokenContent: React.FC = () => {
                 }} onClick={() => setIsApiTokenDialogOpen(true)}>Add API Token</Button>
             </div>
             <TableContainer>
-                <Table size="small">
+                <Table size="small" stickyHeader >
                     <TableHead>
                         <TableRow id="account-api-token-table-headers">
                             <TableCell id="cell">ID</TableCell>

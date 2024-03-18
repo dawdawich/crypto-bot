@@ -1,4 +1,4 @@
-export const trimDecimalNumbers = (num: number, maxSize: number = 3): number => {
+export const trimDecimalNumbers = (num: number, maxSize: number = 2): number => {
     // Convert number to a string
     const numStr = num.toString();
     // Find the position of the decimal point

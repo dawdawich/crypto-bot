@@ -5,7 +5,8 @@
 }
 
 .analyzer-menu-panel {
-    width: 204px;
+    max-width: 204px;
+    min-width: 172px;
     padding: 16px;
     background: #121417;
     display: flex;
@@ -54,26 +55,19 @@
 }
 
 .analyzer-menu-panel-tabs-header {
-    padding-left: 8px;
-    padding-top: 10px;
-    margin-bottom: 18px;
-    height: 28px;
+    height: 40px;
     display: flex;
     flex-direction: row;
     color: white;
+    justify-content: space-evenly;
+    align-items: center;
+    border-radius: 4px;
+    margin-bottom: 16px;
 }
 
 .analyzer-menu-panel-tabs-header:hover {
-    padding-left: 8px;
-    padding-top: 10px;
-    margin-bottom: 18px;
-    height: 28px;
-    display: flex;
-    flex-direction: row;
-    color: white;
     background: #1D2024;
     cursor: pointer;
-    border-radius: 4px;
 }
 
 .analyzer-menu-panel-tabs > #tab {
@@ -101,6 +95,7 @@
 .analyzer-content {
     background: #1D2024;
     flex-grow: 1;
+    width: 0;
 }
 
 .analyzer-folder-menu-hover:hover {

@@ -45,5 +45,6 @@
         </root>
     </springProfile>
 
-    <logger name="org.apache.kafka.clients.consumer.internals.ConsumerCoordinator" level="OFF"/>
+    <logger name="org.springframework.kafka.*" level="OFF"/>
+    <logger name="org.apache.kafka.*" level="OFF"/>
 </configuration>

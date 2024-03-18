@@ -17,15 +17,7 @@ import AnalyzerDetailContent from "./AnalyzerDetailContent";
 import {UnauthorizedError} from "../../utils/errors/UnauthorizedError";
 
 const topHoverStyle = {
-    paddingLeft: '8px',
-    paddingTop: '10px',
-    marginBottom: '18px',
-    height: '28px',
-    display: 'flex',
-    flexDirection: 'row',
-    color: 'white',
     background: '#1D2024',
-    borderRadius: '4px'
 };
 
 const folderHoverStyle = {
@@ -77,6 +69,14 @@ const AnalyzersPage: React.FC = () => {
 
     document.title = 'Analyzers';
 
+    if (location === '/analyzer') {
+        if (!!authInfo) {
+            navigate('/analyzer/folder/all');
+        } else {
+            navigate('/analyzer/folder/top');
+        }
+    }
+
     useEffect(() => {
         if (!!authInfo) {
             fetchFolderList(authInfo)
@@ -87,6 +87,8 @@ const AnalyzersPage: React.FC = () => {
                         logout();
                     }
                 });
+        } else {
+            setFolders([])
         }
     }, [authInfo, logout]);
 
@@ -131,7 +133,7 @@ const AnalyzersPage: React.FC = () => {
                     <div className="analyzer-menu-panel-tabs">
                         <div className="analyzer-menu-panel-tabs-header"
                              style={location === "/analyzer/folder/top" ? {...topHoverStyle as CSSProperties} : {}}>
-                            <FlagIcon style={{marginRight: '8px'}}/>
+                            <FlagIcon/>
                             <Typography onClick={() => navigate("/analyzer/folder/top")} fontSize="14px">
                                 Top Public Analyzer
                             </Typography>

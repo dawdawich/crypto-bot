@@ -139,7 +139,7 @@ const SubscriptionContent: React.FC = () => {
                 </Slider>
             </div>
             <TableContainer>
-                <Table>
+                <Table size="small" stickyHeader>
                     <TableHead>
                         <TableRow className="token-table-headers">
                             <TableCell id="cell">Status</TableCell>
