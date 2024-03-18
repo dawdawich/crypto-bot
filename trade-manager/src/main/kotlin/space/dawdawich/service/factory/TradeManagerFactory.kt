@@ -37,7 +37,7 @@ class TradeManagerFactory(
 
         return Manager(
             tradeManagerData,
-            serviceFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, encryptor),
+            serviceFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, encryptor, apiToken.market),
             strategyConfigReplyingTemplate,
             strategyRuntimeDataReplyingTemplate,
             ByBitWebSocketClient(

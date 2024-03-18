@@ -6,16 +6,17 @@ import space.dawdawich.integration.model.PairInfo
 import io.ktor.client.*
 import io.ktor.client.statement.*
 import space.dawdawich.exception.UnknownRetCodeException
+import space.dawdawich.integration.client.PublicHttpClient
 
 open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val jsonPath: ParseContext) :
-    DefaultHttpClient(serverUrl, client) {
+    DefaultHttpClient(serverUrl, client), PublicHttpClient {
 
     companion object {
         const val GET_INSTRUMENTS_INFO = "/market/instruments-info"
         const val GET_TICKER = "/market/tickers"
     }
 
-    suspend fun getPairCurrentPrice(symbol: String): Double {
+    override suspend fun getPairCurrentPrice(symbol: String): Double {
         val response = get(GET_TICKER, "category=linear&symbol=$symbol")
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
@@ -30,7 +31,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         }
     }
 
-    suspend fun getPairInstructions(symbol: String): PairInfo {
+    override suspend fun getPairInstructions(symbol: String): PairInfo {
         val response = get(GET_INSTRUMENTS_INFO, "category=linear&symbol=$symbol")
 
         val parsedJson = jsonPath.parse(response.bodyAsText())

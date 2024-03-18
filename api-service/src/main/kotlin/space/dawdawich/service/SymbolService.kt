@@ -24,7 +24,7 @@ class SymbolService(
 
     fun addNewSymbol(accountId: String, symbol: String) {
         val apiToken = apiAccessTokenRepository.findAllByAccountId(accountId)[0]
-        val httpClient = clientFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, apiToken.secretKey)
+        val httpClient = clientFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, apiToken.secretKey, apiToken.market)
         val symbolInfo = runBlocking {
             httpClient.getPairInstructions(symbol)
         }

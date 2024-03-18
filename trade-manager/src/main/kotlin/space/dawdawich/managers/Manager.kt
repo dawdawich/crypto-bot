@@ -12,7 +12,7 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
-import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
+import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.constants.Market
 import space.dawdawich.model.strategy.GridStrategyConfigModel
@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.minutes
 @OptIn(DelicateCoroutinesApi::class)
 class Manager(
     private val tradeManagerData: TradeManagerDocument,
-    private val bybitService: ByBitPrivateHttpClient,
+    private val bybitService: PrivateHttpClient,
     private val replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, RequestProfitableAnalyzer, StrategyConfigModel?>,
     private val replayingStrategyDataKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
     private val webSocket: ByBitWebSocketClient,
@@ -142,7 +142,7 @@ class Manager(
                         market
                     )
                 )
-            ).get(1, TimeUnit.MINUTES).value()
+            )[1, TimeUnit.MINUTES].value()
         } catch (ex: KafkaReplyTimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
         } catch (ex: TimeoutException) {
@@ -243,8 +243,12 @@ class Manager(
                 it.info { "Price not in price bound. Min Price: '$minPrice'; Max Price: '$maxPrice'; Current: '$newPrice'" }
             }
             replayingStrategyDataKafkaTemplate
-                .sendAndReceive(ProducerRecord(REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, strategyRunner.id))
-                .get(5, TimeUnit.SECONDS)
+                .sendAndReceive(
+                    ProducerRecord(
+                        REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC,
+                        strategyRunner.id
+                    )
+                )[5, TimeUnit.SECONDS]
                 .value()
                 ?.let { strategyRuntimeInfo ->
                     when (strategyRuntimeInfo) {
@@ -267,7 +271,12 @@ class Manager(
                 bybitService.cancelAllOrder(strategy.symbol, 10)
                 do {
                     strategy.position?.let { position ->
-                        bybitService.closePosition(strategy.symbol, position.trend.directionBoolean, position.size, repeatCount = 10)
+                        bybitService.closePosition(
+                            strategy.symbol,
+                            position.trend.directionBoolean,
+                            position.size,
+                            repeatCount = 10
+                        )
                     }
                 } while (!isPositionEmpty())
                 strategy.position = null
