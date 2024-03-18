@@ -163,8 +163,8 @@ services:
       - "5000"
     volumes:
       - ./init-files/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-    depends_on:
-      - elasticsearch
+#    depends_on:
+#      - elasticsearch
     networks:
       - "crypto-bot-network"
 
