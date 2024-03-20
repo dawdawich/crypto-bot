@@ -179,6 +179,7 @@ class AnalyzerService(
     }
 
     @Throws(AnalyzerLimitExceededException::class)
+    @SuppressWarnings("kotlin:S3776")
     fun bulkCreate(accountId: String, request: CreateAnalyzerBulkRequest) {
         with(request) {
 
@@ -242,7 +243,7 @@ class AnalyzerService(
             }
 
             if (request.active) {
-                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, analyzersToInsert.joinToString(separator = ",") { it.id })
+                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, accountId)
             }
         }
     }

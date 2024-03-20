@@ -32,4 +32,6 @@ interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String
     fun existsByIdInAndAccountId(id: List<String>, accountId: String): Boolean
 
     fun findAllByPublic(public: Boolean = true): List<GridTableAnalyzerDocument>
+
+    fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<GridTableAnalyzerDocument>
 }

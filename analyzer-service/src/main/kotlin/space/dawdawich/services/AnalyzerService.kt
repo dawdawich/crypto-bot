@@ -82,11 +82,12 @@ class AnalyzerService(
     }
 
     @KafkaListener(topics = [ACTIVATE_ANALYZERS_TOPIC])
-    fun activateAnalyzers(analyzerIds: String) {
+    fun activateAnalyzers(accountId: String) {
         runBlocking {
-            analyzerRepository.findAllById(analyzerIds.split(",")).forEach {
-                if (it.isActive) {
-                    launch { addAnalyzer(it.convert()) }
+            analyzerRepository.findAllByPublic()
+            analyzerRepository.findAllByAccountIdAndPublic(accountId, true).forEach { doc ->
+                if (doc.isActive && analyzers.none { analyzer -> analyzer.id == doc.id }) {
+                    launch { addAnalyzer(doc.convert()) }
                 }
             }
         }
@@ -194,19 +195,19 @@ class AnalyzerService(
                                 val twelveOurBefore = now - 12.hours.inWholeMilliseconds
                                 val twentyFourOurBefore = now - 24.hours.inWholeMilliseconds
                                 analyzer.calculateStabilityCoef(snapshots.map { snap -> snap.money }).let {
-                                    update.set("stabilityCoef", it)
+                                    update["stabilityCoef"] = it
                                 }
                                 snapshots.firstOrNull { it.timestamp > oneOurBefore }?.let { snapshot ->
                                     val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                    update.set("pNl1", pNl)
+                                    update["pNl1"] = pNl
                                 }
                                 snapshots.firstOrNull { it.timestamp > twelveOurBefore }?.let { snapshot ->
                                     val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                    update.set("pNl12", pNl)
+                                    update["pNl12"] = pNl
                                 }
                                 snapshots.firstOrNull { it.timestamp > twentyFourOurBefore }?.let { snapshot ->
                                     val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
-                                    update.set("pNl24", pNl)
+                                    update["pNl24"] = pNl
                                 }
 
                                 ops.updateOne(
