@@ -14,6 +14,7 @@ import space.dawdawich.exception.InvalidSignatureException
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.utils.bytesToHex
+import java.nio.channels.UnresolvedAddressException
 import javax.crypto.Mac
 import kotlin.jvm.Throws
 
@@ -71,14 +72,18 @@ class ByBitPrivateHttpClient(
                     logger.info { "Failed to create order. Reason:\n${parsedJson.jsonString()}" }
                     return false
                 }
+
                 10004 -> throw InvalidSignatureException()
                 110009 -> {
                     cancelAllOrder(symbol)
                     return createOrder(symbol, entryPrice, qty, isLong, orderId)
                 }
+
                 110007 -> throw InsufficientBalanceException()
                 else -> throw UnknownRetCodeException(returnCode)
             }
+        } catch (e: UnresolvedAddressException) {
+            logger.warn { "Failed to create order" }
         } catch (e: Exception) {
             logger.warn(e) { "Failed to create order on bybit server" }
         }
@@ -101,6 +106,8 @@ class ByBitPrivateHttpClient(
             } else if (returnCode != 0) {
                 throw UnknownRetCodeException(returnCode)
             }
+        } catch (e: UnresolvedAddressException) {
+            logger.warn { "Failed to cancel order" }
         } catch (e: Exception) {
             throw e
         }
@@ -123,9 +130,12 @@ class ByBitPrivateHttpClient(
                 10004 -> throw InvalidSignatureException()
                 else -> throw UnknownRetCodeException(returnCode)
             }
+        } catch (e: UnresolvedAddressException) {
+            logger.warn { "Failed to cancel order" }
         } catch (e: Exception) {
             throw e
         }
+        return false
     }
 
     override suspend fun getAccountBalance(repeatCount: Int): Double {
@@ -160,6 +170,7 @@ class ByBitPrivateHttpClient(
                     position["updatedTime"].toString().let { if (it.isBlank()) 0 else it.toLong() }
                 )
             }
+
             10002 -> getPositionInfo(symbol, retryCount)
             10004 -> throw InvalidSignatureException()
             else -> throw UnknownRetCodeException(returnCode)

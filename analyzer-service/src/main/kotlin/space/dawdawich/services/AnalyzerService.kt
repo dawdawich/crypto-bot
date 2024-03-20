@@ -84,7 +84,6 @@ class AnalyzerService(
     @KafkaListener(topics = [ACTIVATE_ANALYZERS_TOPIC])
     fun activateAnalyzers(accountId: String) {
         runBlocking {
-            analyzerRepository.findAllByPublic()
             analyzerRepository.findAllByAccountIdAndPublic(accountId, true).forEach { doc ->
                 if (doc.isActive && analyzers.none { analyzer -> analyzer.id == doc.id }) {
                     launch { addAnalyzer(doc.convert()) }
