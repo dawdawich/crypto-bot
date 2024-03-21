@@ -210,9 +210,9 @@ class GridTableStrategyRunner(
                     val orderTrend = if (orderPrice < middlePrice) Trend.LONG else Trend.SHORT
                     val qty = moneyPerOrder * multiplier / orderPrice
 
-                    if (position?.trend != orderTrend && ((position?.calculateReduceOrder(orderPrice, qty, orderTrend)
-                            ?: 0.03) < 0.03) ||
-                        ((position?.calculatePositionUnrealizedProfitPercent(currentPrice) ?: 0.0) > 10)
+                    if (position?.trend != orderTrend &&
+                        (((position?.calculateReduceOrder(orderPrice, qty, orderTrend) ?: 0.03) < 0.03) ||
+                        ((position?.calculatePositionUnrealizedProfitPercent(currentPrice) ?: 0.0) > 10))
                     ) {
                         return@forEach
                     }
