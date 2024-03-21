@@ -238,6 +238,7 @@ class Manager(
                 crashPostAction.invoke(ex)
             }
         } else {
+            strategyRunner.checkStrategyPosition(newPrice)
             logger {
                 val (minPrice, maxPrice) = strategyRunner.getPriceBounds()
                 it.info { "Price not in price bound. Min Price: '$minPrice'; Max Price: '$maxPrice'; Current: '$newPrice'" }
