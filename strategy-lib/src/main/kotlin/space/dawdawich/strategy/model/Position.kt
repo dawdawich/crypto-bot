@@ -34,10 +34,10 @@ class Position(
         return calculateUnrealizedPnL(currentPrice) + realizedPnL
     }
 
-    fun calculateROI(currentPrice: Double): Double {
+    fun calculateROI(currentPrice: Double, leverage: Int): Double {
         val unrealizedPnL = calculateUnrealizedPnL(currentPrice);
         val posValue = getPositionValue()
-        return (unrealizedPnL / posValue) * 100
+        return (unrealizedPnL / posValue) * 100 * leverage
     }
 
     fun calculateReduceOrder(orderPrice: Double, orderSize: Double, orderTrend: Trend): Double {
