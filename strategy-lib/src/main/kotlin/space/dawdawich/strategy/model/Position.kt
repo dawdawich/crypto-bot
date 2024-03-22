@@ -31,14 +31,13 @@ class Position(
     }
 
     fun calculateProfit(currentPrice: Double): Double {
-        val profitPerUnit = if (trend.directionBoolean) currentPrice - entryPrice else entryPrice - currentPrice
-        return (profitPerUnit - (currentPrice - entryPrice).absoluteValue * 0.00055) * size + realizedPnL
+        return calculateUnrealizedPnL(currentPrice) + realizedPnL
     }
 
     fun calculateROI(currentPrice: Double): Double {
-        val finalValue = size * currentPrice
-        val initialValue = entryPrice * size
-        return ((finalValue - initialValue) / initialValue) * 100
+        val unrealizedPnL = calculateUnrealizedPnL(currentPrice);
+        val posValue = getPositionValue()
+        return (unrealizedPnL / posValue) * 100
     }
 
     fun calculateReduceOrder(orderPrice: Double, orderSize: Double, orderTrend: Trend): Double {
@@ -52,6 +51,11 @@ class Position(
     }
 
     fun getPositionValue(): Double = entryPrice * size
+
+    private fun calculateUnrealizedPnL(currentPrice: Double): Double {
+        val profitPerUnit = if (trend.directionBoolean) currentPrice - entryPrice else entryPrice - currentPrice
+        return (profitPerUnit - (currentPrice - entryPrice).absoluteValue * 0.00055) * size
+    }
 
     override fun toString(): String {
         return "Position(entryPrice=$entryPrice, size=$size, trend=$trend, realizedPnL=$realizedPnL)"
