@@ -35,10 +35,10 @@ class Position(
         return (profitPerUnit - (currentPrice - entryPrice).absoluteValue * 0.00055) * size + realizedPnL
     }
 
-    fun calculatePositionUnrealizedProfitPercent(currentPrice: Double): Double {
-        val unrealizedProfit: Double = calculateProfit(currentPrice)
-        val positionValue: Double = getPositionValue()
-        return (unrealizedProfit / positionValue) * 100
+    fun calculateROI(currentPrice: Double): Double {
+        val finalValue = size * currentPrice
+        val initialValue = entryPrice * size
+        return ((finalValue - initialValue) / initialValue) * 100
     }
 
     fun calculateReduceOrder(orderPrice: Double, orderSize: Double, orderTrend: Trend): Double {
