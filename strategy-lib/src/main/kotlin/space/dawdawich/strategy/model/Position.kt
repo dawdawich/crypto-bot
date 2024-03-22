@@ -35,7 +35,7 @@ class Position(
     }
 
     fun calculateROI(currentPrice: Double, leverage: Int): Double {
-        val unrealizedPnL = calculateUnrealizedPnL(currentPrice);
+        val unrealizedPnL = calculateUnrealizedPnLInCoin(currentPrice);
         val initialMargin = size / (entryPrice * leverage)
         return (unrealizedPnL / initialMargin) * 100
     }
@@ -55,6 +55,15 @@ class Position(
     private fun calculateUnrealizedPnL(currentPrice: Double): Double {
         val profitPerUnit = if (trend.directionBoolean) currentPrice - entryPrice else entryPrice - currentPrice
         return (profitPerUnit - (currentPrice - entryPrice).absoluteValue * 0.00055) * size
+    }
+
+    private fun calculateUnrealizedPnLInCoin(currentPrice: Double): Double {
+        return if (trend.directionBoolean) {
+            size * ((1 / entryPrice) - (1 / currentPrice))
+        } else {
+            size * ((1 / currentPrice) - (1 / entryPrice))
+
+        }
     }
 
     override fun toString(): String {
