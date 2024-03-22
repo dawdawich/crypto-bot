@@ -11,7 +11,7 @@ class KafkaManager(private val kafkaTemplate: KafkaTemplate<String, String>) {
 
     fun sendTickerEvent(topic: String, symbol: String, partition: Int, value: String) {
         val currentTime = System.currentTimeMillis()
-        if ((currentTime - (lastUpdateTopicTime["$topic-$partition"] ?: 0)) > 5.seconds.inWholeMilliseconds) {
+        if ((currentTime - (lastUpdateTopicTime["$topic-$partition"] ?: 0)) > 10.seconds.inWholeMilliseconds) {
             lastUpdateTopicTime["$topic-$partition"] = System.currentTimeMillis()
             kafkaTemplate.send(topic, partition, symbol, value)
         }
