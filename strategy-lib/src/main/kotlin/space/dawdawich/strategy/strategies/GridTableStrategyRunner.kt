@@ -216,7 +216,7 @@ class GridTableStrategyRunner(
 
                     if (position?.trend != orderTrend &&
                         (((position?.calculateReduceOrder(orderPrice, qty, orderTrend) ?: 0.03) < 0.03) ||
-                        ((position?.calculateROI(currentPrice, multiplier) ?: 0.0) > 10))
+                        ((position?.calculateROI(currentPrice) ?: 0.0) < 10))
                     ) {
                         return@forEach
                     }
