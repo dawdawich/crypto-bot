@@ -47,6 +47,9 @@ class SecurityConfiguration {
 
         authenticationFilter.successHandler = AuthenticationSuccessHandler { _, _, _ -> } // After success auth, AuthenticationSuccessHandler tries to redirect user to main page, with this approach we disabled redirect
         return http
+            .requiresChannel {
+                it.anyRequest().requiresSecure()
+            }
             .x509 { customizer -> customizer.disable() }
             .cors { customizer ->
                 customizer.configurationSource {
@@ -72,7 +75,6 @@ class SecurityConfiguration {
                     requestMatchers("/symbol").hasAuthority("ADMIN")
                     requestMatchers("/ws/*").permitAll()
                     requestMatchers(HttpMethod.GET, "/health-check").hasAuthority("ADMIN")
-                    anyRequest().permitAll()
                 }
             }
             .sessionManagement {
