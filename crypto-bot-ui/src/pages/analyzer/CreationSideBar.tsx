@@ -299,21 +299,20 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         multiAnalyzerModel.symbol.length;
 
 
-    const getDemoOptionFromValue = (value: boolean | undefined) => value !== undefined ? value ? {
-        value: true,
-        label: 'True'
-    } : {value: false, label: 'False'} : undefined;
+    const getDemoOptionFromValue = (value: boolean | undefined) => {
+        if (value === undefined) {
+            return undefined;
+        }
+        return value ? {value: true, label: 'True'} : {value: false, label: 'False'};
+    };
 
     const getMultiFieldValue = (name: string) => {
         // @ts-ignore
         const valueMin = multiAnalyzerModel[name + 'Min'];
         // @ts-ignore
         const valueMax = multiAnalyzerModel[name + 'Max'];
-        if (!!valueMin) {
-            return valueMin + (!!valueMax ? '-' + valueMax : '');
-        } else {
-            return "";
-        }
+        const maxValuePlaceholder = valueMax ? '-' + valueMax : '';
+        return valueMin ? valueMin + maxValuePlaceholder : "";
     }
 
     const createAnalyzer = () => {
