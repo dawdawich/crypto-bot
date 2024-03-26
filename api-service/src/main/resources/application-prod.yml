@@ -14,11 +14,6 @@ logging:
   level:
     org.springframework: INFO
 
-server:
-  port: 8080
-  servlet:
-    context-path: /api
-
 app:
   services-url: "analyzer-service=http://analyzer-service:8080/actuator/health,event-listener-service=http://event-listener:8080/actuator/health,event-listener-topics-updates=http://event-listener:8080/topics-update-time,trade-manager-service=http://trade-manager-service:8080/actuator/health"
   joat-token-address: "0xf1Cd6904b84902D130dA10C114b16565A1b084Ed"
