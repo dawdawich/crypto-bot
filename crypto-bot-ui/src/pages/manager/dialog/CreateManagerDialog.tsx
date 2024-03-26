@@ -17,6 +17,7 @@ interface AddApiTokenDialogProps {
     logout: () => void;
     open: boolean;
     onClose: () => void;
+    onCreate: () => void;
     apiTokens: ApiToken[];
     folders: FolderModel[];
 }
@@ -37,12 +38,12 @@ const AnalyzerStrategyOption = [
         value: 'BIGGEST_BY_MONEY', label: 'Choose best by money'
     }, {
         value: 'MOST_STABLE', label: 'Choose best by stability'
-    }, {
+    }/*, {
         value: 'TEST', label: 'Test New Strategy'
-    }
+    }*/
 ];
 
-const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, apiTokens, folders}) => {
+const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, onCreate, apiTokens, folders}) => {
     const [managerData, setManagerData] = useState<ManagerModel>({
         apiTokenId: undefined,
         customName: undefined,
@@ -85,11 +86,12 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
             .then((id) => {
                 hideLoader();
                 successToast('Manager created successfully');
+                onCreate();
                 onClose();
             })
             .catch((ex) => {
                 hideLoader();
-                errorToast('Failed to create manager');
+                errorToast('Failed to create` manager');
                 if (ex instanceof UnauthorizedError) {
                     logout();
                 }
@@ -106,7 +108,7 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
                         color: 'white',
                         fontWeight: '400',
                         width: '380px',
-                        height: '700px',
+                        height: 'auto',
                         position: 'relative',
                         padding: '16px'
                     }
@@ -173,24 +175,24 @@ const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout
                            value={managerData.refreshAnalyzerTime}
                            onChange={handleChange}/>
                 </div>
-                <div className="field-container">
-                    <div className="field-container-label">
-                        Stop Loss, %
-                    </div>
-                    <input type="number" name="stopLoss" className="input-field"
-                           value={managerData.stopLoss}
-                           placeholder="Optional"
-                           onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    <div className="field-container-label">
-                        Stop Loss, %
-                    </div>
-                    <input type="number" name="takeProfit" className="input-field"
-                           value={managerData.takeProfit}
-                           placeholder="Optional"
-                           onChange={handleChange}/>
-                </div>
+                {/*<div className="field-container">*/}
+                {/*    <div className="field-container-label">*/}
+                {/*        Stop Loss, %*/}
+                {/*    </div>*/}
+                {/*    <input type="number" name="stopLoss" className="input-field"*/}
+                {/*           value={managerData.stopLoss}*/}
+                {/*           placeholder="Optional"*/}
+                {/*           onChange={handleChange}/>*/}
+                {/*</div>*/}
+                {/*<div className="field-container">*/}
+                {/*    <div className="field-container-label">*/}
+                {/*        Stop Loss, %*/}
+                {/*    </div>*/}
+                {/*    <input type="number" name="takeProfit" className="input-field"*/}
+                {/*           value={managerData.takeProfit}*/}
+                {/*           placeholder="Optional"*/}
+                {/*           onChange={handleChange}/>*/}
+                {/*</div>*/}
             </DialogContent>
             <DialogActions className="action-buttons-container">
                 <div style={{display: 'flex', flexDirection: 'row', fontWeight: 200, fontSize: '13px'}}>

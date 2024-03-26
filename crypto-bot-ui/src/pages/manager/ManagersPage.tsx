@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import "../../css/pages/manager/ManagersPageStyles.css";
 import {
     Button,
@@ -76,6 +76,21 @@ const ManagersPage: React.FC = () => {
 
     document.title = 'Managers';
 
+    const updateManagersList = useCallback(() => {
+        fetchManagersList(authInfo!)
+            .then((managers) => {
+                setIsTableLoading(false);
+                setManagers(managers);
+            })
+            .catch((ex) => {
+                setIsTableLoading(false);
+                errorToast('Failed to fetch managers');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
+    }, [authInfo, logout])
+
     useEffect(() => {
         getApiTokens(authInfo!)
             .then((tokens) => setApiTokens(tokens))
@@ -94,19 +109,8 @@ const ManagersPage: React.FC = () => {
                 }
             });
         setIsTableLoading(true);
-        fetchManagersList(authInfo!)
-            .then((managers) => {
-                setIsTableLoading(false);
-                setManagers(managers);
-            })
-            .catch((ex) => {
-                setIsTableLoading(false);
-                errorToast('Failed to fetch managers');
-                if (ex instanceof UnauthorizedError) {
-                    logout();
-                }
-            });
-    }, [authInfo, logout]);
+        updateManagersList();
+    }, [authInfo, logout, updateManagersList]);
 
     const getFilterStyleClass = (type: FilterType) => type === activeFilter ? 'managers-filters-cell-active' : 'managers-filters-cell';
 
@@ -206,6 +210,7 @@ const ManagersPage: React.FC = () => {
         <div className="managers-content">
             <CreateManagerDialog folders={folders} apiTokens={apiTokens} authInfo={authInfo!} logout={logout}
                                  open={isDialogOpen}
+                                 onCreate={() => updateManagersList()}
                                  onClose={() => setIsDialogOpen(false)}/>
             <div className="managers-header">
                 <div className="managers-header-path">
@@ -261,14 +266,14 @@ const ManagersPage: React.FC = () => {
                                 <TableCell id="cell">Name</TableCell>
                                 <TableCell id="cell">Status</TableCell>
                                 <TableCell id="cell">Market</TableCell>
-                                <TableCell id="cell">Stop Loss</TableCell>
-                                <TableCell id="cell">Take Profit</TableCell>
+                                {/*<TableCell id="cell">Stop Loss</TableCell>*/}
+                                {/*<TableCell id="cell">Take Profit</TableCell>*/}
                                 <TableCell id="cell">Analyzers</TableCell>
                                 <TableCell align="center" id="cell"><MenuHeaderIcon/></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {   isTableLoading ? loadingTableRows({rows: 13, columns: 6}) :
+                            {   isTableLoading ? loadingTableRows({rows: 13, columns: 4, postfixSkipColumns: 1}) :
                                 getManagers().map((manager, index) =>
                                     (
                                         <TableRow>
@@ -276,8 +281,8 @@ const ManagersPage: React.FC = () => {
                                                 id="cell">{!manager.customName ? manager.id : manager.customName}</TableCell>
                                             <TableCell id="cell">{getStatusCell(manager.status)}</TableCell>
                                             <TableCell id="cell">{manager.market}</TableCell>
-                                            <TableCell id="cell">{manager.stopLoss}</TableCell>
-                                            <TableCell id="cell">{manager.takeProfit}</TableCell>
+                                            {/*<TableCell id="cell">{manager.stopLoss}</TableCell>*/}
+                                            {/*<TableCell id="cell">{manager.takeProfit}</TableCell>*/}
                                             <TableCell id="cell">{manager.analyzersCount}</TableCell>
                                             <TableCell align="center" id="cell">
                                                 <MenuIcon className="managers-menu-hover"

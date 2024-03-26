@@ -141,6 +141,32 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                 activate: analyzer.active,
                 public: analyzer.public
             });
+            setMultiAnalyzerModel({
+                    folders: [],
+                    symbol: [analyzer.symbol],
+                    strategy: analyzer.strategy,
+                    diapasonMin: analyzer.diapason,
+                    diapasonMax: undefined,
+                    diapasonStep: 1,
+                    gridSizeMin: analyzer.gridSize,
+                    gridSizeMax: undefined,
+                    gridSizeStep: 1,
+                    multiplierMin: analyzer.multiplier,
+                    multiplierMax: undefined,
+                    multiplierStep: 1,
+                    stopLossMin: analyzer.stopLoss,
+                    stopLossMax: undefined,
+                    stopLossStep: 1,
+                    takeProfitMin: analyzer.takeProfit,
+                    takeProfitMax: undefined,
+                    takeProfitStep: 1,
+                    startCapital: analyzer.startCapital,
+                    market: analyzer.market,
+                    demo: analyzer.demoAccount,
+                    activate: analyzer.active,
+                    public: analyzer.public
+                }
+            );
         }
     }, [props.predefinedAnalyzerProps]);
 
@@ -278,6 +304,18 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         label: 'True'
     } : {value: false, label: 'False'} : undefined;
 
+    const getMultiFieldValue = (name: string) => {
+        // @ts-ignore
+        const valueMin = multiAnalyzerModel[name + 'Min'];
+        // @ts-ignore
+        const valueMax = multiAnalyzerModel[name + 'Max'];
+        if (!!valueMin) {
+            return valueMin + (!!valueMax ? '-' + valueMax : '');
+        } else {
+            return "";
+        }
+    }
+
     const createAnalyzer = () => {
         if ((creationMode === 'SINGLE' && validateAllFieldsSingle()) || (creationMode === 'MULTI' && validateAllFieldsMulti())) {
             if (creationMode === 'SINGLE') {
@@ -340,10 +378,10 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     }}/>
                 </RowDiv>
                 <div className="switch-container">
-                    <div className="switch-container-button" onClick={() => setCreationMode('SINGLE')}
+                    <div role="button" className="switch-container-button" onClick={() => setCreationMode('SINGLE')}
                          style={getSwitcherPressedStyle('SINGLE')}>Single analyzer
                     </div>
-                    <div className="switch-container-button" onClick={() => setCreationMode('MULTI')}
+                    <div role="button" className="switch-container-button" onClick={() => setCreationMode('MULTI')}
                          style={getSwitcherPressedStyle('MULTI')}>Diapason
                     </div>
                 </div>
@@ -408,6 +446,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                                 type="text"
                                 name="diapason"
                                 placeholder="1-2"
+                                value={getMultiFieldValue("diapason")}
                                 onChange={checkAndHandleChange}/>
                         </div>
                         <div className="field-container" style={{marginTop: '0', width: '80px'}}>
@@ -439,6 +478,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                                 type="text"
                                 name="gridSize"
                                 placeholder="1-2"
+                                value={getMultiFieldValue("gridSize")}
                                 onChange={checkAndHandleChange}/>
                         </div>
                         <div className="field-container" style={{marginTop: '0', width: '80px'}}>
@@ -470,6 +510,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                                 type="text"
                                 name="multiplier"
                                 placeholder="1-2"
+                                value={getMultiFieldValue("multiplier")}
                                 onChange={checkAndHandleChange}/>
                         </div>
                         <div className="field-container" style={{marginTop: '0', width: '80px'}}>
@@ -501,6 +542,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                                 type="text"
                                 name="stopLoss"
                                 placeholder="1-2"
+                                value={getMultiFieldValue("stopLoss")}
                                 onChange={checkAndHandleChange}/>
                         </div>
                         <div className="field-container" style={{marginTop: '0', width: '80px'}}>
@@ -531,6 +573,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                                 error={!!multiAnalyzerModel.takeProfitMin && multiAnalyzerModel.takeProfitMin < 1}
                                 type="text"
                                 name="takeProfit"
+                                value={getMultiFieldValue("takeProfit")}
                                 placeholder="1-2"
                                 onChange={checkAndHandleChange}/>
                         </div>

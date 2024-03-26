@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.managers.Manager
-import space.dawdawich.repositories.mongo.TradeManagerRepository
+import space.dawdawich.repositories.mongo.ManagerRepository
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.service.factory.TradeManagerFactory
@@ -16,7 +16,7 @@ import java.util.*
 
 @Service
 class TradeManagerService(
-    private val tradeManagerRepository: TradeManagerRepository,
+    private val managerRepository: ManagerRepository,
     private val tradeManagerFactory: TradeManagerFactory
 ) {
     private val logger = KotlinLogging.logger {}
@@ -57,6 +57,6 @@ class TradeManagerService(
             }
             tradeManagers.remove(it)
         }
-        tradeManagerRepository.updateTradeManagerStatus(managerId, status, stopDescription, ex?.message)
+        managerRepository.updateTradeManagerStatus(managerId, status, stopDescription, ex?.message)
     }
 }

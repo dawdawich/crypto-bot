@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.repository.Update
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.repositories.constants.ManagerStatus
 
-interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String> {
+interface ManagerRepository : MongoRepository<TradeManagerDocument, String> {
 
     @Query("{_id: ?0}")
     @Update("{\$set: {status: ?1, stopDescription: ?2, errorDescription: ?3, updateTime: ?4}}")
@@ -19,4 +19,5 @@ interface TradeManagerRepository : MongoRepository<TradeManagerDocument, String>
     fun findByIdAndAccountId(id: String, accountId: String): TradeManagerDocument?
 
     fun deleteByIdAndAccountId(id: String, accountId: String): Int
+    fun deleteAllByApiTokenId(apiTokenId: String)
 }

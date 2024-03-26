@@ -1,5 +1,6 @@
 package space.dawdawich.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.web3j.abi.FunctionReturnDecoder
@@ -23,12 +24,12 @@ class AccountTransactionService(
     private val accountTransactionRepository: AccountTransactionRepository,
     private val serverConfigRepository: ServerConfigRepository,
     private val web3Client: Web3j,
+    @Value("\${app.joat-token-address}") private val joatContractAddress: String
 ) {
 
     companion object {
         const val SHIFT_TX_INPUT_VALUE = 10
         const val TOKEN_DECIMALS = 18
-        const val JOAT_CONTRACT_ADDRESS = "0x2154481753c3717Cb66b836fC6e9087C89c6Ff73"
         const val ADMIN_WALLET_ADDRESS = "0xe6acDe7D649bdD633A68EAD07b9E8A3FB907b36a"
 
         val transactionMetaInfo = Function(
@@ -66,7 +67,7 @@ class AccountTransactionService(
                     block.transactions
                         .asSequence()
                         .filterIsInstance<Transaction>()
-                        .filter { tx -> JOAT_CONTRACT_ADDRESS.equals(tx.to, true) }
+                        .filter { tx -> joatContractAddress.equals(tx.to, true) }
                         .filter { tx -> web3Client.ethGetTransactionReceipt(tx.hash).send().transactionReceipt.isPresent }
                         .map { tx ->
                             tx to FunctionReturnDecoder.decode(

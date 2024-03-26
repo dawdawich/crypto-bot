@@ -9,11 +9,13 @@ import space.dawdawich.controller.model.account.api_token.ApiTokenResponse
 import space.dawdawich.controller.model.account.api_token.CreateApiTokenRequest
 import space.dawdawich.service.AccountService
 import space.dawdawich.service.AccountTransactionService
+import space.dawdawich.service.ManagerService
 import space.dawdawich.utils.baseDecode
 
 @RestController
 @RequestMapping("/account")
-class AccountController(private val accountService: AccountService, private val accountTransactionService: AccountTransactionService) {
+class AccountController(private val accountService: AccountService,
+                        private val accountTransactionService: AccountTransactionService) {
 
     @GetMapping("/api-token")
     fun getApiTokens(user: Authentication): ResponseEntity<List<ApiTokenResponse>> = ResponseEntity.ok(
@@ -33,10 +35,8 @@ class AccountController(private val accountService: AccountService, private val 
 
     @DeleteMapping("/api-token/{id}")
     fun deleteApiToken(@PathVariable("id") id: String, user: Authentication): ResponseEntity<Unit> {
-        if (accountService.deleteApiToken(id, user.name) > 0) {
-            return ResponseEntity(HttpStatus.OK)
-        }
-        return ResponseEntity(NOT_FOUND)
+        accountService.deleteApiToken(id, user.name)
+        return ResponseEntity(HttpStatus.OK)
     }
 
     @GetMapping("/salt")

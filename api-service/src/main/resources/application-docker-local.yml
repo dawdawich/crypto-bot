@@ -18,3 +18,4 @@ logging:
 
 app:
   services-url: "analyzer-service=http://analyzer-service:8701/actuator/health,event-listener-service=http://event-listener:8702/actuator/health,event-listener-topics-updates=http://event-listener:8702/topics-update-time,trade-manager-service=http://trade-manager-service:8703/actuator/health"
+  joat-token-address: "0x2154481753c3717Cb66b836fC6e9087C89c6Ff73"
