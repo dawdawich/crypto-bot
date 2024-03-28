@@ -321,7 +321,7 @@ const tokenAbi = [
         "type": "function"
     }
 ];
-const tokenAddress = "0x2154481753c3717Cb66b836fC6e9087C89c6Ff73";
+const tokenAddress = "0xf1Cd6904b84902D130dA10C114b16565A1b084Ed";
 
 const web3 = new Web3((window as any).ethereum);
 const tokenContract = new web3.eth.Contract(tokenAbi, tokenAddress);
