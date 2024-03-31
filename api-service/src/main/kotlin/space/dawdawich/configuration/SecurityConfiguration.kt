@@ -70,7 +70,7 @@ class SecurityConfiguration {
                     requestMatchers("/analyzer/**").authenticated()
                     requestMatchers("/folder").authenticated()
                     requestMatchers("/folder/**").authenticated()
-                    requestMatchers("/manager").authenticated()
+                    requestMatchers("/manager/**").authenticated()
                     requestMatchers("/symbol/names").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
                     requestMatchers("/ws/*").permitAll()
