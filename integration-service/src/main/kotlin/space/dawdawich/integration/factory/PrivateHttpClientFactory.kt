@@ -5,9 +5,12 @@ import space.dawdawich.integration.client.bybit.ByBitPrivateHttpClient
 import io.ktor.client.*
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
+import space.dawdawich.constants.BINANCE_SERVER_URL
+import space.dawdawich.constants.BINANCE_TEST_SERVER_URL
 import space.dawdawich.constants.BYBIT_SERVER_URL
 import space.dawdawich.constants.BYBIT_TEST_SERVER_URL
 import space.dawdawich.integration.client.PrivateHttpClient
+import space.dawdawich.integration.client.binance.BinancePrivateHttpClient
 import space.dawdawich.model.constants.Market
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -20,6 +23,13 @@ class PrivateHttpClientFactory(private val httpClient: HttpClient, private val j
         when(market) {
             Market.BYBIT -> ByBitPrivateHttpClient(
                 if (isTest) BYBIT_TEST_SERVER_URL else BYBIT_SERVER_URL,
+                httpClient,
+                jsonPath,
+                apiKey,
+                encryptor
+            )
+            Market.BINANCE -> BinancePrivateHttpClient(
+                if (isTest) BINANCE_TEST_SERVER_URL else BINANCE_SERVER_URL,
                 httpClient,
                 jsonPath,
                 apiKey,

@@ -5,13 +5,11 @@ import space.dawdawich.integration.model.PositionInfo
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mu.KotlinLogging
-import space.dawdawich.exception.InsufficientBalanceException
-import space.dawdawich.exception.InvalidMarginProvided
-import space.dawdawich.exception.InvalidSignatureException
-import space.dawdawich.exception.UnknownRetCodeException
+import space.dawdawich.exception.*
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.utils.bytesToHex
 import java.nio.channels.UnresolvedAddressException
@@ -64,6 +62,10 @@ class ByBitPrivateHttpClient(
         try {
             val response = repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
 
+            if (response.status != HttpStatusCode.OK) {
+                throw UnsuccessfulOperationException(response.status.value)
+            }
+
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
                 0 -> return true
@@ -99,6 +101,10 @@ class ByBitPrivateHttpClient(
         try {
             val response = repeatCount repeatTry { post(CANCEL_ALL_ORDERS, request, getByBitHeadersWithSign(request)) }
 
+            if (response.status != HttpStatusCode.OK) {
+                throw UnsuccessfulOperationException(response.status.value)
+            }
+
             val parsedJson = jsonPath.parse(response.bodyAsText())
             val returnCode = parsedJson.read<Int>(RET_CODE_KEY)
             if (returnCode == 10002) {
@@ -123,6 +129,10 @@ class ByBitPrivateHttpClient(
         try {
             val response = repeatCount repeatTry { post(CANCEL_ORDER, request, getByBitHeadersWithSign(request)) }
 
+            if (response.status != HttpStatusCode.OK) {
+                throw UnsuccessfulOperationException(response.status.value)
+            }
+
             val parsedJson = jsonPath.parse(response.bodyAsText())
             return when (val returnCode = parsedJson.read<Int>("$.retCode")) {
                 0, 110001 -> true
@@ -140,8 +150,12 @@ class ByBitPrivateHttpClient(
 
     override suspend fun getAccountBalance(repeatCount: Int): Double {
         val query = "accountType=UNIFIED&coin=USDT"
-        val response: HttpResponse =
-            repeatCount repeatTry { get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query)) }
+        val response: HttpResponse = repeatCount repeatTry { get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query)) }
+
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
+
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
         return when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
@@ -157,6 +171,9 @@ class ByBitPrivateHttpClient(
         val query = "category=linear&symbol=$symbol"
         val headers = getByBitHeadersWithSign(query)
         val response = retryCount repeatTry { get(GET_POSITIONS, query, headers) }
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
         val parsedJson = jsonPath.parse(response.bodyAsText())
 
         return when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
@@ -184,8 +201,11 @@ class ByBitPrivateHttpClient(
             put("buyLeverage", multiplier.toString())
             put("sellLeverage", multiplier.toString())
         }.toString()
-        val response: HttpResponse =
-            retryCount repeatTry { post(SET_MARGIN, request, getByBitHeadersWithSign(request)) }
+        val response: HttpResponse = retryCount repeatTry { post(SET_MARGIN, request, getByBitHeadersWithSign(request)) }
+
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
@@ -216,8 +236,11 @@ class ByBitPrivateHttpClient(
             put("timeInForce", "IOC")
         }.toString()
 
-        val response: HttpResponse =
-            repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
+        val response: HttpResponse = repeatCount repeatTry { post(CREATE_ORDER_URL, request, getByBitHeadersWithSign(request)) }
+
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {

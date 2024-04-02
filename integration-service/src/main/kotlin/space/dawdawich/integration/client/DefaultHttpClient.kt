@@ -12,27 +12,44 @@ abstract class DefaultHttpClient(private val serverUrl: String, private val clie
         queryString: String = "",
         headers: Array<Pair<String, String>> = arrayOf()
     ): HttpResponse {
-        val response = client.get("$serverUrl$url?$queryString") {
+        return client.get("$serverUrl$url?$queryString") {
             headers {
                 headers.forEach { append(it.first, it.second) }
             }
         }
-        if (response.status != HttpStatusCode.OK) {
-            throw UnsuccessfulOperationException(response.status.value)
-        }
-        return response
     }
 
     suspend fun post(url: String, body: String, headers: Array<Pair<String, String>>): HttpResponse {
-        val response = client.post("$serverUrl$url") {
+        return client.post("$serverUrl$url") {
             headers {
                 headers.forEach { append(it.first, it.second) }
             }
             setBody(body)
         }
-        if (response.status != HttpStatusCode.OK) {
-            throw UnsuccessfulOperationException(response.status.value)
+    }
+
+    suspend fun post(url: String, queryParameters: Array<Pair<String, String>>, headers: Array<Pair<String, String>>): HttpResponse {
+        return client.post("$serverUrl$url") {
+            queryParameters.forEach {
+                parameter(it.first, it.second)
+            }
+            headers {
+                headers.forEach { append(it.first, it.second) }
+            }
+            setBody(body)
+
         }
-        return response
+    }
+
+    suspend fun delete(url: String, queryParameters: Array<Pair<String, String>>, headers: Array<Pair<String, String>>): HttpResponse {
+        return client.delete("$serverUrl$url") {
+            queryParameters.forEach {
+                parameter(it.first, it.second)
+            }
+            headers {
+                headers.forEach { append(it.first, it.second) }
+            }
+            setBody(body)
+        }
     }
 }

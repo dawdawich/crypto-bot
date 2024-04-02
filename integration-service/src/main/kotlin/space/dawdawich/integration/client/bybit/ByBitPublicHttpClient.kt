@@ -5,7 +5,9 @@ import space.dawdawich.integration.client.DefaultHttpClient
 import space.dawdawich.integration.model.PairInfo
 import io.ktor.client.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import space.dawdawich.exception.UnknownRetCodeException
+import space.dawdawich.exception.UnsuccessfulOperationException
 import space.dawdawich.integration.client.PublicHttpClient
 
 open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val jsonPath: ParseContext) :
@@ -18,6 +20,10 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
 
     override suspend fun getPairCurrentPrice(symbol: String): Double {
         val response = get(GET_TICKER, "category=linear&symbol=$symbol")
+
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
@@ -33,6 +39,10 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
 
     override suspend fun getPairInstructions(symbol: String): PairInfo {
         val response = get(GET_INSTRUMENTS_INFO, "category=linear&symbol=$symbol")
+
+        if (response.status != HttpStatusCode.OK) {
+            throw UnsuccessfulOperationException(response.status.value)
+        }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
