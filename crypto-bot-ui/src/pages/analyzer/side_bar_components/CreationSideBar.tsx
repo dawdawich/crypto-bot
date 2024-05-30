@@ -126,7 +126,6 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     useEffect(() => {
         if (props.predefinedAnalyzerProps !== null) {
             const analyzer = props.predefinedAnalyzerProps;
-            console.log(JSON.stringify(analyzer));
             setSingleAnalyzerModel({
                 folders: [],
                 symbol: analyzer.symbol,
@@ -305,20 +304,13 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         });
     }
 
-    const calculateAnalyzersToCreate = () => {
-        console.log(calculateDiapasonFieldWithStepCount('diapason'));
-        console.log(calculateDiapasonFieldWithStepCount('gridSize'));
-        console.log(calculateDiapasonFieldWithStepCount('multiplier'));
-        console.log(calculateDiapasonFieldWithStepCount('stopLoss'));
-        console.log(calculateDiapasonFieldWithStepCount('takeProfit'));
-
-        return calculateDiapasonFieldWithStepCount('diapason') *
-            calculateDiapasonFieldWithStepCount('gridSize') *
-            calculateDiapasonFieldWithStepCount('multiplier') *
-            calculateDiapasonFieldWithStepCount('stopLoss') *
-            calculateDiapasonFieldWithStepCount('takeProfit') *
-            multiAnalyzerModel.symbol.length;
-    };
+    const calculateAnalyzersToCreate = () =>
+        calculateDiapasonFieldWithStepCount('diapason') *
+        calculateDiapasonFieldWithStepCount('gridSize') *
+        calculateDiapasonFieldWithStepCount('multiplier') *
+        calculateDiapasonFieldWithStepCount('stopLoss') *
+        calculateDiapasonFieldWithStepCount('takeProfit') *
+        multiAnalyzerModel.symbol.length;
 
 
     const getDemoOptionFromValue = (value: boolean | undefined) => {
