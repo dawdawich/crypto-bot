@@ -54,6 +54,25 @@
     font-weight: 200;
 }
 
+.range-field-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0;
+    margin-right: 8px;
+    width: 100%;
+    color: white;
+    font-weight: 200;
+}
+
+.step-field-container {
+    display: flex;
+    flex-direction: column;
+    color: white;
+    font-weight: 200;
+    margin-top: 0;
+    width: 80px;
+}
+
 .count-field-container {
     height: 32px;
     display: flex;

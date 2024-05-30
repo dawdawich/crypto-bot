@@ -37,7 +37,7 @@ import {useAuth} from "../../context/AuthContext";
 import {MultiSelectStyle, RowDiv} from "../../utils/styles/element-styles";
 import Select, {ActionMeta, components, OptionProps} from "react-select";
 import {fetchSymbolsNameList} from "../../service/SymbolService";
-import CreationSideBar from "./CreationSideBar";
+import CreationSideBar from "./side_bar_components/CreationSideBar";
 import {FolderModel} from "../../model/FolderModel";
 import {AnalyzerModel} from "../../model/AnalyzerModel";
 import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";

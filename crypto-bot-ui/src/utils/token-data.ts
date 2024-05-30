@@ -1,4 +1,5 @@
 import Web3 from 'web3';
+import {TOKEN_ADDRESS} from "../service/Constants";
 
 const tokenAbi = [
     {
@@ -321,10 +322,9 @@ const tokenAbi = [
         "type": "function"
     }
 ];
-const tokenAddress = "0xf1Cd6904b84902D130dA10C114b16565A1b084Ed";
 
 const web3 = new Web3((window as any).ethereum);
-const tokenContract = new web3.eth.Contract(tokenAbi, tokenAddress);
+const tokenContract = new web3.eth.Contract(tokenAbi, TOKEN_ADDRESS);
 
 export const sendToken = async (joatToSend: number) => {
     const accounts = await web3.eth.getAccounts();

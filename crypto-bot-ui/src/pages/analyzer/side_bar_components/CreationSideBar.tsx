@@ -1,15 +1,17 @@
 import React, {useEffect, useState} from "react";
 import {Button, styled} from "@mui/material";
-import "../../css/pages/analyzer/SideBlock.css";
-import {ReactComponent as CrossIcon} from '../../assets/images/action-icon/cross-icon.svg';
+import "../../../css/pages/analyzer/SideBlock.css";
+import {ReactComponent as CrossIcon} from '../../../assets/images/action-icon/cross-icon.svg';
 import Select from "react-select";
-import {AntSwitch, MultiSelectStyle, SelectStyle} from "../../utils/styles/element-styles";
-import {FolderModel} from "../../model/FolderModel";
-import {errorToast} from "../../shared/toast/Toasts";
-import {AnalyzerModel} from "../../model/AnalyzerModel";
-import {AnalyzerModelBulk} from "../../model/AnalyzerModelBulk";
-import {getMarketOptionFromValue, getStrategyOptionFromValue, StrategyTypes} from "../../model/AnalyzerConstants";
-import {InputField} from "../../shared/InputComponents";
+import {AntSwitch, MultiSelectStyle, SelectStyle} from "../../../utils/styles/element-styles";
+import {FolderModel} from "../../../model/FolderModel";
+import {errorToast} from "../../../shared/toast/Toasts";
+import {AnalyzerModel} from "../../../model/AnalyzerModel";
+import {AnalyzerModelBulk} from "../../../model/AnalyzerModelBulk";
+import {getMarketOptionFromValue, getStrategyOptionFromValue, StrategyTypes} from "../../../model/AnalyzerConstants";
+import {InputField} from "../../../shared/InputComponents";
+import SingleInputFields from "./SingleInputFields";
+import RangeInputFields from "./RangeInputFields";
 
 const SideBody = styled('div')({
     padding: '16px',
@@ -35,7 +37,7 @@ interface InitialProps {
     closeAction: () => void;
 }
 
-const PATTERN = /\d+-\d+/;
+const PATTERN = /\d+(-\d+)?/;
 
 type AnalyzerFieldsModel = {
     folders: string[];
@@ -78,7 +80,6 @@ type MultiAnalyzerFieldsModel = {
     activate: boolean;
     public: boolean;
 };
-
 const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, ref) => {
     const [creationMode, setCreationMode] = useState<CreationMode>('SINGLE');
     const [singleAnalyzerModel, setSingleAnalyzerModel] = useState<AnalyzerFieldsModel>({
@@ -169,20 +170,6 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
             );
         }
     }, [props.predefinedAnalyzerProps]);
-
-    const checkAndHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const {value, name} = e.target;
-        if (PATTERN.test(value)) {
-            const [min, max] = value.split("-");
-            if (parseInt(min) < parseInt(max)) {
-                setMultiAnalyzerModel({
-                    ...multiAnalyzerModel,
-                    [name + 'Min']: min,
-                    [name + 'Max']: max
-                });
-            }
-        }
-    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value, type, checked} = e.target;
@@ -286,17 +273,52 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
             const min = (multiAnalyzerModel as any)[fieldName + 'Min'];
             const max = (multiAnalyzerModel as any)[fieldName + 'Max'];
             const step = (multiAnalyzerModel as any)[fieldName + 'Step'];
-            return ((max - min) / step) + 1;
+            if (!!max && !!step) {
+                return ((max - min) / step) + 1;
+            }
         }
         return 1;
     }
 
-    const calculateAnalyzersToCreate = () => calculateDiapasonFieldWithStepCount('diapason') *
-        calculateDiapasonFieldWithStepCount('gridSize') *
-        calculateDiapasonFieldWithStepCount('multiplier') *
-        calculateDiapasonFieldWithStepCount('stopLoss') *
-        calculateDiapasonFieldWithStepCount('takeProfit') *
-        multiAnalyzerModel.symbol.length;
+    const applyDiapasonField = (field: any) => {
+        Object.entries(field).forEach(([key, value]) => {
+            if (String(value).indexOf('-') > -1) {
+                const values = String(value).split('-');
+                setMultiAnalyzerModel({
+                    ...multiAnalyzerModel,
+                    [key + 'Min']: values[0],
+                    [key + 'Max']: values[1],
+                })
+            } else {
+                setMultiAnalyzerModel({
+                    ...multiAnalyzerModel,
+                    [key + 'Min']: value,
+                })
+            }
+        })
+    }
+
+    const applyStepField = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMultiAnalyzerModel({
+            ...multiAnalyzerModel,
+            [e.target.name]: e.target.value
+        });
+    }
+
+    const calculateAnalyzersToCreate = () => {
+        console.log(calculateDiapasonFieldWithStepCount('diapason'));
+        console.log(calculateDiapasonFieldWithStepCount('gridSize'));
+        console.log(calculateDiapasonFieldWithStepCount('multiplier'));
+        console.log(calculateDiapasonFieldWithStepCount('stopLoss'));
+        console.log(calculateDiapasonFieldWithStepCount('takeProfit'));
+
+        return calculateDiapasonFieldWithStepCount('diapason') *
+            calculateDiapasonFieldWithStepCount('gridSize') *
+            calculateDiapasonFieldWithStepCount('multiplier') *
+            calculateDiapasonFieldWithStepCount('stopLoss') *
+            calculateDiapasonFieldWithStepCount('takeProfit') *
+            multiAnalyzerModel.symbol.length;
+    };
 
 
     const getDemoOptionFromValue = (value: boolean | undefined) => {
@@ -305,16 +327,6 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         }
         return value ? {value: true, label: 'True'} : {value: false, label: 'False'};
     };
-
-    const getMultiFieldValue = (name: string) => {
-        // @ts-ignore
-        const valueMin = multiAnalyzerModel[name + 'Min'];
-        // @ts-ignore
-        const valueMax = multiAnalyzerModel[name + 'Max'];
-        const maxValuePlaceholder = valueMax ? '-' + valueMax : '';
-        return valueMin ? valueMin + maxValuePlaceholder : "";
-    }
-
     const createAnalyzer = () => {
         if ((creationMode === 'SINGLE' && validateAllFieldsSingle()) || (creationMode === 'MULTI' && validateAllFieldsMulti())) {
             if (creationMode === 'SINGLE') {
@@ -427,166 +439,23 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                         options={StrategyTypes}
                     />
                 </div>
+                {/*Rangeble Input Fields*/}
                 {creationMode === 'SINGLE' ?
-                    <div className="field-container">
-                        Diapason, %
-                        <InputField
-                            error={!!singleAnalyzerModel.diapason && !validateDiapasonField()}
-                            type="number"
-                            name="diapason"
-                            value={singleAnalyzerModel.diapason}
-                            onChange={handleChange}/>
-                    </div> :
-                    <div className="several-fields-container">
-                        <div className="field-container" style={{marginTop: '0', marginRight: '8px', width: '100%'}}>
-                            Diapason, %
-                            <InputField
-                                error={!!multiAnalyzerModel.diapasonMin && !validateDiapasonStepField()}
-                                type="text"
-                                name="diapason"
-                                placeholder="1-2"
-                                value={getMultiFieldValue("diapason")}
-                                onChange={checkAndHandleChange}/>
-                        </div>
-                        <div className="field-container" style={{marginTop: '0', width: '80px'}}>
-                            Step
-                            <InputField
-                                error={!!multiAnalyzerModel.diapasonStep && multiAnalyzerModel.diapasonStep < 1}
-                                type="number"
-                                value={multiAnalyzerModel.diapasonStep}
-                                name="diapasonStep"
-                                onChange={handleChange}/>
-                        </div>
-                    </div>
-                }
-                {creationMode === 'SINGLE' ?
-                    <div className="field-container">
-                        Grid Size
-                        <InputField
-                            error={!!singleAnalyzerModel.gridSize && !validateGridSizeField()}
-                            type="number"
-                            name="gridSize"
-                            value={singleAnalyzerModel.gridSize}
-                            onChange={handleChange}/>
-                    </div> :
-                    <div className="several-fields-container">
-                        <div className="field-container" style={{marginTop: '0', marginRight: '8px', width: '100%'}}>
-                            Grid Size
-                            <InputField
-                                error={!!multiAnalyzerModel.gridSizeMin && !validateGridSizeStepField()}
-                                type="text"
-                                name="gridSize"
-                                placeholder="1-2"
-                                value={getMultiFieldValue("gridSize")}
-                                onChange={checkAndHandleChange}/>
-                        </div>
-                        <div className="field-container" style={{marginTop: '0', width: '80px'}}>
-                            Step
-                            <InputField
-                                type="number"
-                                error={!!multiAnalyzerModel.gridSizeStep && multiAnalyzerModel.gridSizeStep < 1}
-                                value={multiAnalyzerModel.gridSizeStep}
-                                name="gridSizeStep"
-                                onChange={handleChange}/>
-                        </div>
-                    </div>
-                }
-                {creationMode === 'SINGLE' ?
-                    <div className="field-container">
-                        Multiplier
-                        <InputField
-                            error={!!singleAnalyzerModel.multiplier && !validateMultiplierField()}
-                            type="number"
-                            name="multiplier"
-                            value={singleAnalyzerModel.multiplier}
-                            onChange={handleChange}/>
-                    </div> :
-                    <div className="several-fields-container">
-                        <div className="field-container" style={{marginTop: '0', marginRight: '8px', width: '100%'}}>
-                            Multiplier
-                            <InputField
-                                error={!!multiAnalyzerModel.multiplierMin && !validateMultiplierStepField()}
-                                type="text"
-                                name="multiplier"
-                                placeholder="1-2"
-                                value={getMultiFieldValue("multiplier")}
-                                onChange={checkAndHandleChange}/>
-                        </div>
-                        <div className="field-container" style={{marginTop: '0', width: '80px'}}>
-                            Step
-                            <InputField
-                                error={!!multiAnalyzerModel.diapasonStep && multiAnalyzerModel.diapasonStep < 1}
-                                type="number"
-                                value={multiAnalyzerModel.multiplierStep}
-                                name="multiplierStep"
-                                onChange={handleChange}/>
-                        </div>
-                    </div>
-                }
-                {creationMode === 'SINGLE' ?
-                    <div className="field-container">
-                        Stop Loss, %
-                        <InputField
-                            error={!!singleAnalyzerModel.stopLoss && !validateStopLossField()}
-                            type="number"
-                            name="stopLoss"
-                            value={singleAnalyzerModel.stopLoss}
-                            onChange={handleChange}/>
-                    </div> :
-                    <div className="several-fields-container">
-                        <div className="field-container" style={{marginTop: '0', marginRight: '8px', width: '100%'}}>
-                            Stop Loss, %
-                            <InputField
-                                error={!!multiAnalyzerModel.stopLossMin && multiAnalyzerModel.stopLossMin < 1}
-                                type="text"
-                                name="stopLoss"
-                                placeholder="1-2"
-                                value={getMultiFieldValue("stopLoss")}
-                                onChange={checkAndHandleChange}/>
-                        </div>
-                        <div className="field-container" style={{marginTop: '0', width: '80px'}}>
-                            Step
-                            <InputField
-                                error={!!multiAnalyzerModel.stopLossStep && multiAnalyzerModel.stopLossStep < 1}
-                                type="number"
-                                name="stopLossStep"
-                                value={multiAnalyzerModel.stopLossStep}
-                                onChange={handleChange}/>
-                        </div>
-                    </div>
-                }
-                {creationMode === 'SINGLE' ?
-                    <div className="field-container">
-                        Take Profit, %
-                        <InputField
-                            error={!!singleAnalyzerModel.takeProfit && !validateTakeProfitField()}
-                            type="number"
-                            name="takeProfit"
-                            value={singleAnalyzerModel.takeProfit}
-                            onChange={handleChange}/>
-                    </div> :
-                    <div className="several-fields-container">
-                        <div className="field-container" style={{marginTop: '0', marginRight: '8px', width: '100%'}}>
-                            Take Profit, %
-                            <InputField
-                                error={!!multiAnalyzerModel.takeProfitMin && multiAnalyzerModel.takeProfitMin < 1}
-                                type="text"
-                                name="takeProfit"
-                                value={getMultiFieldValue("takeProfit")}
-                                placeholder="1-2"
-                                onChange={checkAndHandleChange}/>
-                        </div>
-                        <div className="field-container" style={{marginTop: '0', width: '80px'}}>
-                            Step
-                            <InputField
-                                error={!!multiAnalyzerModel.takeProfitStep && multiAnalyzerModel.takeProfitStep < 1}
-                                type="number"
-                                name="takeProfitStep"
-                                value={multiAnalyzerModel.takeProfitStep}
-                                onChange={handleChange}/>
-                        </div>
-                    </div>
-                }
+                    <SingleInputFields
+                        diapason={!!singleAnalyzerModel.diapason ? singleAnalyzerModel.diapason.toString() : ''}
+                        gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
+                        multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                        onChange={handleChange}/> :
+                    <RangeInputFields diapason={!!multiAnalyzerModel.diapasonMin ? multiAnalyzerModel.diapasonMin.toString() : ''}
+                                      gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
+                                      multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                                      stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
+                                      takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
+                                      onChange={applyDiapasonField}
+                                      onStepChange={applyStepField}/>}
+                {/*-----------------------------*/}
                 <div className="field-container">
                     Start Capital, $
                     <InputField

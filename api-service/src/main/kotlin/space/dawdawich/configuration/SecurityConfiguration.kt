@@ -2,6 +2,7 @@ package space.dawdawich.configuration
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
@@ -20,7 +21,7 @@ import space.dawdawich.utils.baseDecode
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfiguration {
+class SecurityConfiguration(private val environment: Environment) {
 
     @Bean
     fun authManager(http: HttpSecurity, jwtAuthProvider: WalletAuthenticationProvider): AuthenticationManager {
@@ -46,10 +47,13 @@ class SecurityConfiguration {
         }
 
         authenticationFilter.successHandler = AuthenticationSuccessHandler { _, _, _ -> } // After success auth, AuthenticationSuccessHandler tries to redirect user to main page, with this approach we disabled redirect
+        if (environment.activeProfiles[0] == "prod") {
+            http
+                .requiresChannel {
+                    it.anyRequest().requiresSecure()
+                }
+        }
         return http
-            .requiresChannel {
-                it.anyRequest().requiresSecure()
-            }
             .x509 { customizer -> customizer.disable() }
             .cors { customizer ->
                 customizer.configurationSource {
