@@ -25,6 +25,7 @@ interface FolderDialogProps {
     currentFolder: FolderModel | null;
     currentFolderList: FolderModel[];
     analyzerIds: string[],
+    allAnalyzers: boolean,
     open: boolean;
     onClose: () => void;
     onCreate: (folder: FolderModel) => void;
@@ -39,6 +40,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
                                                               currentFolder,
                                                               currentFolderList,
                                                               analyzerIds,
+                                                              allAnalyzers,
                                                               open,
                                                               onClose,
                                                               onCreate,
@@ -120,7 +122,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({
             case "addToFolder":
                 if (!!choosedFolder && analyzerIds.length > 0) {
                     showBannerLoader();
-                    addAnalyzersToFolder(authInfo, choosedFolder.id, analyzerIds)
+                    addAnalyzersToFolder(authInfo, choosedFolder.id, analyzerIds, allAnalyzers)
                         .then(() => {
                             hideLoader();
                             onClose();

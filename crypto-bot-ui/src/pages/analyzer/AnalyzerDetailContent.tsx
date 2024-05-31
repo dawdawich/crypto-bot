@@ -181,7 +181,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
     };
 
     const stopAnalyzer = () => {
-        changeBulkAnalyzerStatus(authInfo!, [analyzerId], false)
+        changeBulkAnalyzerStatus(authInfo!, false, [analyzerId])
             .then(() => {
                 successToast('Analyzer stopped');
                 setAnalyzer({...analyzer as AnalyzerResponse, isActive: false});
@@ -195,7 +195,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
     }
 
     const activateAnalyzer = () => {
-        changeBulkAnalyzerStatus(authInfo!, [analyzerId], true)
+        changeBulkAnalyzerStatus(authInfo!, true, [analyzerId])
             .then(() => {
                 successToast('Analyzer stopped');
                 setAnalyzer({...analyzer as AnalyzerResponse, isActive: true});

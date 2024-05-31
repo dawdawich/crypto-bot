@@ -151,6 +151,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const [selectedStatusFilter, setSelectedStatusFilter] = useState<ActiveStatus>('ALL')
     const [selectedSymbolFilter, setSelectedSymbolFilter] = useState<string[]>([])
     const [selectedAnalyzers, setSelectedAnalyzers] = useState<readonly number[]>([]);
+    const [selectAllCheckbox, setSelectAllCheckbox] = useState<boolean>(false);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [symbols, setSymbols] = useState<string[]>([]);
     const [data, setData] = useState<AnalyzerResponse[]>([]);
@@ -266,7 +267,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         setAnchorEl(null);
     };
 
-    const handleClick = (id: number) => {
+    const handleSelectAnalyzer = (id: number) => {
         const selectedIndex = selectedAnalyzers.indexOf(id);
         let newSelected: readonly number[] = [];
 
@@ -286,12 +287,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     };
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.checked) {
-            const newSelected = Array.from({length: rowsCount}, (_, index) => index);
-            setSelectedAnalyzers(newSelected);
-            return;
-        }
         setSelectedAnalyzers([]);
+        setSelectAllCheckbox(event.target.checked);
     };
 
     const activateSelectedAnalyzers = () => {
@@ -314,7 +311,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const deleteAnalyzers = (analyzers: AnalyzerResponse[]) => {
         if (analyzers.length > 0) {
             showLoader();
-            deleteAnalyzerBulk(authInfo!, analyzers.map(e => e.id))
+            deleteAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
                 .then(() => {
                     hideLoader();
                     successToast('Analyzers deleted successfully.');
@@ -334,7 +331,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const resetAnalyzers = (analyzers: AnalyzerResponse[]) => {
         if (analyzers.length > 0) {
             showLoader();
-            resetAnalyzerBulk(authInfo!, analyzers.map(e => e.id))
+            resetAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
                 .then(() => {
                     hideLoader();
                     successToast('Analyzers updated successfully.');
@@ -352,29 +349,47 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     }
 
     const setCurrentAnalyzerStatus = (analyzers: AnalyzerResponse[], status: boolean) => {
-        if (analyzers.length > 0) {
-            showLoader();
-            changeBulkAnalyzerStatus(authInfo!, analyzers.map(e => e.id), status)
-                .then(() => {
-                    hideLoader();
+        showLoader();
+        changeBulkAnalyzerStatus(authInfo!, status,
+            analyzers.filter(e => e.isActive !== status).map(e => e.id), selectAllCheckbox)
+            .then(() => {
+                hideLoader();
+                if (!selectAllCheckbox) {
                     analyzers.forEach(e => e.isActive = status);
-                    setData([...data]);
-                    successToast(`Analyzers ${status ? 'activated' : 'deactivated'} successfully.`);
-                    setSelectedAnalyzers([]);
-                    setActiveSize(activeSize + (status ? analyzers.length : -analyzers.length))
-                    setNotActiveSize(notActiveSize - (status ? analyzers.length : -analyzers.length))
-                })
-                .catch((ex) => {
-                    hideLoader();
-                    setSelectedAnalyzers([]);
-                    errorToast(`Failed to ${status ? 'activate' : 'deactivate'} analyzers.`);
-                    if (ex instanceof UnauthorizedError) {
-                        logout();
-                    } else if (ex instanceof PaymentRequiredError) {
-                        errorToast('Not enough active subscriptions');
+                    setActiveSize(activeSize + (status ? analyzers.length : -analyzers.length));
+                    setNotActiveSize(notActiveSize - (status ? analyzers.length : -analyzers.length));
+                } else { // case when user choose all analyzers
+                    data
+                        .filter(e => !analyzers.includes(e))
+                        .forEach(e => e.isActive = status);
+                    if (status) { // also here processing deselected analyzers
+                        const notActive = analyzers.filter(e => !e.isActive).length;
+                        const active = dataSize - notActive;
+                        setActiveSize(active);
+                        setNotActiveSize(notActive);
+                    } else {
+                        const active = analyzers.filter(e => e.isActive).length;
+                        const notActive = dataSize - active;
+                        setActiveSize(active);
+                        setNotActiveSize(notActive);
                     }
-                });
-        }
+                }
+                setData([...data]);
+                setSelectedAnalyzers([]);
+                setSelectAllCheckbox(false);
+                successToast(`Analyzers ${status ? 'activated' : 'deactivated'} successfully.`);
+            })
+            .catch((ex) => {
+                hideLoader();
+                setSelectedAnalyzers([]);
+                setSelectAllCheckbox(false);
+                errorToast(`Failed to ${status ? 'activate' : 'deactivate'} analyzers.`);
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                } else if (ex instanceof PaymentRequiredError) {
+                    errorToast('Not enough active subscriptions');
+                }
+            });
     }
 
     const addAnalyzer = (analyzer: AnalyzerModel) => {
@@ -498,11 +513,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
 
     }
     const isListPage = () => pageType === 'LIST' || pageType === 'FOLDER';
-    const isSelected = (id: number) => selectedAnalyzers.indexOf(id) !== -1;
+    const isSelected = (id: number) => (!selectAllCheckbox && selectedAnalyzers.indexOf(id) !== -1) || (selectAllCheckbox && selectedAnalyzers.indexOf(id) === -1);
     const allSelectedActive = () => selectedAnalyzers.filter((index) => data[index].isActive).length;
     const allSelectedNotActive = () => selectedAnalyzers.filter((index) => !data[index].isActive).length;
-    const isAllSelectedActive = () => Array.isArray(data) && allSelectedActive() === selectedAnalyzers.length;
-    const isAllSelectedNotActive = () => Array.isArray(data) && allSelectedNotActive() === selectedAnalyzers.length;
+    const allDeselectedActive = () => data.filter((value, index) => selectedAnalyzers.includes(index) && value.isActive).length;
+    const allDeselectedNotActive = () => data.filter((value, index) => selectedAnalyzers.includes(index) && !value.isActive).length;
+    const containsNotActive = () => Array.isArray(data) && ((!selectAllCheckbox && allSelectedNotActive() === selectedAnalyzers.length) || (selectAllCheckbox && notActiveSize > allDeselectedNotActive()));
+    const containsActive = () => Array.isArray(data) && ((!selectAllCheckbox && allSelectedActive() === selectedAnalyzers.length) || (selectAllCheckbox && activeSize > allDeselectedActive()));
     const HeaderCellContent = styled(RowDiv)({
         "&:hover": {
             cursor: isListPage() ? 'pointer' : 'inherit'
@@ -547,6 +564,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             postfixSkipColumns: 1
         });
     };
+
+    function isExistSelectedAnalyzers() {
+        return (!selectAllCheckbox && selectedAnalyzers.length > 0) || (selectAllCheckbox && selectedAnalyzers.length < dataSize);
+    }
 
     return (
         <div className="analyzer-content-body">
@@ -631,7 +652,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                 <TableCell id="cell" padding="checkbox">
                                     <StyledCheckbox
                                         onChange={handleSelectAllClick}
-                                        checked={rowsCount > 0 && selectedAnalyzers.length === rowsCount}
+                                        checked={selectAllCheckbox}
                                     />
                                 </TableCell>
                             }
@@ -720,12 +741,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                             <TableCell id="cell" padding="checkbox">
                                                 <StyledCheckbox
                                                     checked={isItemSelected}
-                                                    onClick={() => handleClick(index)}
+                                                    onClick={() => handleSelectAnalyzer(index)}
                                                 />
                                             </TableCell>
                                         }
                                         <TableCell id="cell" onClick={() => navigateToAnalyzerDetail(analyzer.id)}>
-                                            <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200} placement={"right"} arrow>
+                                            <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200}
+                                                     placement={"right"} arrow>
                                                 {getSymbolIcon(analyzer.symbol)}
                                             </Tooltip>
                                         </TableCell>
@@ -841,7 +863,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 </Menu>
             }
             {
-                selectedAnalyzers.length > 0 &&
+                isExistSelectedAnalyzers() &&
                 <div className="analyzer-selected-banner">
                     <div className="analyzer-selected-banner-content">
                         <div style={{
@@ -851,7 +873,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                             fontWeight: 400,
                             marginBottom: '16px'
                         }}>
-                            Selected {selectedAnalyzers.length} items
+                            Selected {selectAllCheckbox ? (dataSize - selectedAnalyzers.length) : selectedAnalyzers.length} items
                         </div>
                         <div style={{
                             display: 'flex',
@@ -890,7 +912,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                         marginLeft: '16px'
                                     }}>Delete</Button>
                             {
-                                (isAllSelectedActive() &&
+                                (containsActive() &&
                                     <Button variant="contained"
                                             onClick={deactivateSelectedAnalyzers}
                                             style={{
@@ -900,10 +922,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                 textTransform: 'none',
                                                 fontWeight: 700,
                                                 marginLeft: '16px'
-                                            }}>Stop</Button>)
+                                            }}>Stop{selectAllCheckbox ? ' (' + (activeSize - allDeselectedActive()) + ')' : ''}</Button>)
                             }
                             {
-                                (isAllSelectedNotActive() &&
+                                (containsNotActive() &&
                                     <Button variant="contained"
                                             onClick={activateSelectedAnalyzers}
                                             style={{
@@ -913,7 +935,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                 textTransform: 'none',
                                                 fontWeight: 700,
                                                 marginLeft: '16px'
-                                            }}>Activate</Button>
+                                            }}>Activate{selectAllCheckbox ? ' (' + (notActiveSize - allDeselectedNotActive()) + ')' : ''}</Button>
                                 )
                             }
                         </div>

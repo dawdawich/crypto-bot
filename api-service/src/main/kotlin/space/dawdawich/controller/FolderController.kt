@@ -32,7 +32,7 @@ class FolderController(private val folderService: FolderService) {
     @PutMapping("/{id}/analyzers")
     fun analyzersToAdd(authentication: Authentication, @PathVariable id: String, @RequestBody analyzersToAdd: IdListRequest): ResponseEntity<Set<String>> =
             try {
-                val analyzers = folderService.addAnalyzersToFolder(authentication.name, id, analyzersToAdd.ids.toSet())
+                val analyzers = folderService.addAnalyzersToFolder(authentication.name, id, analyzersToAdd.ids.toSet(), analyzersToAdd.all)
                 ResponseEntity(analyzers, HttpStatus.OK)
             } catch (ex: FolderNotFoundException) {
                 ResponseEntity(HttpStatus.NOT_FOUND)

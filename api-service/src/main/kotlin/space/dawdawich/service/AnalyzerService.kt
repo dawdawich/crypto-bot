@@ -21,6 +21,7 @@ import space.dawdawich.model.constants.TradeStrategy
 import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.custom.model.AnalyzerFilter
 import space.dawdawich.repositories.mongo.AccountTransactionRepository
+import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
 import java.util.*
@@ -30,6 +31,7 @@ import kotlin.jvm.Throws
 class AnalyzerService(
     private val analyzerRepository: AnalyzerRepository,
     private val analyzerValidationService: AnalyzerValidationService,
+    private val analyzerStabilityRepository: AnalyzerStabilityRepository,
     private val accountTransactionRepository: AccountTransactionRepository,
     private val symbolRepository: SymbolRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
@@ -97,30 +99,47 @@ class AnalyzerService(
 
     fun getActiveAnalyzersCount(accountId: String) = analyzerRepository.countByAccountIdAndIsActive(accountId)
 
-    fun updateAnalyzersStatus(accountId: String, ids: List<String>, status: Boolean): Unit =
-        analyzerValidationService
-            .validateAnalyzersExistByIdAndAccountId(ids, accountId)
-            .let {
-                if (status) {
-                    checkIsUserCanCreateAnalyzers(accountId, ids.size)
+    fun updateAnalyzersStatus(accountId: String, status: Boolean, ids: List<String>, all: Boolean = false): Unit =
+        if (!all) {
+            analyzerValidationService
+                .validateAnalyzersExistByIdAndAccountId(ids, accountId)
+                .let {
+                    if (status) {
+                        checkIsUserCanCreateAnalyzers(accountId, ids.size)
+                    }
                 }
-            }
-            .let { analyzerRepository.setAnalyzersActiveStatus(ids, status) }
-            .let {
-                ids.forEach { id ->
-                    kafkaTemplate.send(
-                        if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC,
-                        id
-                    )
+                .let { processChangeStatus(ids, status) }
+        } else {
+            analyzerRepository.findAllByAccountIdAndIdNotIn(accountId, ids)
+                .map { analyzer -> analyzer.id }
+                .let { analyzerIds ->
+                    if (status) {
+                        checkIsUserCanCreateAnalyzers(accountId, analyzerIds.size)
+                    }
+                    analyzerRepository.setAnalyzersActiveStatus(analyzerIds, status)
+                    analyzerIds.forEach { id ->
+                        kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
+                    }
+                    processChangeStatus(analyzerIds, status)
                 }
-            }
+        }
 
-    fun deleteAnalyzers(accountId: String, ids: List<String>): Unit =
-        analyzerValidationService
-            .validateAnalyzersExistByIdAndAccountId(ids, accountId)
-            .let { analyzerRepository.deleteByIdIn(ids) }
-            .let { folderService.removeAnalyzers(ids.toSet()) }
-            .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
+    fun deleteAnalyzers(accountId: String, ids: List<String>, all: Boolean = false): Unit =
+        if (!all) {
+            analyzerValidationService
+                .validateAnalyzersExistByIdAndAccountId(ids, accountId)
+                .let { analyzerRepository.deleteByIdIn(ids) }
+                .let { folderService.removeAnalyzers(ids.toSet()) }
+                .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
+        } else {
+            analyzerRepository.findAllByAccountIdAndIdNotIn(accountId, ids)
+                .map { analyzers -> analyzers.id }
+                .let { analyzerIds ->
+                    analyzerRepository.deleteByIdIn(analyzerIds)
+                    folderService.removeAnalyzers(analyzerIds.toSet())
+                    analyzerIds.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
+                }
+        }
 
     fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
         GridTableAnalyzerResponse(
@@ -165,18 +184,16 @@ class AnalyzerService(
             }
         }
 
-    fun resetAnalyzers(accountId: String, ids: List<String>) {
-        analyzerValidationService
-            .validateAnalyzersExistByIdAndAccountId(ids, accountId)
-            .let { analyzerRepository.setAnalyzersActiveStatus(ids, false) }
-            .let {
-                ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
-            }
-            .let { analyzerRepository.resetAnalyzers(ids) }
-            .let {
-                ids.forEach { id -> kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, id) }
-            }
-    }
+    fun resetAnalyzers(accountId: String, ids: List<String>, all: Boolean) =
+        if (!all) {
+            analyzerValidationService
+                .validateAnalyzersExistByIdAndAccountId(ids, accountId)
+                .let { resetAnalyzers(ids) }
+        } else {
+            analyzerRepository.findAllByAccountIdAndIdNotIn(accountId, ids)
+                .map { analyzer -> analyzer.id }
+                .let { foundedIds -> resetAnalyzers(foundedIds) }
+        }
 
     @Throws(AnalyzerLimitExceededException::class)
     @SuppressWarnings("kotlin:S3776")
@@ -247,6 +264,21 @@ class AnalyzerService(
             }
         }
     }
+
+    private fun processChangeStatus(ids: List<String>, status: Boolean) {
+        analyzerRepository.setAnalyzersActiveStatus(ids, status)
+        ids.forEach { id ->
+            kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
+        }
+
+    }
+
+    private fun resetAnalyzers(ids: List<String>) = let { analyzerRepository.setAnalyzersActiveStatus(ids, false) }
+        .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
+        .let { analyzerRepository.resetAnalyzers(ids) }
+        .let { analyzerStabilityRepository.deleteByAnalyzerIdIn(ids) }
+        .let { analyzerRepository.setAnalyzersActiveStatus(ids, true) }
+        .let { ids.forEach { id -> kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, id) } }
 
     private fun checkIsUserCanCreateAnalyzers(accountId: String, analyzersToCreate: Int = 1) {
         val activeAnalyzers = analyzerRepository.countByAccountIdAndIsActive(accountId)

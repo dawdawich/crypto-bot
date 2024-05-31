@@ -70,7 +70,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
         ResponseEntity(analyzerService.getActiveAnalyzersCount(authentication.name), HttpStatus.OK)
 
     @DeleteMapping
-    fun deleteAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
+    fun bulkDeleteAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
             analyzerService.deleteAnalyzers(authentication.name, request.ids)
             ResponseEntity(HttpStatus.OK)
@@ -100,7 +100,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     @PutMapping("/activate/bulk")
     fun activateAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
-            analyzerService.updateAnalyzersStatus(authentication.name, request.ids, true)
+            analyzerService.updateAnalyzersStatus(authentication.name, true, request.ids, request.all)
             ResponseEntity(HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
@@ -111,7 +111,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     @PutMapping("/deactivate/bulk")
     fun deactivateAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
-            analyzerService.updateAnalyzersStatus(authentication.name, request.ids, false)
+            analyzerService.updateAnalyzersStatus(authentication.name, false, request.ids, request.all)
             ResponseEntity(HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
@@ -120,7 +120,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     @PatchMapping("/reset")
     fun resetAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
-            analyzerService.resetAnalyzers(authentication.name, request.ids)
+            analyzerService.resetAnalyzers(authentication.name, request.ids, request.all)
             ResponseEntity(HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)

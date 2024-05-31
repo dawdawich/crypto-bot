@@ -24,8 +24,8 @@ type RangeInputFieldsModel = {
     takeProfitStep: string;
 }
 
-const numberRangeRegex = /^([0-9]+(-[0-9]*)?)?$/;
-const numberRegex = /^[0-9]*$/;
+const numberRangeRegex = /^(\d+(-\d*)?)?$/;
+const numberRegex = /^\d*$/;
 
 const RangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
 

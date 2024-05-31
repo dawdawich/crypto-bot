@@ -56,7 +56,8 @@ const StyledMenuItem = styled(MenuItem)(
 )
 
 const AnalyzersPage: React.FC = () => {
-    const [analyzerIdsToAdd, setAnalyzerIdsToAdd] = useState<string[]>([]);
+    const [analyzerIdsToAdd, setAnalyzerIdsToAdd]
+        = useState<{ ids: string[], all: boolean }>({ids: [], all: false});
     const [actionType, setActionType] = useState<FolderActionType>('create');
     const [currentFolder, setCurrentFolder] = useState<FolderModel | null>(null);
     const [selectedFolder, setSelectedFolder] = useState<FolderModel | null>(null);
@@ -121,8 +122,8 @@ const AnalyzersPage: React.FC = () => {
         setAnchorEl(null);
     };
 
-    const addAnalyzersToFolder = (ids: string[]) => {
-        setAnalyzerIdsToAdd([...ids]);
+    const addAnalyzersToFolder = (ids: string[], all: boolean = false) => {
+        setAnalyzerIdsToAdd({ids, all});
         openCreateFolderDialog('addToFolder');
     }
 
@@ -231,7 +232,7 @@ const AnalyzersPage: React.FC = () => {
             <FolderDialog actionType={actionType} authInfo={authInfo!} logout={logout} currentFolder={currentFolder}
                           currentFolderList={folders} open={isDialogOpen} onClose={() => setIsDialogOpen(false)}
                           onCreate={handleNewFolder} onDelete={handleDeleteFolder} onRename={handleRenameFolder}
-                          analyzerIds={analyzerIdsToAdd}/>
+                          analyzerIds={analyzerIdsToAdd.ids} allAnalyzers={analyzerIdsToAdd.all}/>
             <Menu
                 anchorEl={anchorEl}
                 open={menuOpen}

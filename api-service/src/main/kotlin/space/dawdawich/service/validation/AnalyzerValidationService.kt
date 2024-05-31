@@ -9,6 +9,14 @@ import kotlin.jvm.Throws
 class AnalyzerValidationService(
         private val analyzerRepository: AnalyzerRepository,
 ) {
+
+    /**
+     * Validates if all analyzers with the given IDs and account ID exist in the system.
+     *
+     * @param analyzerIds The set of analyzer IDs to validate.
+     * @param accountId The account ID associated with the analyzers.
+     * @throws AnalyzerNotFoundException if any of the analyzers are not found.
+     */
     @Throws(AnalyzerNotFoundException::class)
     fun validateAnalyzersExistByIdsAndAccountId(analyzerIds: Set<String>, accountId: String) {
         if (!analyzerIds.all { analyzerRepository.existsByIdAndAccountId(it, accountId) }) {

@@ -16,6 +16,19 @@ interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String
     @Update("{\$set:  {\"money\": null, middlePrice: null, pNl1: null, pNl12: null, pNl24: null, stabilityCoef: null, updateTime:  ?1}}")
     fun resetAnalyzers(ids: List<String>, updateTime: Long = System.currentTimeMillis())
 
+    /**
+     * Resets all analyzers with the provided IDs by setting various fields to null and updating the updateTime.
+     *
+     * @param accountId of analyzers needed to reset.
+     * @param ids The list of analyzer IDs to exclude of reset.
+     * @param updateTime The timestamp of the update. Default is the current system time.
+     */
+    @Query("{accountId:  ?0, _id:  {\$nin: ?1}}")
+    @Update("{\$set:  {\"money\": null, middlePrice: null, pNl1: null, pNl12: null, pNl24: null, stabilityCoef: null, updateTime:  ?1}}")
+    fun resetAllAnalyzers(accountId: String, ids: List<String>, updateTime: Long = System.currentTimeMillis())
+
+    fun findAllByAccountIdAndIdNotIn(accountId: String, ids: Collection<String>): List<GridTableAnalyzerDocument>
+
     fun deleteByIdIn(ids: List<String>)
 
     fun countByAccountId(accountId: String): Int
