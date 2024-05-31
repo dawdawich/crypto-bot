@@ -47,6 +47,7 @@ import HideBox from "./HideBox";
 import {trimDecimalNumbers} from "../../utils/number-utils";
 import {useLoader} from "../../context/LoaderContext";
 import loadingTableRows from "../../shared/LoadingTableRows";
+import InfiniteScroll from "react-infinite-scroller";
 
 interface AnalyzerContentProps {
     folderId: string;
@@ -158,13 +159,13 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const [dataSize, setDataSize] = useState(0);
     const [activeSize, setActiveSize] = useState(0);
     const [notActiveSize, setNotActiveSize] = useState(0);
-    const [rowsCount, setRowsCount] = useState<number>(0);
     const [duplicatedAnalyzer, setDuplicatedAnalyzer] = useState<AnalyzerModel | null>(null);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [, navigate] = useLocation();
     const {authInfo, logout} = useAuth();
     const {showLoader, hideLoader} = useLoader();
     const open = Boolean(anchorEl);
+    const [pageNumber, setPageNumber] = useState<number>(1);
 
     if (!authInfo) {
         navigate("/analyzer/folder/top");
@@ -182,7 +183,6 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         fetchAnalyzersList(authInfo!, 0, 20, statusFilter, symbolFilter, sortOption, folderId)
             .then(response => {
                 setData([...response.analyzers]);
-                setRowsCount(response.analyzers.length);
                 setActiveSize(response.activeSize);
                 setNotActiveSize(response.notActiveSize);
                 setDataSize(response.totalSize);
@@ -565,6 +565,21 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         });
     };
 
+    const loadMoreAnalyzers = useCallback(() => {
+        fetchAnalyzersList(authInfo!, pageNumber, 20, identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter())
+            .then(response => {
+                setData([...data, ...response.analyzers]);
+                setPageNumber(pageNumber + 1)
+            })
+            .catch(ex => {
+                errorToast("Failed to fetch analyzers.");
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            })
+    }, [authInfo, data, getFolderFilter, getSortObject, logout, pageNumber, selectedStatusFilter, selectedSymbolFilter]);
+
+
     function isExistSelectedAnalyzers() {
         return (!selectAllCheckbox && selectedAnalyzers.length > 0) || (selectAllCheckbox && selectedAnalyzers.length < dataSize);
     }
@@ -645,177 +660,184 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 }
             </div>
             <TableContainer style={{overflowY: 'auto', overflowX: 'auto', maxWidth: '100%'}}>
-                <Table size="small" stickyHeader>
-                    <TableHead>
-                        <TableRow id="analyzer-table-headers">
-                            {isListPage() &&
-                                <TableCell id="cell" padding="checkbox">
-                                    <StyledCheckbox
-                                        onChange={handleSelectAllClick}
-                                        checked={selectAllCheckbox}
-                                    />
+                <InfiniteScroll
+                    loadMore={loadMoreAnalyzers}
+                    hasMore={data.length < dataSize}
+                    useWindow={false}
+                    loader={<div className='loader' key={0}></div>}
+                >
+                    <Table size="small" stickyHeader>
+                        <TableHead>
+                            <TableRow id="analyzer-table-headers">
+                                {isListPage() &&
+                                    <TableCell id="cell" padding="checkbox">
+                                        <StyledCheckbox
+                                            onChange={handleSelectAllClick}
+                                            checked={selectAllCheckbox}
+                                        />
+                                    </TableCell>
+                                }
+                                <TableCell id="cell">Symbol</TableCell>
+                                {isListPage() && <TableCell width="82px" align="center" id="cell">Status</TableCell>}
+                                <TableCell id="cell" ref={diapasonHeaderRef}>
+                                    <HeaderCellContent onClick={() => handleSortChange('diapason')}>
+                                        Diapason {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'diapason'}/>}
+                                    </HeaderCellContent>
                                 </TableCell>
-                            }
-                            <TableCell id="cell">Symbol</TableCell>
-                            {isListPage() && <TableCell width="82px" align="center" id="cell">Status</TableCell>}
-                            <TableCell id="cell" ref={diapasonHeaderRef}>
-                                <HeaderCellContent onClick={() => handleSortChange('diapason')}>
-                                    Diapason {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'diapason'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('gridSize')}>
-                                    Grid Size {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'gridSize'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('multiplier')}>
-                                    Multiplier {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'multiplier'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('positionStopLoss')}>
-                                    SL {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'positionStopLoss'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell align="left" id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('positionTakeProfit')}>
-                                    TP {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'positionTakeProfit'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            {isListPage() &&
                                 <TableCell id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('startCapital')}>
-                                        Start Capital <HeaderCellIcon direction={order}
-                                                                      active={orderBy === 'startCapital'}/>
+                                    <HeaderCellContent onClick={() => handleSortChange('gridSize')}>
+                                        Grid Size {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'gridSize'}/>}
                                     </HeaderCellContent>
-                                </TableCell>}
-                            {isListPage() &&
+                                </TableCell>
                                 <TableCell id="cell">
-                                    <HeaderCellContent onClick={() => handleSortChange('money')}>
-                                        Total Equity <HeaderCellIcon direction={order}
-                                                                     active={orderBy === 'money'}/>
+                                    <HeaderCellContent onClick={() => handleSortChange('multiplier')}>
+                                        Multiplier {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'multiplier'}/>}
                                     </HeaderCellContent>
-                                </TableCell>}
-                            <TableCell align="center" id="cell" ref={stabilityHeaderRef}>
-                                <HeaderCellContent onClick={() => handleSortChange('stabilityCoef')}>
-                                    Stability {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'stabilityCoef'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell align="center" id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('pNl1')}>
-                                    1h % {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl1'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell align="center" id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('pNl12')}>
-                                    12h % {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl12'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell align="center" id="cell">
-                                <HeaderCellContent onClick={() => handleSortChange('pNl24')}>
-                                    24h % {isListPage() &&
-                                    <HeaderCellIcon direction={order} active={orderBy === 'pNl24'}/>}
-                                </HeaderCellContent>
-                            </TableCell>
-                            <TableCell align="center" id="cell">
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody style={{position: 'relative'}}>
-                        {!!data &&
-                        isTableLoading ? getLoadingRows() :
-                            Array.isArray(data) && data.map((analyzer, index) => {
-                                const isItemSelected = isSelected(index);
-                                return (
-                                    <TableRow key={analyzer.id} id="analyzer-table-content">
-                                        {isListPage() &&
-                                            <TableCell id="cell" padding="checkbox">
-                                                <StyledCheckbox
-                                                    checked={isItemSelected}
-                                                    onClick={() => handleSelectAnalyzer(index)}
-                                                />
-                                            </TableCell>
-                                        }
-                                        <TableCell id="cell" onClick={() => navigateToAnalyzerDetail(analyzer.id)}>
-                                            <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200}
-                                                     placement={"right"} arrow>
-                                                {getSymbolIcon(analyzer.symbol)}
-                                            </Tooltip>
-                                        </TableCell>
-                                        {isListPage() && <TableCell align="left" id="cell">
-                                            {analyzer.isActive ?
-                                                <div className="analyzer-table-item-status">
-                                                    <ActiveIcon style={{alignSelf: 'center'}}/>
-                                                    <div style={{marginLeft: '4px'}}>Active</div>
-                                                </div>
-                                                :
-                                                <div className="analyzer-table-item-status"
-                                                     style={{paddingLeft: 0, paddingRight: 0, minWidth: '85px'}}>
-                                                    <NotActiveIcon style={{alignSelf: 'center'}}/>
-                                                    <div style={{marginLeft: '4px'}}>Not Active</div>
-                                                </div>
+                                </TableCell>
+                                <TableCell id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('positionStopLoss')}>
+                                        SL {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'positionStopLoss'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="left" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('positionTakeProfit')}>
+                                        TP {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'positionTakeProfit'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                {isListPage() &&
+                                    <TableCell id="cell">
+                                        <HeaderCellContent onClick={() => handleSortChange('startCapital')}>
+                                            Start Capital <HeaderCellIcon direction={order}
+                                                                          active={orderBy === 'startCapital'}/>
+                                        </HeaderCellContent>
+                                    </TableCell>}
+                                {isListPage() &&
+                                    <TableCell id="cell">
+                                        <HeaderCellContent onClick={() => handleSortChange('money')}>
+                                            Total Equity <HeaderCellIcon direction={order}
+                                                                         active={orderBy === 'money'}/>
+                                        </HeaderCellContent>
+                                    </TableCell>}
+                                <TableCell align="center" id="cell" ref={stabilityHeaderRef}>
+                                    <HeaderCellContent onClick={() => handleSortChange('stabilityCoef')}>
+                                        Stability {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'stabilityCoef'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl1')}>
+                                        1h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl1'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl12')}>
+                                        12h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl12'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                    <HeaderCellContent onClick={() => handleSortChange('pNl24')}>
+                                        24h % {isListPage() &&
+                                        <HeaderCellIcon direction={order} active={orderBy === 'pNl24'}/>}
+                                    </HeaderCellContent>
+                                </TableCell>
+                                <TableCell align="center" id="cell">
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {!!data &&
+                            isTableLoading ? getLoadingRows() :
+                                Array.isArray(data) && data.map((analyzer, index) => {
+                                    const isItemSelected = isSelected(index);
+                                    return (
+                                        <TableRow key={analyzer.id} id="analyzer-table-content">
+                                            {isListPage() &&
+                                                <TableCell id="cell" padding="checkbox">
+                                                    <StyledCheckbox
+                                                        checked={isItemSelected}
+                                                        onClick={() => handleSelectAnalyzer(index)}
+                                                    />
+                                                </TableCell>
                                             }
-                                        </TableCell>}
-                                        <TableCell id="cell">{analyzer.diapason}%</TableCell>
-                                        <TableCell id="cell">{analyzer.gridSize}</TableCell>
-                                        <TableCell id="cell">x{analyzer.multiplier}</TableCell>
-                                        <TableCell id="cell">{analyzer.positionStopLoss}%</TableCell>
-                                        <TableCell id="cell" align="left">{analyzer.positionTakeProfit}%</TableCell>
-                                        {isListPage() &&
-                                            <TableCell id="cell" align="left">${analyzer.startCapital}</TableCell>}
-                                        {isListPage() &&
-                                            <TableCell id="cell"
-                                                       align="left">{!!analyzer.money && '$' + trimDecimalNumbers(analyzer.money)}</TableCell>}
-                                        <TableCell align="left"
-                                                   id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
-                                        <TableCell align="left" id="cell"
-                                                   style={{color: getPnLColorByValue(analyzer.pnl1)}}>
-                                            {getSignByValue(analyzer.pnl1)}{trimDecimalNumbers(analyzer.pnl1, 1)} %
-                                        </TableCell>
-                                        <TableCell align="left" id="cell"
-                                                   style={{color: getPnLColorByValue(analyzer.pnl12)}}>
-                                            {getSignByValue(analyzer.pnl12)}{trimDecimalNumbers(analyzer.pnl12, 1)} %
-                                        </TableCell>
-                                        <TableCell align="left" id="cell"
-                                                   style={{color: getPnLColorByValue(analyzer.pnl24)}}>
-                                            {getSignByValue(analyzer.pnl24)}{trimDecimalNumbers(analyzer.pnl24, 1)} %
-                                        </TableCell>
-                                        <TableCell align={isListPage() ? "center" : "right"} id="cell">
-                                            {
-                                                isListPage() ?
-                                                    <MenuIcon className="analyzer-folder-menu-hover"
-                                                              onClick={(event: React.MouseEvent<HTMLElement>) => handleMenuClick(event, index)}/>
+                                            <TableCell id="cell" onClick={() => navigateToAnalyzerDetail(analyzer.id)}>
+                                                <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200}
+                                                         placement={"right"} arrow>
+                                                    {getSymbolIcon(analyzer.symbol)}
+                                                </Tooltip>
+                                            </TableCell>
+                                            {isListPage() && <TableCell align="left" id="cell">
+                                                {analyzer.isActive ?
+                                                    <div className="analyzer-table-item-status">
+                                                        <ActiveIcon style={{alignSelf: 'center'}}/>
+                                                        <div style={{marginLeft: '4px'}}>Active</div>
+                                                    </div>
                                                     :
-                                                    <Button variant="outlined"
-                                                            onClick={() => {
-                                                                setDuplicatedAnalyzer(mapAnalyzerToModel(analyzer));
-                                                                navigate("/analyzer/folder/all")
-                                                                openRightDrawer();
-                                                            }}
-                                                            disabled={!authInfo} style={{
-                                                        textTransform: 'none',
-                                                        borderColor: !authInfo ? '#2D323A' : '#D0FF12',
-                                                        color: !authInfo ? '#2D323A' : '#D0FF12'
-                                                    }}>Duplicate</Button>}
-                                        </TableCell>
-                                        {
-                                            !authInfo &&
-                                            <HideBox diapasonRef={diapasonHeaderRef} stabilityRef={stabilityHeaderRef}/>
-                                        }
-                                    </TableRow>
-                                );
-                            })}
-                    </TableBody>
-                </Table>
+                                                    <div className="analyzer-table-item-status"
+                                                         style={{paddingLeft: 0, paddingRight: 0, minWidth: '85px'}}>
+                                                        <NotActiveIcon style={{alignSelf: 'center'}}/>
+                                                        <div style={{marginLeft: '4px'}}>Not Active</div>
+                                                    </div>
+                                                }
+                                            </TableCell>}
+                                            <TableCell id="cell">{analyzer.diapason}%</TableCell>
+                                            <TableCell id="cell">{analyzer.gridSize}</TableCell>
+                                            <TableCell id="cell">x{analyzer.multiplier}</TableCell>
+                                            <TableCell id="cell">{analyzer.positionStopLoss}%</TableCell>
+                                            <TableCell id="cell" align="left">{analyzer.positionTakeProfit}%</TableCell>
+                                            {isListPage() &&
+                                                <TableCell id="cell" align="left">${analyzer.startCapital}</TableCell>}
+                                            {isListPage() &&
+                                                <TableCell id="cell"
+                                                           align="left">{!!analyzer.money && '$' + trimDecimalNumbers(analyzer.money)}</TableCell>}
+                                            <TableCell align="left"
+                                                       id="cell">{trimDecimalNumbers(analyzer.stabilityCoef, 1)}</TableCell>
+                                            <TableCell align="left" id="cell"
+                                                       style={{color: getPnLColorByValue(analyzer.pnl1)}}>
+                                                {getSignByValue(analyzer.pnl1)}{trimDecimalNumbers(analyzer.pnl1, 1)} %
+                                            </TableCell>
+                                            <TableCell align="left" id="cell"
+                                                       style={{color: getPnLColorByValue(analyzer.pnl12)}}>
+                                                {getSignByValue(analyzer.pnl12)}{trimDecimalNumbers(analyzer.pnl12, 1)} %
+                                            </TableCell>
+                                            <TableCell align="left" id="cell"
+                                                       style={{color: getPnLColorByValue(analyzer.pnl24)}}>
+                                                {getSignByValue(analyzer.pnl24)}{trimDecimalNumbers(analyzer.pnl24, 1)} %
+                                            </TableCell>
+                                            <TableCell align={isListPage() ? "center" : "right"} id="cell">
+                                                {
+                                                    isListPage() ?
+                                                        <MenuIcon className="analyzer-folder-menu-hover"
+                                                                  onClick={(event: React.MouseEvent<HTMLElement>) => handleMenuClick(event, index)}/>
+                                                        :
+                                                        <Button variant="outlined"
+                                                                onClick={() => {
+                                                                    setDuplicatedAnalyzer(mapAnalyzerToModel(analyzer));
+                                                                    navigate("/analyzer/folder/all")
+                                                                    openRightDrawer();
+                                                                }}
+                                                                disabled={!authInfo} style={{
+                                                            textTransform: 'none',
+                                                            borderColor: !authInfo ? '#2D323A' : '#D0FF12',
+                                                            color: !authInfo ? '#2D323A' : '#D0FF12'
+                                                        }}>Duplicate</Button>}
+                                            </TableCell>
+                                            {
+                                                !authInfo &&
+                                                <HideBox diapasonRef={diapasonHeaderRef} stabilityRef={stabilityHeaderRef}/>
+                                            }
+                                        </TableRow>
+                                    );
+                                })}
+                        </TableBody>
+                    </Table>
+                </InfiniteScroll>
             </TableContainer>
 
             {isListPage() && currentIndex > -1 &&
