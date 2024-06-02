@@ -156,21 +156,19 @@ class AnalyzerService(
         val calculationStartTime = System.currentTimeMillis()
         if (analyzers.isNotEmpty()) {
             val copiedAnalyzers = analyzers.asSequence()
-            runBlocking {
-                copiedAnalyzers
-                    .filter { it.getMoney() != it.previousSnapshotMoney }
-                    .map {
-                        it.previousSnapshotMoney = it.getMoney()
-                        it.readyToUpdateStability = true
-                        AnalyzerMoneyModel(it.id, it.getMoney())
+            copiedAnalyzers
+                .filter { it.getMoney() != it.previousSnapshotMoney }
+                .map {
+                    it.previousSnapshotMoney = it.getMoney()
+                    it.readyToUpdateStability = true
+                    AnalyzerMoneyModel(it.id, it.getMoney())
+                }
+                .let {
+                    val list = it.toList()
+                    if (list.isNotEmpty()) {
+                        analyzerStabilityRepository.saveAll(list)
                     }
-                    .let {
-                        val list = it.toList()
-                        if (list.isNotEmpty()) {
-                            analyzerStabilityRepository.saveAll(list)
-                        }
-                    }
-            }
+                }
         }
         log.info { "Finish process update money snapshot. Time elapsed: ${System.currentTimeMillis() - calculationStartTime}" }
     }
@@ -336,13 +334,13 @@ class AnalyzerService(
 
     private fun getFilteredAnalyzerConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         val analyzersDocs =
-        analyzerRepository.findAllById(analyzers
-            .asSequence()
-            .filter { it.demoAccount == request.demoAccount }
-            .filter { it.market == request.market }
-            .filter { it.accountId == request.accountId }
-            .map { it.id }
-            .toList())
+            analyzerRepository.findAllById(analyzers
+                .asSequence()
+                .filter { it.demoAccount == request.demoAccount }
+                .filter { it.market == request.market }
+                .filter { it.accountId == request.accountId }
+                .map { it.id }
+                .toList())
         val neededAnalyzer = analyzersDocs
             .asSequence()
             .filter { (it.stabilityCoef ?: 0.0) >= 2 } // sortedStabilityHigherThanFour
