@@ -178,9 +178,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const updateAnalyzersList = useCallback((statusFilter: boolean | null, symbolFilter: string[], sortOption: {
         name: string,
         direction: Order
-    } | null, folderId: string | null) => {
+    } | null, folderId: string | null, pageNumber: number) => {
         setIsTableLoading(true);
-        fetchAnalyzersList(authInfo!, 0, 20, statusFilter, symbolFilter, sortOption, folderId)
+        setData([]);
+        fetchAnalyzersList(authInfo!, 0, pageNumber * 20, statusFilter, symbolFilter, sortOption, folderId)
             .then(response => {
                 setData([...response.analyzers]);
                 setActiveSize(response.activeSize);
@@ -247,10 +248,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     });
                 break;
             case 'LIST':
-                updateAnalyzersList(null, [], null, null);
+                updateAnalyzersList(null, [], null, null, 1);
                 break;
             case 'FOLDER':
-                updateAnalyzersList(null, [], null, processedFolderId);
+                updateAnalyzersList(null, [], null, processedFolderId, 1);
                 break;
         }
     }, [authInfo, processedFolderId, pageType, updateAnalyzersList]);
@@ -316,7 +317,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     hideLoader();
                     successToast('Analyzers deleted successfully.');
                     setSelectedAnalyzers([]);
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
+                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
                 })
                 .catch((ex) => {
                     hideLoader();
@@ -336,7 +337,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                     hideLoader();
                     successToast('Analyzers updated successfully.');
                     setSelectedAnalyzers([]);
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
+                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
                 })
                 .catch((ex) => {
                     hideLoader();
@@ -399,7 +400,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 hideLoader();
                 successToast("Analyzer created");
                 if (pageType === 'LIST' || (pageType === 'FOLDER' && analyzer.folders.indexOf(folderId) > -1)) {
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
+                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
                 }
             })
             .catch((ex) => {
@@ -420,7 +421,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 hideLoader();
                 successToast("Analyzers created");
                 if (pageType === 'LIST' || (pageType === 'FOLDER' && analyzers.folders.indexOf(folderId) > -1)) {
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter());
+                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
                 }
             })
             .catch((ex) => {
@@ -473,7 +474,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     const changeActiveFilter = (status: ActiveStatus) => {
         if (status !== selectedStatusFilter) {
             setSelectedStatusFilter(status);
-            updateAnalyzersList(identifyStatus(status), selectedSymbolFilter, getSortObject(), getFolderFilter());
+            updateAnalyzersList(identifyStatus(status), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
         }
     }
 
@@ -481,10 +482,10 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         if (Array.isArray(options) && options.length > 0) {
             const symbols = options.map(element => element.value);
             setSelectedSymbolFilter(symbols);
-            updateAnalyzersList(identifyStatus(selectedStatusFilter), symbols, getSortObject(), getFolderFilter());
+            updateAnalyzersList(identifyStatus(selectedStatusFilter), symbols, getSortObject(), getFolderFilter(), pageNumber);
         } else if (selectedSymbolFilter.length > 0) {
             setSelectedSymbolFilter([]);
-            updateAnalyzersList(identifyStatus(selectedStatusFilter), [], getSortObject(), getFolderFilter());
+            updateAnalyzersList(identifyStatus(selectedStatusFilter), [], getSortObject(), getFolderFilter(), pageNumber);
         }
     };
 
@@ -503,7 +504,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 data.direction = 'desc';
                 setOrderBy(key);
             }
-            updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter());
+            updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, data, getFolderFilter(), pageNumber);
         }
     }
     const navigateToAnalyzerDetail = (analyzerId: string) => {
@@ -662,7 +663,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
             <TableContainer style={{overflowY: 'auto', overflowX: 'auto', maxWidth: '100%'}}>
                 <InfiniteScroll
                     loadMore={loadMoreAnalyzers}
-                    hasMore={data.length < dataSize}
+                    hasMore={data.length < dataSize && !isTableLoading}
                     useWindow={false}
                     loader={<div className='loader' key={0}></div>}
                 >
@@ -751,7 +752,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                 </TableCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody>
+                        <TableBody style={{position: 'relative'}}>
                             {!!data &&
                             isTableLoading ? getLoadingRows() :
                                 Array.isArray(data) && data.map((analyzer, index) => {

@@ -19,10 +19,22 @@ import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 @Configuration
 class KafkaConfiguration {
 
+    /**
+     * Creates a Kafka listener container factory that consumes JSON messages.
+     *
+     * @param managerInfoConsumerFactory The consumer factory for deserializing JSON messages.
+     * @return The Kafka listener container factory.
+     */
     @Bean
     fun <T> jsonKafkaListenerContainerFactory(managerInfoConsumerFactory: ConsumerFactory<String, T>) =
         ConcurrentKafkaListenerContainerFactory<String, T>().apply { this.consumerFactory = managerInfoConsumerFactory }
 
+    /**
+     * Creates a JSON consumer factory for Kafka.
+     *
+     * @param bootstrapServer The bootstrap server for the Kafka cluster.
+     * @return The JSON consumer factory.
+     */
     @Bean
     fun <T> jsonConsumerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String): ConsumerFactory<String, T> {
         val configProps: MutableMap<String, Any> = HashMap()
@@ -34,22 +46,54 @@ class KafkaConfiguration {
         return DefaultKafkaConsumerFactory(configProps)
     }
 
+    /**
+     * Creates a Kafka template for producing messages to Kafka.
+     *
+     * @param factory The producer factory to be used by the Kafka template.
+     * @return The Kafka template.
+     */
     @Bean
     fun kafkaTemplate(factory: ProducerFactory<String, String>): KafkaTemplate<String, String> =
         KafkaTemplate(factory)
 
+    /**
+     * Creates a Kafka template for producing messages to Kafka.
+     *
+     * @param jsonProducerFactory The producer factory to be used by the Kafka template.
+     * @return The Kafka template.
+     */
     @Bean
     fun <T> jsonKafkaTemplate(jsonProducerFactory: ProducerFactory<String, T>): KafkaTemplate<String, T> =
         KafkaTemplate(jsonProducerFactory)
 
+    /**
+     * Creates a producer factory for Kafka.
+     *
+     * @param bootstrapServer The bootstrap server for the Kafka cluster.
+     * @return The Kafka producer factory.
+     */
     @Bean
     fun producerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
         producerFactory<String>(bootstrapServer, StringSerializer::class.java)
 
+    /**
+     * Creates a JSON producer factory for Kafka.
+     *
+     * @param bootstrapServer The bootstrap server for the Kafka cluster.
+     * @return The JSON producer factory.
+     */
     @Bean
     fun jsonProducerFactory(@Value("\${spring.kafka.bootstrap-servers}") bootstrapServer: String) =
         producerFactory<TradeManagerDocument>(bootstrapServer, JsonSerializer::class.java)
 
+    /**
+     * Creates a replying Kafka template for sending and receiving messages to and from Kafka for
+     * [RESPONSE_ANALYZER_RUNTIME_DATA].
+     *
+     * @param producerFactory The producer factory used by the Kafka template.
+     * @param jsonKafkaListenerContainerFactory The Kafka listener container factory used by the Kafka template.
+     * @return The replying Kafka template.
+     */
     @Bean
     fun strategyRuntimeDataReplyingTemplate(
         producerFactory: ProducerFactory<String, String>,
@@ -60,6 +104,14 @@ class KafkaConfiguration {
         RESPONSE_ANALYZER_RUNTIME_DATA
     ).apply { setSharedReplyTopic(true) }
 
+    /**
+     * Creates a producer factory for Kafka.
+     *
+     * @param bootstrapServer The bootstrap server for the Kafka cluster.
+     * @param serializerClass The serializer class for the Kafka messages.
+     * @return The Kafka producer factory.
+     * @param T The type of the Kafka message value.
+     */
     private fun <T> producerFactory(bootstrapServer: String, serializerClass: Class<*>): ProducerFactory<String, T> {
         val configProps: MutableMap<String, Any> = HashMap()
         configProps[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServer
@@ -68,6 +120,15 @@ class KafkaConfiguration {
         return DefaultKafkaProducerFactory(configProps)
     }
 
+    /**
+     * Creates a replying Kafka template for sending and receiving messages to and from Kafka.
+     *
+     * @param producerFactory The producer factory used by the Kafka template.
+     * @param jsonKafkaListenerContainerFactory The Kafka listener container factory used by the Kafka template.
+     * @param topic The Kafka topic to which the template will send messages.
+     * @return The replying Kafka template.
+     * @param T The type of the Kafka message value.
+     */
     private fun <T> replyingTemplate(
         producerFactory: ProducerFactory<String, String>,
         jsonKafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, T>,

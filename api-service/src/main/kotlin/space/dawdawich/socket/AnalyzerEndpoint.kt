@@ -16,6 +16,11 @@ import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
+/**
+ * The `AnalyzerEndpoint` class represents a WebSocket endpoint for analyzing data. It is responsible for handling incoming messages and sending responses.
+ *
+ * @property strategyRuntimeDataReplyingTemplate The Kafka template for sending and receiving runtime information for analyzers.
+ */
 @Service
 @ServerEndpoint(value = "/ws/analyzer", configurator = WebSocketConfigurator::class)
 class AnalyzerEndpoint(
@@ -25,7 +30,7 @@ class AnalyzerEndpoint(
 
     @OnOpen
     fun onOpen(session: Session?, config: EndpointConfig?) {
-
+        // do nothing
     }
 
     @OnMessage
@@ -45,6 +50,7 @@ class AnalyzerEndpoint(
 
     @OnClose
     fun onClose(session: Session?, closeReason: CloseReason?) {
+        // do nothing
     }
 
     @OnError

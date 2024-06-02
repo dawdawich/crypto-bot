@@ -23,6 +23,13 @@ import space.dawdawich.utils.baseDecode
 @EnableWebSecurity
 class SecurityConfiguration(private val environment: Environment) {
 
+    /**
+     * Creates an instance of AuthenticationManager for handling authentication in a web application.
+     *
+     * @param http The HttpSecurity object used for configuring the security settings.
+     * @param jwtAuthProvider The implementation of WalletAuthenticationProvider used for authenticating wallet user credentials.
+     * @return The created AuthenticationManager.
+     */
     @Bean
     fun authManager(http: HttpSecurity, jwtAuthProvider: WalletAuthenticationProvider): AuthenticationManager {
         val authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder::class.java)
@@ -30,6 +37,13 @@ class SecurityConfiguration(private val environment: Environment) {
         return authenticationManagerBuilder.build()
     }
 
+    /**
+     * This method is used to create a security filter chain for the HTTP security configuration.
+     *
+     * @param http The HttpSecurity object used for configuring the security settings.
+     * @param authenticationManager The AuthenticationManager object used for handling authentication in a web application.
+     * @return The SecurityFilterChain object representing the security filter chain configuration.
+     */
     @Bean
     fun filterChain(
         http: HttpSecurity,

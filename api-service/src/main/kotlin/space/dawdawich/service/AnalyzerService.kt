@@ -27,6 +27,9 @@ import space.dawdawich.utils.plusPercent
 import java.util.*
 import kotlin.jvm.Throws
 
+/**
+ * Service class that provides functionality for managing analyzers.
+ */
 @Service
 class AnalyzerService(
     private val analyzerRepository: AnalyzerRepository,
@@ -40,6 +43,11 @@ class AnalyzerService(
     private val folderService: FolderService,
 ) {
 
+    /**
+     * Retrieves the top 20 analyzers based on their percent difference between money and startCapital.
+     *
+     * @return A list of GridTableAnalyzerResponse objects representing the top analyzers.
+     */
     fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
         analyzerRepository.findAllByPublic().sortedByDescending {
             val difference = it.money - it.startCapital
@@ -48,6 +56,19 @@ class AnalyzerService(
             percentDifference
         }.take(20).map { GridTableAnalyzerResponse(it) }
 
+    /**
+     * Retrieves a list of GridTableAnalyzerResponse objects based on the provided parameters.
+     *
+     * @param accountId The account ID.
+     * @param page The page number for pagination.
+     * @param size The number of items per page.
+     * @param status The status filter for analyzers. Can be null.
+     * @param symbols The symbols filter for analyzers. Can be null.
+     * @param fieldName The field name for sorting analyzers. Can be null.
+     * @param orderDirection The order direction for sorting analyzers. Can be null.
+     * @param folderId The folder ID filter for analyzers. Can be null.
+     * @return A list of GridTableAnalyzerResponse objects.
+     */
     fun getAnalyzers(
         accountId: String,
         page: Int,
@@ -76,6 +97,14 @@ class AnalyzerService(
             .map { GridTableAnalyzerResponse(it) }.toList()
     }
 
+    /**
+     * Retrieves the counters for active, active and not active analyzers based on the provided parameters.
+     *
+     * @param accountId The account ID.
+     * @param folderId The folder ID. Can be null.
+     * @param symbols The list of symbols to filter analyzers.
+     * @return A Triple object representing the counters of all, active and not active analyzers.
+     */
     fun getAnalyzersCounters(accountId: String, folderId: String?, symbols: List<String>): Triple<Int, Int, Int> =
         folderId?.let {
             Triple(
@@ -97,8 +126,22 @@ class AnalyzerService(
             )
         }
 
+    /**
+     * Returns the number of active analyzers for the specified account.
+     *
+     * @param accountId The account ID.
+     * @return The count of active analyzers.
+     */
     fun getActiveAnalyzersCount(accountId: String) = analyzerRepository.countByAccountIdAndIsActive(accountId)
 
+    /**
+     * Updates the status of analyzers.
+     *
+     * @param accountId The account ID associated with the analyzers.
+     * @param status The new status of the analyzers.
+     * @param ids The list of analyzer IDs to update. If [all] is true, the list to exclude from processing.
+     * @param all Flag indicating whether to update all analyzers or not. Default is false.
+     */
     fun updateAnalyzersStatus(accountId: String, status: Boolean, ids: List<String>, all: Boolean = false): Unit =
         if (!all) {
             analyzerValidationService
@@ -124,6 +167,13 @@ class AnalyzerService(
                 }
         }
 
+    /**
+     * Deletes analyzers based on the provided parameters.
+     *
+     * @param accountId The account ID associated with the analyzers.
+     * @param ids The list of analyzer IDs to delete. If [all] is true, the list to exclude from processing.
+     * @param all Flag indicating whether to delete all analyzers or not. Default is false.
+     */
     fun deleteAnalyzers(accountId: String, ids: List<String>, all: Boolean = false): Unit =
         if (!all) {
             analyzerValidationService
@@ -141,12 +191,27 @@ class AnalyzerService(
                 }
         }
 
+    /**
+     * Retrieves a GridTableAnalyzerResponse object based on the provided analyzer ID and account ID.
+     *
+     * @param id The identifier of the analyzer.
+     * @param accountId The account ID associated with the analyzer.
+     * @return A GridTableAnalyzerResponse object representing the analyzer.
+     * @throws AnalyzerNotFoundException if the analyzer with the given ID and account ID is not found.
+     */
     fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
         GridTableAnalyzerResponse(
             analyzerRepository.findByIdAndAccountId(id, accountId)
                 ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found")
         )
 
+    /**
+     * Creates a new analyzer.
+     *
+     * @param accountId The ID of the account associated with the analyzer.
+     * @param analyzerData The data for creating the analyzer.
+     * @throws AnalyzerLimitExceededException if the maximum number of active analyzers is exceeded.
+     */
     @Throws(AnalyzerLimitExceededException::class)
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
         analyzerData.apply {
@@ -184,6 +249,14 @@ class AnalyzerService(
             }
         }
 
+    /**
+     * Resets the analyzers with the given IDs.
+     *
+     * @param accountId The account ID associated with the analyzers.
+     * @param ids The list of analyzer IDs to reset. If [all] is true, the list to exclude from processing.
+     * @param all Flag indicating whether to reset all analyzers or not.
+     * @throws AnalyzerNotFoundException if any of the analyzers are not found.
+     */
     fun resetAnalyzers(accountId: String, ids: List<String>, all: Boolean) =
         if (!all) {
             analyzerValidationService
@@ -195,6 +268,15 @@ class AnalyzerService(
                 .let { foundedIds -> resetAnalyzers(foundedIds) }
         }
 
+    /**
+     * Creates multiple analyzers in bulk for a given account.
+     *
+     * @param accountId The ID of the account associated with the analyzers.
+     * @param request The request object containing the parameters for creating the analyzers.
+     * @throws AnalyzerLimitExceededException if the maximum number of active analyzers is exceeded.
+     *
+     * @see [CreateAnalyzerRequest] for bulk create params
+     */
     @Throws(AnalyzerLimitExceededException::class)
     @SuppressWarnings("kotlin:S3776")
     fun bulkCreate(accountId: String, request: CreateAnalyzerBulkRequest) {
@@ -265,14 +347,25 @@ class AnalyzerService(
         }
     }
 
+    /**
+     * Processes the change of status for analyzers.
+     *
+     * @param ids The list of analyzer IDs to update.
+     * @param status The new status of the analyzers.
+     */
     private fun processChangeStatus(ids: List<String>, status: Boolean) {
         analyzerRepository.setAnalyzersActiveStatus(ids, status)
         ids.forEach { id ->
             kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
         }
-
     }
 
+    /**
+     * Resets the analyzers with the given IDs.
+     *
+     * @param ids The list of analyzer IDs to reset.
+     * @throws AnalyzerNotFoundException if any of the analyzers are not found.
+     */
     private fun resetAnalyzers(ids: List<String>) = let { analyzerRepository.setAnalyzersActiveStatus(ids, false) }
         .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
         .let { analyzerRepository.resetAnalyzers(ids) }
@@ -280,6 +373,13 @@ class AnalyzerService(
         .let { analyzerRepository.setAnalyzersActiveStatus(ids, true) }
         .let { ids.forEach { id -> kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, id) } }
 
+    /**
+     * Checks if a user can create analyzers based on the account ID and the number of analyzers to create.
+     *
+     * @param accountId The ID of the account associated with the analyzers.
+     * @param analyzersToCreate The number of analyzers to create. Default is 1.
+     * @throws AnalyzerLimitExceededException Throws if the maximum number of active analyzers is exceeded.
+     */
     private fun checkIsUserCanCreateAnalyzers(accountId: String, analyzersToCreate: Int = 1) {
         val activeAnalyzers = analyzerRepository.countByAccountIdAndIsActive(accountId)
         val activeSubs =

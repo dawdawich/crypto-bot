@@ -21,6 +21,13 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+/**
+ * Authentication provider for wallet accounts.
+ *
+ * This class is responsible for authenticating wallet user credentials and retrieving user details.
+ *
+ * @property accountRepository The repository for accessing wallet accounts.
+ */
 @Component
 class WalletAuthenticationProvider(private val accountRepository: AccountRepository) :
     AbstractUserDetailsAuthenticationProvider() {
@@ -30,6 +37,15 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
     val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneOffset.UTC)
 
+    /**
+     * Performs additional authentication checks during the authentication process.
+     *
+     * @param userDetails The user details object that contains the wallet user details.
+     * @param authentication The authentication token.
+     * @throws BadCredentialsException if the signature is not valid.
+     * @throws CredentialsExpiredException if the salt has expired.
+     * @throws BadCredentialsException if the signature size is invalid.
+     */
     override fun additionalAuthenticationChecks(
         userDetails: UserDetails?,
         authentication: UsernamePasswordAuthenticationToken,
@@ -50,6 +66,13 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
         }
     }
 
+    /**
+     * Retrieves the UserDetails for the given username and authentication token.
+     *
+     * @param username The username of the user to retrieve.
+     * @param authentication The authentication token containing the user's address and signature.
+     * @return The UserDetails object for the user, or null if no user is found.
+     */
     override fun retrieveUser(username: String, authentication: UsernamePasswordAuthenticationToken?): UserDetails? =
         (authentication as WalletAuthenticationRequest?)?.let { auth ->
             accountRepository.findByIdOrNull(auth.address)?.let { account ->
@@ -62,6 +85,14 @@ class WalletAuthenticationProvider(private val accountRepository: AccountReposit
             }
         }
 
+    /**
+     * Checks if the signature is valid for the given address, signature, and salt.
+     *
+     * @param address The address of the wallet account.
+     * @param signature The signature associated with the wallet account.
+     * @param salt The salt value associated with the wallet account.
+     * @return true if the signature is valid, false otherwise.
+     */
     private fun isSignatureValid(address: String, signature: String, salt: Long): Boolean {
         val formattedSalt =
             "Signature will be valid until:\n${formatter.format(Instant.ofEpochSecond(salt))}"

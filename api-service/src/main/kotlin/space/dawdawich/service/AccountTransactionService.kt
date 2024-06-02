@@ -19,6 +19,14 @@ import space.dawdawich.repositories.mongo.entity.AccountTransactionDocument
 import java.math.BigInteger
 import java.util.concurrent.TimeUnit
 
+/**
+ * Service class for handling account transaction-related operations.
+ *
+ * @property accountTransactionRepository The repository for accessing and manipulating AccountTransactionDocument objects.
+ * @property serverConfigRepository The repository for accessing and manipulating ServerConfigDocument objects.
+ * @property web3Client The Web3j client for interacting with the Ethereum blockchain.
+ * @property joatContractAddress The address of the JOAT contract.
+ */
 @Service
 class AccountTransactionService(
     private val accountTransactionRepository: AccountTransactionRepository,
@@ -42,11 +50,23 @@ class AccountTransactionService(
         )
     }
 
+    /**
+     * Retrieves the transactions for a given account ID.
+     *
+     * @param accountId The ID of the account.
+     * @return A list of TransactionResponse objects representing the transactions for the account.
+     */
     fun getTransactions(accountId: String): List<TransactionResponse> =
         accountTransactionRepository.findByAccountId(accountId).map {
             TransactionResponse(it.value, it.time)
         }
 
+    /**
+     * Method to check for new transactions periodically.
+     * Retrieves the last checked block from the server config, retrieves the last block from the web3Client,
+     * and checks for new transactions between the two blocks.
+     * If new transactions are found, they are saved in the accountTransactionRepository and the last checked block is updated in the server config.
+     */
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
     private fun checkNewTransactions() {
         val lastCheckedBlock: Long = serverConfigRepository.getConfig().lastCheckedBlock + 1
