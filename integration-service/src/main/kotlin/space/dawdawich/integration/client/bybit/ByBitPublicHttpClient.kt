@@ -16,13 +16,15 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         const val GET_TICKER = "/market/tickers"
     }
 
-    override suspend fun getPairCurrentPrice(symbol: String): Double {
-        val response = get(GET_TICKER, "category=linear&symbol=$symbol")
+    override suspend fun getPairCurrentPrice(): List<Map<String, String>> {
+//        val response = 5 repeatTry { get(GET_TICKER, "category=linear&symbol=$symbol") }
+        val response = 5 repeatTry { get(GET_TICKER, "category=linear") }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read<String>("\$.result.list[0].lastPrice").toDouble()
+                return parsedJson.read<List<Map<String, String>>>("\$.result.list")
+//                return parsedJson.read<String>("\$.result.list[0].lastPrice").toDouble()
             }
 
             else -> {
@@ -32,7 +34,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
     }
 
     override suspend fun getPairInstructions(symbol: String): PairInfo {
-        val response = get(GET_INSTRUMENTS_INFO, "category=linear&symbol=$symbol")
+        val response = 5 repeatTry { get(GET_INSTRUMENTS_INFO, "category=linear&symbol=$symbol") }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {

@@ -1,5 +1,6 @@
 package space.dawdawich.service
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -296,41 +297,47 @@ class AnalyzerService(
             val symbols = symbolRepository.findAllById(symbols)
             val analyzersToInsert = mutableListOf<GridTableAnalyzerDocument>()
 
-            for (symbol in symbols) {
-                val currentPrice = runBlocking {
-                    (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice(symbol.symbol)
-                }
-                val instructions = runBlocking {
-                    (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairInstructions(symbol.symbol)
-                }
-                for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
-                    for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
-                        for (diapason in diapasonMin..diapasonMax step diapasonStep) {
-                            for (gridSize in gridSizeMin..gridSizeMax step gridSizeStep) {
-                                for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
-                                    val startCapital = startCapital.toDouble()
-                                    val moneyPerOrder = startCapital.plusPercent(-2) / gridSize
-                                    val qty = moneyPerOrder * multiplier / currentPrice
+            runBlocking {
+                val pricesMap = (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice()
+                for (symbol in symbols) {
+                    launch {
+//                        val currentPrice = runBlocking {
+//                            (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice(symbol.symbol)
+//                        }
+//                        val instructions = runBlocking {
+//                            (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairInstructions(symbol.symbol)
+//                        }
+                        val currentPrice = pricesMap.first { it["symbol"] == symbol.symbol }["lastPrice"]!!.toDouble()
+                        for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
+                            for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
+                                for (diapason in diapasonMin..diapasonMax step diapasonStep) {
+                                    for (gridSize in gridSizeMin..gridSizeMax step gridSizeStep) {
+                                        for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
+                                            val startCapital = startCapital.toDouble()
+                                            val moneyPerOrder = startCapital.plusPercent(-2) / gridSize
+                                            val qty = moneyPerOrder * multiplier / currentPrice
 
-                                    if (qty > symbol.minOrderQty && multiplier <= instructions.maxLeverage) {
-                                        analyzersToInsert.add(
-                                            GridTableAnalyzerDocument(
-                                                UUID.randomUUID().toString(),
-                                                accountId,
-                                                public,
-                                                diapason,
-                                                gridSize,
-                                                multiplier,
-                                                stopLoss,
-                                                takeProfit,
-                                                symbol,
-                                                startCapital,
-                                                active,
-                                                demoAccount,
-                                                market,
-                                                TradeStrategy.GRID_TABLE_STRATEGY
-                                            )
-                                        )
+                                            if (qty > symbol.minOrderQty/* && multiplier <= instructions.maxLeverage*/) {
+                                                analyzersToInsert.add(
+                                                    GridTableAnalyzerDocument(
+                                                        UUID.randomUUID().toString(),
+                                                        accountId,
+                                                        public,
+                                                        diapason,
+                                                        gridSize,
+                                                        multiplier,
+                                                        stopLoss,
+                                                        takeProfit,
+                                                        symbol,
+                                                        startCapital,
+                                                        active,
+                                                        demoAccount,
+                                                        market,
+                                                        TradeStrategy.GRID_TABLE_STRATEGY
+                                                    )
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }

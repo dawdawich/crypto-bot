@@ -26,7 +26,7 @@ class ActionListener(
     @PostConstruct
     fun postInit() {
         val allSymbols = symbolRepository.findAll()
-        initializeTickerTopics(BYBIT_TICKER_TOPIC, allSymbols, byBitClient)
+//        initializeTickerTopics(BYBIT_TICKER_TOPIC, allSymbols, byBitClient)
         initializeTickerTopics(BYBIT_TEST_TICKER_TOPIC, allSymbols, byBitTestClient)
     }
 

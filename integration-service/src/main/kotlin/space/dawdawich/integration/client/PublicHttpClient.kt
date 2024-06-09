@@ -6,7 +6,8 @@ import space.dawdawich.integration.model.PairInfo
 
 interface PublicHttpClient {
 
-    suspend fun getPairCurrentPrice(symbol: String): Double
+//    suspend fun getPairCurrentPrice(symbol: String): Double
+    suspend fun getPairCurrentPrice(): List<Map<String, String>>
     suspend fun getPairInstructions(symbol: String): PairInfo
 
     suspend infix fun <T> Int.repeatTry(block: suspend () -> T): T {

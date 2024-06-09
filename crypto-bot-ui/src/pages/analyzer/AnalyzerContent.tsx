@@ -105,7 +105,8 @@ type ActiveStatus = 'ALL' | 'ACTIVE' | 'NOT_ACTIVE';
 const SelectOption = (props: OptionProps<any>) => {
     return (
         <components.Option {...props}>
-            {getSymbolIcon(props.label)}
+            {/*{getSymbolIcon(props.label)}*/}
+            {props.label}
             <div style={{marginLeft: '8px'}}>{props.children}</div>
         </components.Option>
     );
@@ -764,10 +765,11 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                 </TableCell>
                                             }
                                             <TableCell id="cell" onClick={() => navigateToAnalyzerDetail(analyzer.id)}>
-                                                <Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200}
-                                                         placement={"right"} arrow>
-                                                    {getSymbolIcon(analyzer.symbol)}
-                                                </Tooltip>
+                                                {/*<Tooltip title={analyzer.symbol} enterDelay={500} leaveDelay={200}*/}
+                                                {/*         placement={"right"} arrow>*/}
+                                                    {/*{getSymbolIcon(analyzer.symbol)}*/}
+                                                    {analyzer.symbol}
+                                                {/*</Tooltip>*/}
                                             </TableCell>
                                             {isListPage() && <TableCell align="left" id="cell">
                                                 {analyzer.isActive ?

@@ -67,7 +67,7 @@ class AccountTransactionService(
      * and checks for new transactions between the two blocks.
      * If new transactions are found, they are saved in the accountTransactionRepository and the last checked block is updated in the server config.
      */
-    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
+//    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
     private fun checkNewTransactions() {
         val lastCheckedBlock: Long = serverConfigRepository.getConfig().lastCheckedBlock + 1
         val lastBlock = web3Client.ethBlockNumber().send().blockNumber.longValueExact()

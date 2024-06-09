@@ -415,7 +415,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                             value: singleAnalyzerModel.symbol,
                             label: singleAnalyzerModel.symbol
                         } : multiAnalyzerModel.symbol.map(el => ({value: el, label: el}))}
-                        onChange={(newValue) => handleSelectChange("symbol", Array.isArray(newValue) ? newValue : (newValue as any).value)}
+                        // onChange={(newValue) => handleSelectChange("symbol", Array.isArray(newValue) ? newValue : (newValue as any).value)}
+                        onChange={(newValue) => handleSelectChange("symbol", Array.isArray(newValue) ? props.symbols.map(el => ({value: el})) : (newValue as any).value)}
                         options={props.symbols.map(el => ({value: el, label: el}))}
                     />
                 </div>
