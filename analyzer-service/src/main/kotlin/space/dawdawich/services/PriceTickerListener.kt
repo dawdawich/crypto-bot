@@ -5,8 +5,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.kafka.listener.AcknowledgingMessageListener
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
-import org.springframework.kafka.listener.ContainerProperties
-import org.springframework.kafka.listener.MessageListener
 
 class PriceTickerListener(private val kafkaContainer: ConcurrentMessageListenerContainer<String, String>) {
     private val log = KotlinLogging.logger {  }

@@ -72,7 +72,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     @DeleteMapping
     fun bulkDeleteAnalyzers(authentication: Authentication, @RequestBody request: IdListRequest): ResponseEntity<Unit> =
         try {
-            analyzerService.deleteAnalyzers(authentication.name, request.ids)
+            analyzerService.deleteAnalyzers(authentication.name, request.ids, request.all)
             ResponseEntity(HttpStatus.OK)
         } catch (ex: AnalyzerNotFoundException) {
             ResponseEntity(HttpStatus.NOT_FOUND)
