@@ -1,7 +1,7 @@
 import React from "react";
 import "../../css/pages/contact/ContactPageStyle.css";
 import "../../css/pages/LoginBanner.css";
-import { ReactComponent as FullLogo } from "../../assets/images/contact/full-logo.svg";
+import {ReactComponent as FullLogo} from "../../assets/images/contact/full-logo.svg";
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import {ReactComponent as MetamaskIcon} from "../../assets/images/account/metamask-icon.svg";
 import {Button, styled, Typography} from "@mui/material";
@@ -22,9 +22,17 @@ const ContactPage: React.FC = () => {
                 About App
             </Header>
             <div className="contact-content">
-                <FullLogo />
+                <FullLogo/>
                 <Typography style={{marginTop: '32'}} color="#555C68">alpha: 0.0.1</Typography>
-                <Typography style={{marginTop: '80'}} color="#555C68">Docs | Support | Discord | Contact Us </Typography>
+                <Typography style={{marginTop: '80'}} color="#555C68">
+                    <a href="https://discord.gg/jbnUQNsZKb"
+                                                                         target="_blank" rel="noopener noreferrer"
+                                                                         style={{
+                                                                             textDecoration: 'none',
+                                                                             color: 'inherit'
+                                                                         }}>Discord</a> |
+                    <a href="mailto:admin@joat.trade" style={{textDecoration: 'none', color: 'inherit'}}>Contact Us</a>
+                </Typography>
             </div>
 
             {

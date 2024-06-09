@@ -310,43 +310,39 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     }
 
     const deleteAnalyzers = (analyzers: AnalyzerResponse[]) => {
-        if (analyzers.length > 0) {
-            showLoader();
-            deleteAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
-                .then(() => {
-                    hideLoader();
-                    successToast('Analyzers deleted successfully.');
-                    setSelectedAnalyzers([]);
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
-                })
-                .catch((ex) => {
-                    hideLoader();
-                    errorToast('Failed to delete analyzers.');
-                    if (ex instanceof UnauthorizedError) {
-                        logout();
-                    }
-                });
-        }
+        showLoader();
+        deleteAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
+            .then(() => {
+                hideLoader();
+                successToast('Analyzers deleted successfully.');
+                setSelectedAnalyzers([]);
+                updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
+            })
+            .catch((ex) => {
+                hideLoader();
+                errorToast('Failed to delete analyzers.');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     }
 
     const resetAnalyzers = (analyzers: AnalyzerResponse[]) => {
-        if (analyzers.length > 0) {
-            showLoader();
-            resetAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
-                .then(() => {
-                    hideLoader();
-                    successToast('Analyzers updated successfully.');
-                    setSelectedAnalyzers([]);
-                    updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
-                })
-                .catch((ex) => {
-                    hideLoader();
-                    errorToast('Failed to updated analyzers.');
-                    if (ex instanceof UnauthorizedError) {
-                        logout();
-                    }
-                });
-        }
+        showLoader();
+        resetAnalyzerBulk(authInfo!, analyzers.map(e => e.id), selectAllCheckbox)
+            .then(() => {
+                hideLoader();
+                successToast('Analyzers updated successfully.');
+                setSelectedAnalyzers([]);
+                updateAnalyzersList(identifyStatus(selectedStatusFilter), selectedSymbolFilter, getSortObject(), getFolderFilter(), pageNumber);
+            })
+            .catch((ex) => {
+                hideLoader();
+                errorToast('Failed to updated analyzers.');
+                if (ex instanceof UnauthorizedError) {
+                    logout();
+                }
+            });
     }
 
     const setCurrentAnalyzerStatus = (analyzers: AnalyzerResponse[], status: boolean) => {
