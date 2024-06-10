@@ -62,6 +62,7 @@ class SymbolService(
                 symbolInfo.maxPrice,
                 symbolInfo.minOrderQty,
                 symbolInfo.maxOrderQty,
+                symbolInfo.maxLeverage,
                 symbolInfo.qtyStep
             )
         )
