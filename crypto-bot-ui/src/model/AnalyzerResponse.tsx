@@ -19,4 +19,5 @@ export type AnalyzerResponse = {
     pnl1: number;
     pnl12: number;
     pnl24: number;
+    symbolVolatile?: number;
 }

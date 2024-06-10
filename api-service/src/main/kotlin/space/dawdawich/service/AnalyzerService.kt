@@ -42,6 +42,7 @@ class AnalyzerService(
     private val publicBybitClient: ByBitPublicHttpClient,
     private val publicBybitTestClient: ByBitPublicHttpClient,
     private val folderService: FolderService,
+    private val symbolService: SymbolService,
 ) {
 
     /**
@@ -55,7 +56,7 @@ class AnalyzerService(
             val percentDifference = (difference / it.startCapital) * 100
             // The data is sorted by percent difference in descending order
             percentDifference
-        }.take(20).map { GridTableAnalyzerResponse(it) }
+        }.take(20).map { GridTableAnalyzerResponse(it, symbolService.volatileCoefficients[it.symbolInfo.symbol]) }
 
     /**
      * Retrieves a list of GridTableAnalyzerResponse objects based on the provided parameters.
@@ -92,7 +93,12 @@ class AnalyzerService(
             PageRequest.of(page, size),
             AnalyzerFilter(status, symbols?.split(",")?.toList() ?: emptyList()),
             sort
-        ).map { analyzer -> GridTableAnalyzerResponse(analyzer) }.toList()
+        ).map { analyzer ->
+            GridTableAnalyzerResponse(
+                analyzer,
+                symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
+            )
+        }.toList()
     }
 
     /**
@@ -197,11 +203,14 @@ class AnalyzerService(
      * @return A GridTableAnalyzerResponse object representing the analyzer.
      * @throws AnalyzerNotFoundException if the analyzer with the given ID and account ID is not found.
      */
-    fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse =
-        GridTableAnalyzerResponse(
-            analyzerRepository.findByIdAndAccountId(id, accountId)
-                ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found")
+    fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse {
+        val gridTableAnalyzerDocument = (analyzerRepository.findByIdAndAccountId(id, accountId)
+            ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found"))
+        return GridTableAnalyzerResponse(
+            gridTableAnalyzerDocument,
+            symbolService.volatileCoefficients[gridTableAnalyzerDocument.symbolInfo.symbol]
         )
+    }
 
     /**
      * Creates a new analyzer.

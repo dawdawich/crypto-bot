@@ -746,6 +746,9 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                     </HeaderCellContent>
                                 </TableCell>
                                 <TableCell align="center" id="cell">
+                                    Volatile
+                                </TableCell>
+                                <TableCell align="center" id="cell">
                                 </TableCell>
                             </TableRow>
                         </TableHead>
@@ -808,6 +811,9 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                             <TableCell align="left" id="cell"
                                                        style={{color: getPnLColorByValue(analyzer.pnl24)}}>
                                                 {getSignByValue(analyzer.pnl24)}{trimDecimalNumbers(analyzer.pnl24, 1)} %
+                                            </TableCell>
+                                            <TableCell align="left" id="cell">
+                                                {trimDecimalNumbers((!!analyzer.symbolVolatile ? analyzer.symbolVolatile : 0) * 100)}
                                             </TableCell>
                                             <TableCell align={isListPage() ? "center" : "right"} id="cell">
                                                 {

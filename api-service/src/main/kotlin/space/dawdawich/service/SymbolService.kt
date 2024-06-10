@@ -36,6 +36,8 @@ class SymbolService(
 
     private val log = KotlinLogging.logger { }
 
+    val volatileCoefficients: Map<String, Double> = mutableMapOf()
+
     /**
      * Retrieves all symbols from the symbol repository.
      *
@@ -90,7 +92,9 @@ class SymbolService(
                 launch {
                     val mean = kLineClosePrices.average()
                     val standardDeviation = sqrt(kLineClosePrices.map { value -> (value - mean).pow(2.0) }.average())
-                    symbolRepository.updateVolatilityCoef(symbol.symbol, standardDeviation / mean)
+                    val result = standardDeviation / mean
+                    (volatileCoefficients as MutableMap)[symbol.symbol] = result
+                    symbolRepository.updateVolatilityCoef(symbol.symbol, result)
                 }
             }
         }

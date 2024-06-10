@@ -60,8 +60,9 @@ data class GridTableAnalyzerResponse(
     var pnl12: Int = 0,
     @EncodeDefault
     var pnl24: Int = 0,
+    val symbolVolatile: Double?
 ) {
-    constructor(documentAnalyzer: GridTableAnalyzerDocument) : this(
+    constructor(documentAnalyzer: GridTableAnalyzerDocument, volatileCoef: Double?) : this(
         documentAnalyzer.id,
         documentAnalyzer.diapason,
         documentAnalyzer.gridSize,
@@ -82,5 +83,6 @@ data class GridTableAnalyzerResponse(
         documentAnalyzer.pNl1 ?: 0,
         documentAnalyzer.pNl12 ?: 0,
         documentAnalyzer.pNl24 ?: 0,
+        volatileCoef
     )
 }
