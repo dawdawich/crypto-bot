@@ -117,6 +117,9 @@ class ByBitWebSocketClient(
 
     override fun onError(ex: Exception?) {
         logger.error(ex) { "Failed to listen websocket" }
+        if (ex is java.net.UnknownHostException) {
+            GlobalScope.launch { reconnect() }
+        }
     }
 
     private fun subscribe() {
