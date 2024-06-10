@@ -9,6 +9,7 @@ interface PublicHttpClient {
 //    suspend fun getPairCurrentPrice(symbol: String): Double
     suspend fun getPairCurrentPrice(): List<Map<String, String>>
     suspend fun getPairInstructions(symbol: String): PairInfo
+    suspend fun getKLineClosePrices(symbol: String): List<Double>
 
     suspend infix fun <T> Int.repeatTry(block: suspend () -> T): T {
         return try {

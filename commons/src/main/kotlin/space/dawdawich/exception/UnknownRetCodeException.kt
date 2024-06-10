@@ -6,4 +6,4 @@ package space.dawdawich.exception
  *
  * @param retCode The unknown return code.
  */
-class UnknownRetCodeException(retCode: Int) : Exception("Unknown return code: $retCode")
+class UnknownRetCodeException(retCode: Int, query: String? = null) : Exception("Unknown return code: $retCode.${query?.let { " Query string: $it" } ?: ""}")

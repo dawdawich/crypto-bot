@@ -92,16 +92,7 @@ class AnalyzerService(
             PageRequest.of(page, size),
             AnalyzerFilter(status, symbols?.split(",")?.toList() ?: emptyList()),
             sort
-        )
-            .map { analyzer ->
-                if (analyzer.isActive) {
-                    analyzerStabilityRepository.findFirstByAnalyzerIdOrderByTimestampDesc(analyzer.id)
-                        ?.let { lastStability ->
-                            analyzer.money = lastStability.money
-                        }
-                }
-                GridTableAnalyzerResponse(analyzer)
-            }.toList()
+        ).map { analyzer -> GridTableAnalyzerResponse(analyzer) }.toList()
     }
 
     /**

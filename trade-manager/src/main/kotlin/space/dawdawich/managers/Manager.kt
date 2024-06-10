@@ -22,6 +22,7 @@ import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.service.factory.PriceTickerListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner
+import space.dawdawich.strategy.model.Trend
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.Timer
 import java.util.concurrent.TimeUnit
@@ -56,6 +57,7 @@ class Manager(
     private var lastRefreshTime = System.currentTimeMillis()
     private var listener: ConcurrentMessageListenerContainer<String, String>? = null
     private var strategyRunner: StrategyRunner? = null
+    private var previousPositionTrend: Trend? = null
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
 
     private var money: Double by Delegates.observable(runBlocking { bybitService.getAccountBalance() }) { _, _, newValue ->
@@ -66,7 +68,9 @@ class Manager(
             synchronized(synchronizationObject) {
                 acceptGridTableStrategyPriceChange(oldPrice, newPrice)
             }
-            refreshStrategyConfig()
+            if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
+                refreshStrategyConfig()
+            }
         }
     }
 
@@ -194,6 +198,9 @@ class Manager(
                             if (isStopLoss) {
                                 pauseTimer.setTimer(5.minutes.inWholeMilliseconds)
                                 lastRefreshTime = 0
+                                refreshStrategyConfig()
+                            } else {
+                                refreshStrategyConfig()
                             }
                         } catch (e: Exception) {
                             crashPostAction(e)
@@ -202,6 +209,7 @@ class Manager(
 
                     with(webSocket) {
                         positionUpdateCallback = { position ->
+                            previousPositionTrend = strategyRunner?.position?.trend
                             this@apply.updatePosition(position)
                             this@Manager.money = runBlocking {
                                 bybitService.getAccountBalance()

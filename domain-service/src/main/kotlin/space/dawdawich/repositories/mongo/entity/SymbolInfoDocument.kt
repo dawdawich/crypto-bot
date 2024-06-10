@@ -16,5 +16,6 @@ data class SymbolInfoDocument(
     val minOrderQty: Double,
     val maxOrderQty: Double,
     val maxLeverage: Double,
-    val qtyStep: Double
+    val qtyStep: Double,
+    val volatilityCoef: Double? = null
 )

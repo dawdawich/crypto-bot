@@ -7,6 +7,7 @@ import io.ktor.client.*
 import io.ktor.client.statement.*
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.integration.client.PublicHttpClient
+import kotlin.time.Duration.Companion.days
 
 open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val jsonPath: ParseContext) :
     DefaultHttpClient(serverUrl, client), PublicHttpClient {
@@ -14,6 +15,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
     companion object {
         const val GET_INSTRUMENTS_INFO = "/market/instruments-info"
         const val GET_TICKER = "/market/tickers"
+        const val GET_KLINE = "/market/kline"
     }
 
     override suspend fun getPairCurrentPrice(): List<Map<String, String>> {
@@ -23,7 +25,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read<List<Map<String, String>>>("\$.result.list")
+                return parsedJson.read("\$.result.list")
 //                return parsedJson.read<String>("\$.result.list[0].lastPrice").toDouble()
             }
 
@@ -54,6 +56,21 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
             else -> {
                 throw UnknownRetCodeException(returnCode)
             }
+        }
+    }
+
+    override suspend fun getKLineClosePrices(symbol: String): List<Double> {
+        val queryString =
+            "category=linear&symbol=$symbol&interval=5&limit=1000&start=${(System.currentTimeMillis() - 1.days.inWholeMilliseconds)}"
+        val response = 3 repeatTry { get(GET_KLINE, queryString) }
+
+        val parsedJson = jsonPath.parse(response.bodyAsText())
+        when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
+            0 -> {
+                return parsedJson.read<List<String>>("\$.result.list[*][4]").map { price -> price.toDouble() }
+            }
+
+            else -> throw UnknownRetCodeException(returnCode, queryString)
         }
     }
 }
