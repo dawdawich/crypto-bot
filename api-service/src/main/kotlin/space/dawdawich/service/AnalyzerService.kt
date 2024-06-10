@@ -80,11 +80,9 @@ class AnalyzerService(
         orderDirection: String?,
         folderId: String?,
     ): List<GridTableAnalyzerResponse> {
-        val direction = if (orderDirection != null && orderDirection.equals(
-                "asc",
-                ignoreCase = true
-            )
-        ) Sort.Direction.ASC else Sort.Direction.DESC
+        val direction =
+            if (orderDirection != null && orderDirection.equals("asc", ignoreCase = true)) Sort.Direction.ASC
+            else Sort.Direction.DESC
         val sort = fieldName?.let { Sort.by(direction, it) }
         val analyzerIds = folderId?.let { folderService.getAnalyzersByFolderIdAndAccountId(accountId, it) }?.toList()
 
@@ -97,9 +95,10 @@ class AnalyzerService(
         )
             .map { analyzer ->
                 if (analyzer.isActive) {
-                    analyzerStabilityRepository.findFirstByAnalyzerIdOrderByTimestampDesc(analyzer.id)?.let { lastStability ->
-                        analyzer.money = lastStability.money
-                    }
+                    analyzerStabilityRepository.findFirstByAnalyzerIdOrderByTimestampDesc(analyzer.id)
+                        ?.let { lastStability ->
+                            analyzer.money = lastStability.money
+                        }
                 }
                 GridTableAnalyzerResponse(analyzer)
             }.toList()
@@ -317,7 +316,7 @@ class AnalyzerService(
                                             val moneyPerOrder = startCapital.plusPercent(-2) / gridSize
                                             val qty = moneyPerOrder * multiplier / currentPrice
 
-                                            if (qty > symbol.minOrderQty/* && multiplier <= instructions.maxLeverage*/) {
+                                            if (qty > symbol.minOrderQty && multiplier <= symbol.maxLeverage) {
                                                 analyzersToInsert.add(
                                                     GridTableAnalyzerDocument(
                                                         UUID.randomUUID().toString(),
