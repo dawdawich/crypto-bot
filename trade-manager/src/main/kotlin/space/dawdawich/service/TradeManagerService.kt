@@ -42,6 +42,7 @@ class TradeManagerService(
             })
         } catch (e: Exception) {
             logger.error(e) { "Failed to create manager" }
+            deactivateTradeManager(managerConfig.id, ex = e)
         }
     }
 

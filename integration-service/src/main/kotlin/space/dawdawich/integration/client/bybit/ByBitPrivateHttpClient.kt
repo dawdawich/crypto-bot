@@ -8,10 +8,7 @@ import io.ktor.client.statement.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mu.KotlinLogging
-import space.dawdawich.exception.InsufficientBalanceException
-import space.dawdawich.exception.InvalidMarginProvided
-import space.dawdawich.exception.InvalidSignatureException
-import space.dawdawich.exception.UnknownRetCodeException
+import space.dawdawich.exception.*
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.utils.bytesToHex
 import java.nio.channels.UnresolvedAddressException
@@ -80,6 +77,7 @@ class ByBitPrivateHttpClient(
                 }
 
                 110007 -> throw InsufficientBalanceException()
+                33004 -> throw ApiTokenExpiredException()
                 else -> throw UnknownRetCodeException(returnCode)
             }
         } catch (e: UnresolvedAddressException) {
@@ -148,6 +146,7 @@ class ByBitPrivateHttpClient(
             0 -> parsedJson.read<String>("$.result.list[0].coin[0].equity").toDouble()
             10002 -> getAccountBalance(repeatCount)
             10004 -> throw InvalidSignatureException()
+            33004 -> throw ApiTokenExpiredException()
             else -> throw UnknownRetCodeException(returnCode)
         }
     }
@@ -173,6 +172,7 @@ class ByBitPrivateHttpClient(
 
             10002 -> getPositionInfo(symbol, retryCount)
             10004 -> throw InvalidSignatureException()
+            33004 -> throw ApiTokenExpiredException()
             else -> throw UnknownRetCodeException(returnCode)
         }
     }
@@ -193,6 +193,7 @@ class ByBitPrivateHttpClient(
             10001 -> throw InvalidMarginProvided()
             10002 -> setMarginMultiplier(symbol, multiplier, retryCount)
             10004 -> throw InvalidSignatureException()
+            33004 -> throw ApiTokenExpiredException()
             else -> throw UnknownRetCodeException(returnCode)
         }
     }
@@ -224,9 +225,8 @@ class ByBitPrivateHttpClient(
             0, 110017 -> return
             10002 -> closePosition(symbol, isLong, size, positionIdx, repeatCount)
             10004 -> throw InvalidSignatureException()
-            else -> {
-                throw UnknownRetCodeException(returnCode)
-            }
+            33004 -> throw ApiTokenExpiredException()
+            else -> throw UnknownRetCodeException(returnCode)
         }
     }
 
