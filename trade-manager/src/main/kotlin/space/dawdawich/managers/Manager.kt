@@ -65,11 +65,11 @@ class Manager(
     }
     private var currentPrice: Double by Delegates.observable(0.0) { _, oldPrice, newPrice ->
         if (active && !pauseTimer.isTimerActive() && strategyRunner != null && oldPrice > 0 && newPrice > 0) {
+            if (strategyRunner?.position == null || strategyRunner!!.position!!.calculateProfit(newPrice) > 0.0) {
+                refreshStrategyConfig()
+            }
             synchronized(synchronizationObject) {
                 acceptGridTableStrategyPriceChange(oldPrice, newPrice)
-            }
-            if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
-                refreshStrategyConfig()
             }
         }
     }
@@ -211,6 +211,9 @@ class Manager(
                         positionUpdateCallback = { position ->
                             previousPositionTrend = strategyRunner?.position?.trend
                             this@apply.updatePosition(position)
+                            if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
+                                refreshStrategyConfig()
+                            }
                             this@Manager.money = runBlocking {
                                 bybitService.getAccountBalance()
                             }
