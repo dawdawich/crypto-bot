@@ -2,6 +2,7 @@ package space.dawdawich.client
 
 import com.jayway.jsonpath.ParseContext
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging.logger
 import org.java_websocket.client.WebSocketClient
@@ -15,6 +16,7 @@ import space.dawdawich.strategy.model.Trend
 import java.net.URI
 import javax.crypto.Mac
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 class ByBitWebSocketClient(
     isTest: Boolean,
@@ -118,7 +120,10 @@ class ByBitWebSocketClient(
     override fun onError(ex: Exception?) {
         logger.error(ex) { "Failed to listen websocket" }
         if (ex is java.net.UnknownHostException) {
-            GlobalScope.launch { reconnect() }
+            GlobalScope.launch {
+                delay(1.minutes)
+                reconnect()
+            }
         }
     }
 
