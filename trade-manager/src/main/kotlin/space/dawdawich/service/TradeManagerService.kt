@@ -24,6 +24,9 @@ class TradeManagerService(
     private val tradeManagers: MutableList<Manager> = Collections.synchronizedList(mutableListOf())
 
     init {
+        managerRepository.findAllByStatus(ManagerStatus.ACTIVE).forEach { config ->
+            activateManager(config)
+        }
         Runtime.getRuntime().addShutdownHook(Thread {
             runBlocking {
                 tradeManagers.forEach {
