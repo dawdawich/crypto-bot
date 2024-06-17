@@ -1,4 +1,4 @@
-package space.dawdawich.repositories.custom.model
+package space.dawdawich.repositories.custom.mongo.model
 
 data class AnalyzerFilter(
     val statusFilter: Boolean?,

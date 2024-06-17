@@ -1,4 +1,4 @@
-package space.dawdawich.repositories.custom.impl
+package space.dawdawich.repositories.custom.mongo.impl
 
 import org.bson.Document
 import org.springframework.data.domain.Pageable
@@ -10,8 +10,8 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.isEqualTo
-import space.dawdawich.repositories.custom.CustomAnalyzerRepository
-import space.dawdawich.repositories.custom.model.AnalyzerFilter
+import space.dawdawich.repositories.custom.mongo.CustomAnalyzerRepository
+import space.dawdawich.repositories.custom.mongo.model.AnalyzerFilter
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 class CustomAnalyzerRepositoryImpl(private val mongoTemplate: MongoTemplate) : CustomAnalyzerRepository {

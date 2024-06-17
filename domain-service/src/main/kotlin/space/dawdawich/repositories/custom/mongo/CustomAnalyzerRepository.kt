@@ -1,8 +1,8 @@
-package space.dawdawich.repositories.custom
+package space.dawdawich.repositories.custom.mongo
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import space.dawdawich.repositories.custom.model.AnalyzerFilter
+import space.dawdawich.repositories.custom.mongo.model.AnalyzerFilter
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 interface CustomAnalyzerRepository {

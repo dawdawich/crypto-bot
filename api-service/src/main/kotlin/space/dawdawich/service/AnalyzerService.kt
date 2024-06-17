@@ -20,7 +20,7 @@ import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.model.constants.TradeStrategy
 import space.dawdawich.repositories.mongo.AnalyzerRepository
-import space.dawdawich.repositories.custom.model.AnalyzerFilter
+import space.dawdawich.repositories.custom.mongo.model.AnalyzerFilter
 import space.dawdawich.repositories.mongo.AccountTransactionRepository
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.service.validation.AnalyzerValidationService

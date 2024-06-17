@@ -5,6 +5,6 @@ import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
 
 interface AnalyzerStabilityRepository : CrudRepository<AnalyzerMoneyModel, String> {
     fun findAllByAnalyzerId(analyzerId: String): List<AnalyzerMoneyModel>
-    fun deleteByAnalyzerId(analyzerId: String): Int
+    fun deleteByAnalyzerId(analyzerId: String)
     fun findFirstByAnalyzerIdOrderByTimestampDesc(analyzerId: String): AnalyzerMoneyModel?
 }

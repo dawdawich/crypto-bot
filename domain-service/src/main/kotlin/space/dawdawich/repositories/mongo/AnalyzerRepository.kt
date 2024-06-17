@@ -3,7 +3,7 @@ package space.dawdawich.repositories.mongo
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
-import space.dawdawich.repositories.custom.CustomAnalyzerRepository
+import space.dawdawich.repositories.custom.mongo.CustomAnalyzerRepository
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String>, CustomAnalyzerRepository {
