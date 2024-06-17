@@ -384,8 +384,12 @@ class AnalyzerService(
         .let { analyzerRepository.resetAnalyzers(ids) }
         .let {
             runBlocking {
-                ids.forEach { id ->
-                    launch { analyzerStabilityRepository.deleteByAnalyzerId(id) }
+                ids.forEach { analyzerId ->
+                    launch {
+                        analyzerStabilityRepository.findAllByAnalyzerId(analyzerId).forEach { model ->
+                            analyzerStabilityRepository.deleteById(model.id)
+                        }
+                    }
                 }
             }
         }
