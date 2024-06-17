@@ -382,7 +382,13 @@ class AnalyzerService(
     private fun resetAnalyzers(ids: List<String>) = let { analyzerRepository.setAnalyzersActiveStatus(ids, false) }
         .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
         .let { analyzerRepository.resetAnalyzers(ids) }
-        .let { analyzerStabilityRepository.deleteByAnalyzerIdIn(ids) }
+        .let {
+            runBlocking {
+                ids.forEach { id ->
+                    launch { analyzerStabilityRepository.deleteByAnalyzerId(id) }
+                }
+            }
+        }
         .let { analyzerRepository.setAnalyzersActiveStatus(ids, true) }
         .let { ids.forEach { id -> kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, id) } }
 
