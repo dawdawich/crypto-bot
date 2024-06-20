@@ -12,6 +12,8 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import space.dawdawich.client.ByBitWebSocketClient
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
+import space.dawdawich.exception.ApiTokenExpiredException
+import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.constants.Market
@@ -25,6 +27,7 @@ import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.Trend
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.Timer
+import java.nio.channels.UnresolvedAddressException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.properties.Delegates
@@ -61,7 +64,17 @@ class Manager(
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
 
     private var money: Double by Delegates.observable(runBlocking { bybitService.getAccountBalance() }) { _, _, newValue ->
-        strategyRunner?.updateMoney(newValue)
+        try {
+            strategyRunner?.updateMoney(newValue)
+        } catch (e: InsufficientBalanceException) {
+            logger { it.warn("Insufficient balance to make this operation") }
+            deactivate()
+        } catch (e: ApiTokenExpiredException) {
+            logger { it.warn("Api token was expired") }
+            deactivate()
+        } catch (e: UnresolvedAddressException) {
+            logger { it.warn("Failed to send request to the market", e) }
+        }
     }
     private var currentPrice: Double by Delegates.observable(0.0) { _, oldPrice, newPrice ->
         if (active && !pauseTimer.isTimerActive() && strategyRunner != null && oldPrice > 0 && newPrice > 0) {
