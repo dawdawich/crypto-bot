@@ -12,7 +12,7 @@ import space.dawdawich.model.constants.Market
 // Names must be consists with TradeStrategy enum
 @JsonSubTypes(
     JsonSubTypes.Type(value = CreateGridAnalyzerBulkRequest::class, name = "GRID_TABLE_STRATEGY"),
-    JsonSubTypes.Type(value = CreateCandleTailAnalyzerRequest::class, name = "CANDLE_TAIL_STRATEGY"),
+    JsonSubTypes.Type(value = CreateCandleTailAnalyzerBulkRequest::class, name = "CANDLE_TAIL_STRATEGY"),
 )
 sealed class CreateAnalyzerBulkRequest {
     abstract val stopLossMin: Int
