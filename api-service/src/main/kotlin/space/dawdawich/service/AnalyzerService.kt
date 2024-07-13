@@ -416,7 +416,7 @@ class AnalyzerService(
                         for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
                             for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
                                 for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
-                                    for (kLineDuration in klineDurations) {
+                                    for (kLineDuration in kLineDurations) {
                                         analyzersToInsert.add(
                                             CandleTailStrategyAnalyzerDocument(
                                                 UUID.randomUUID().toString(),
