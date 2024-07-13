@@ -1,18 +1,6 @@
 version: "3"
 
 services:
-  zookeeper:
-    image: docker.io/bitnami/zookeeper:latest
-    ports:
-      - "2181:2181"
-    volumes:
-      - "zookeeper_data:/bitnami"
-    environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
-      ZOOKEEPER_CLIENT_PORT: 2181
-    networks:
-      - "crypto-bot-network"
-
   rabbitmq:
     image: rabbitmq:3
     container_name: rabbitmq
@@ -60,7 +48,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      kafka:
+      rabbitmq:
         condition: service_started
       logstash:
         condition: service_started
@@ -76,7 +64,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      kafka:
+      rabbitmq:
         condition: service_started
       event-listener:
         condition: service_started
@@ -96,7 +84,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      kafka:
+      rabbitmq:
         condition: service_started
       logstash:
         condition: service_started
@@ -114,7 +102,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      kafka:
+      rabbitmq:
         condition: service_started
       logstash:
         condition: service_started
@@ -170,8 +158,6 @@ services:
 
 volumes:
   zookeeper_data:
-    driver: local
-  kafka_data:
     driver: local
   mongodb_data:
     driver: local
