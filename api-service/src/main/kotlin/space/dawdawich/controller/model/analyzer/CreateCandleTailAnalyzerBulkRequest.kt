@@ -15,7 +15,7 @@ data class CreateCandleTailAnalyzerBulkRequest(
     val multiplierMin: Int,
     val multiplierMax: Int = multiplierMin,
     val multiplierStep: Int,
-    val klineDurations: List<Int>,
+    val kLineDurations: List<Int>,
     override val startCapital: Int,
     override val demoAccount: Boolean,
     override val market: Market,
