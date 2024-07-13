@@ -256,6 +256,10 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         }
     };
 
+    const validateKLineRangeField = () => {
+        return !!multiAnalyzerModel.kLineDurations && multiAnalyzerModel.kLineDurations.length > 0;
+    };
+
     const validateStrategyField = () => creationMode === 'SINGLE' ? singleAnalyzerModel.strategy !== undefined : multiAnalyzerModel.strategy !== undefined;
 
     const validateKLineDurationField = () => validateField('kLineDuration') && singleAnalyzerModel.kLineDuration! > 0;
@@ -284,8 +288,11 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         validateMultiplierField() && validateStopLossField() && validateTakeProfitField() &&
         validateStartCapitalField() && validateMarketField() && validateDemoField();
 
-    const validateAllFieldsMulti = () => validateSymbolField() && validateStrategyField() && validateDiapasonStepField() &&
-        validateGridSizeStepField() && validateMultiplierStepField() && validateStopLossStepField() && validateTakeProfitStepField() &&
+    const validateAllFieldsMulti = () => validateSymbolField() && validateStrategyField() &&
+        ((validateDiapasonStepField() &&
+        validateGridSizeStepField()) ||
+        validateKLineRangeField())
+        && validateMultiplierStepField() && validateStopLossStepField() && validateTakeProfitStepField() &&
         validateStartCapitalField() && validateMarketField() && validateDemoField();
 
     const validatingDependingOnType = () => creationMode === 'SINGLE' ? validateAllFieldsSingle() : validateAllFieldsMulti();
@@ -333,7 +340,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         calculateDiapasonFieldWithStepCount('multiplier') *
         calculateDiapasonFieldWithStepCount('stopLoss') *
         calculateDiapasonFieldWithStepCount('takeProfit') *
-        multiAnalyzerModel.symbol.length;
+        multiAnalyzerModel.symbol.length *
+        (!!multiAnalyzerModel.kLineDurations ? multiAnalyzerModel.kLineDurations.length : 1);
 
 
     const getDemoOptionFromValue = (value: boolean | undefined) => {

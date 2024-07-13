@@ -2,7 +2,6 @@ package space.dawdawich.controller.model.analyzer
 
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.constants.Market
-import space.dawdawich.model.constants.TradeStrategy
 
 /**
  * Represents a request to create multiple analyzers in bulk.
@@ -55,13 +54,4 @@ data class CreateGridAnalyzerBulkRequest(
     override val active: Boolean,
     override val public: Boolean,
     override val folders: List<String>,
-) : CreateAnalyzerBulkRequest() {
-    fun calculateSize() =
-        symbols.size *
-                ((stopLossMax - stopLossMin) / stopLossStep) *
-                ((takeProfitMax - takeProfitMin) / takeProfitStep) *
-                ((diapasonMax - diapasonMin) / diapasonStep) *
-                ((gridSizeMax - gridSizeMin) / gridSizeStep) *
-                ((multiplierMax - multiplierMin) / multiplierStep)
-
-}
+) : CreateAnalyzerBulkRequest()
