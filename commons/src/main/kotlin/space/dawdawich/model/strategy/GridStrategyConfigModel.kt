@@ -27,15 +27,15 @@ class GridStrategyConfigModel(
     override val symbol: String,
     override val money: Double,
     override val multiplier: Int,
+    override val stopLoss: Int,
+    override val takeProfit: Int,
     val diapason: Int,
     val gridSize: Int,
-    val stopLoss: Int,
-    val takeProfit: Int,
-    override val priceMinStep: Double,
+    val priceMinStep: Double,
     override val minQtyStep: Double,
     val middlePrice: Double,
     val minPrice: Double,
     val maxPrice: Double,
     val step: Double,
     val pricesGrid: Set<Double>
-) : StrategyConfigModel()
+) : StrategyConfigModel(), java.io.Serializable

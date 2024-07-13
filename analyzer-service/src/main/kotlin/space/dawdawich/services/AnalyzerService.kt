@@ -1,47 +1,48 @@
 package space.dawdawich.services
 
+import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import org.springframework.amqp.rabbit.annotation.RabbitListener
+import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.kafka.annotation.KafkaListener
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.listener.ConsumerSeekAware
-import org.springframework.kafka.support.TopicPartitionOffset
-import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.analyzers.Analyzer
+import space.dawdawich.analyzers.KLineStrategyAnalyzer
 import space.dawdawich.constants.*
 import space.dawdawich.model.RequestProfitableAnalyzer
+import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.mongo.AnalyzerRepository
-import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
-import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.calculatePercentageChange
-import space.dawdawich.utils.getRightTopic
+import space.dawdawich.utils.convert
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 
 @Service
 class AnalyzerService(
-    private val kafkaListenerContainerFactory: ConcurrentKafkaListenerContainerFactory<String, String>,
-    private val symbolRepository: SymbolRepository,
+    private val connectionFactory: ConnectionFactory,
     private val analyzerStabilityRepository: AnalyzerStabilityRepository,
     private val analyzerRepository: AnalyzerRepository,
     private val mongoTemplate: MongoTemplate,
-) : ConsumerSeekAware {
+) {
 
     companion object {
         val comparator = Comparator<Pair<String, Double>> { p1, p2 -> p1.first.compareTo(p2.first) }
@@ -49,9 +50,8 @@ class AnalyzerService(
 
     private val log = KotlinLogging.logger { }
 
-    private val priceListeners = mutableMapOf<Pair<Int, Boolean>, PriceTickerListener>()
-    private val partitionMap: MutableMap<String, Int> =
-        mutableMapOf(*symbolRepository.findAll().map { it.symbol to it.partition }.toTypedArray())
+    private val priceListeners = mutableMapOf<String, EventListener<Double>>()
+    private val kLineListeners = mutableMapOf<String, EventListener<KLineRecord>>()
     private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
     private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
@@ -60,19 +60,12 @@ class AnalyzerService(
         analyzerRepository.findAll().filter { it.isActive }.map { it.convert() }.forEach { addAnalyzer(it) }
     }
 
-    override fun onPartitionsAssigned(
-        assignments: MutableMap<org.apache.kafka.common.TopicPartition, Long>,
-        callback: ConsumerSeekAware.ConsumerSeekCallback,
-    ) {
-        callback.seekToEnd(assignments.keys)
-    }
-
-    @KafkaListener(topics = [DEACTIVATE_ANALYZER_TOPIC])
+    @RabbitListener(queues = [DEACTIVATE_ANALYZER_TOPIC])
     fun deactivateAnalyzer(analyzerId: String) {
         removeAnalyzer(analyzerId)
     }
 
-    @KafkaListener(topics = [ACTIVATE_ANALYZER_TOPIC])
+    @RabbitListener(queues = [ACTIVATE_ANALYZER_TOPIC])
     fun activateAnalyzer(analyzerId: String) {
         analyzerRepository.findByIdOrNull(analyzerId)?.let {
             if (it.isActive) {
@@ -81,7 +74,7 @@ class AnalyzerService(
         }
     }
 
-    @KafkaListener(topics = [ACTIVATE_ANALYZERS_TOPIC])
+    @RabbitListener(queues = [ACTIVATE_ANALYZERS_TOPIC])
     fun activateAnalyzers(accountId: String) {
         runBlocking {
             analyzerRepository.findAllByAccountIdAndPublic(accountId, true).forEach { doc ->
@@ -92,17 +85,14 @@ class AnalyzerService(
         }
     }
 
-    @KafkaListener(topics = [DELETE_ANALYZER_TOPIC])
+    @RabbitListener(queues = [DELETE_ANALYZER_TOPIC])
     fun deleteAnalyzer(analyzerId: String) {
         analyzerRepository.deleteById(analyzerId)
         removeAnalyzer(analyzerId)
     }
 
-    @KafkaListener(
-        topics = [REQUEST_ANALYZER_RUNTIME_DATA],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
-    )
-    @SendTo(RESPONSE_ANALYZER_RUNTIME_DATA)
+    @RabbitListener(queues = [REQUEST_ANALYZER_RUNTIME_DATA])
+//    @SendTo(RESPONSE_ANALYZER_RUNTIME_DATA)
     fun requestAnalyzerRuntimeInfoData(analyzerId: String): AnalyzerRuntimeInfoModel? {
         return analyzers.find { analyzerId == it.id }?.let { analyzer ->
             val money = analyzer.getMoney()
@@ -119,19 +109,11 @@ class AnalyzerService(
         }
     }
 
-    @KafkaListener(
-        topics = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC],
-        containerFactory = "kafkaListenerReplayingContainerFactory"
-    )
-    @SendTo(RESPONSE_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC)
+    @RabbitListener(queues = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC])
     fun requestAnalyzerData(analyzerId: String) =
-        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
+        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()?.let { Json.encodeToString(it) }
 
-    @KafkaListener(
-        topics = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC],
-        containerFactory = "jsonKafkaListenerReplayingContainerFactory"
-    )
-    @SendTo(RESPONSE_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC)
+    @RabbitListener(queues = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC])
     fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         return when (request.chooseStrategy) {
             AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
@@ -239,59 +221,33 @@ class AnalyzerService(
     }
 
     private fun addAnalyzer(analyzer: Analyzer) {
-        val partition = partitionMap.getOrPut(analyzer.symbol) {
-            symbolRepository.findByIdOrNull(analyzer.symbol)?.partition
-                ?: throw Exception("Could not find partition for provided symbol: '${analyzer.symbol}'")
-        }
-
-        priceListeners.getOrPut(partition to analyzer.demoAccount) {
-            PriceTickerListener(
-                kafkaListenerContainerFactory.createContainer(
-                    TopicPartitionOffset(
-                        getRightTopic(analyzer.market, analyzer.demoAccount),
-                        partition,
-                        TopicPartitionOffset.SeekPosition.END
-                    )
-                )
-            )
+        priceListeners.getOrPut(analyzer.symbol) {
+            EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, analyzer.symbol, object : TypeReference<Double>() {})
         }.addObserver(analyzer::acceptPriceChange)
+        if (analyzer is KLineStrategyAnalyzer) {
+            kLineListeners.getOrPut(analyzer.symbol) {
+                EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, analyzer.symbol, object : TypeReference<KLineRecord>() {})
+            }.addObserver(analyzer::acceptCandle)
+        }
 
         analyzers += analyzer
     }
 
     private fun removeAnalyzer(analyzerId: String) {
         analyzers.find { it.id == analyzerId }?.let {
-            val partition = partitionMap[it.symbol]
-            priceListeners[partition to it.demoAccount]?.removeObserver(it::acceptPriceChange)
+            priceListeners[it.symbol]?.removeObserver(it::acceptPriceChange)
+            if (it is KLineStrategyAnalyzer) {
+                kLineListeners[it.symbol]?.removeObserver(it::acceptCandle)
+            }
         }
 
         analyzers.removeIf { it.id == analyzerId }
     }
 
-    private fun GridTableAnalyzerDocument.convert(): Analyzer = Analyzer(
-        GridTableStrategyRunner(
-            symbolInfo.symbol,
-            diapason,
-            gridSize,
-            positionStopLoss,
-            positionTakeProfit,
-            multiplier,
-            money,
-            symbolInfo.tickSize,
-            symbolInfo.minOrderQty,
-            true,
-            moneyChangePostProcessFunction = { _, newValue -> moneyUpdateQueue += id to newValue },
-            updateMiddlePrice = { middlePrice -> middlePriceUpdateQueue += id to middlePrice },
-            id = id
-        ),
-        0.0,
-        startCapital,
-        symbolInfo.symbol,
-        accountId,
-        market,
-        demoAccount,
-        id,
-    )
+    private fun AnalyzerDocument.convert() = when (this) {
+        is GridTableAnalyzerDocument -> convert({ _, newValue -> moneyUpdateQueue += id to newValue }, { middlePrice -> middlePriceUpdateQueue += id to middlePrice },)
+        is CandleTailStrategyAnalyzerDocument -> convert { _, newValue -> moneyUpdateQueue += id to newValue }
+    }
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
         val copiedAnalyzers = analyzers

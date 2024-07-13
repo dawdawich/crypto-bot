@@ -3,11 +3,10 @@ package space.dawdawich.utils
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
-fun Double.calculatePercentageChange(value: Double): Double {
-    return ((value - this) / abs(this)) * 100.0
-}
+fun Double.calculatePercentageChange(value: Double): Double = ((value - this) / abs(this)) * 100.0
+
+fun Double.calculatePercentageDifference(value: Double): Double = (value * 100.0) / this
 
 fun Double.plusPercentAccurate(value: Number): Double {
     return BigDecimal(this).multiply(BigDecimal(1 + value.toDouble() / 100)).toDouble()

@@ -4,7 +4,7 @@ import kotlinx.coroutines.launch
 import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.SYMBOL_REINITIALIZE_TOPIC
@@ -22,14 +22,14 @@ import kotlin.math.sqrt
  *
  * @property symbolRepository The repository for SymbolInfoDocument.
  * @property apiAccessTokenRepository The repository for ApiAccessTokenDocument.
- * @property kafkaTemplate The KafkaTemplate for sending messages.
+ * @property rabbitTemplate The RabbitTemplate for sending messages.
  * @property clientFactory The factory for creating PrivateHttpClient instances.
  */
 @Service
 class SymbolService(
     private val symbolRepository: SymbolRepository,
     private val apiAccessTokenRepository: ApiAccessTokenRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val rabbitTemplate: RabbitTemplate,
     private val clientFactory: PrivateHttpClientFactory,
     private val publicBybitClient: ByBitPublicHttpClient,
 ) {
@@ -80,7 +80,7 @@ class SymbolService(
             )
         )
 
-        kafkaTemplate.send(SYMBOL_REINITIALIZE_TOPIC, null)
+        rabbitTemplate.convertAndSend(SYMBOL_REINITIALIZE_TOPIC, Any())
     }
 
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.MINUTES)

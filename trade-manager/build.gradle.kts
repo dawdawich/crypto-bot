@@ -12,7 +12,7 @@ dependencies {
     implementation(project(":strategy-lib"))
 
     implementation(libs.spring.boot.mongo)
-    implementation(libs.spring.kafka)
+    implementation(libs.spring.rabbitmq)
 
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines)

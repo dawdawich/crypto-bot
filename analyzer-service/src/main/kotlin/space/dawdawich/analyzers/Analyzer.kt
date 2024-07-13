@@ -1,14 +1,15 @@
 package space.dawdawich.analyzers
 
 import space.dawdawich.model.constants.Market
+import space.dawdawich.strategy.PriceChangeStrategyRunner
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.utils.findLargestRange
 import space.dawdawich.utils.findLowestRange
 import java.util.*
 import kotlin.properties.Delegates
 
-class Analyzer(
-    private val strategyRunner: StrategyRunner,
+abstract class Analyzer(
+    protected val strategyRunner: StrategyRunner,
     currentPrice: Double,
     val startCapital: Double,
     val symbol: String,
@@ -32,10 +33,6 @@ class Analyzer(
         this.currentPrice = currentPrice
     }
 
-    fun getRuntimeInfo() = strategyRunner.getRuntimeInfo()
-
-    fun getStrategyConfig() = strategyRunner.getStrategyConfig()
-
     fun getMoney() = strategyRunner.moneyWithProfit
 
     fun calculateStabilityCoef(listOfMoneySnapshots: List<Double>): Double {
@@ -58,4 +55,7 @@ class Analyzer(
         }
     }
 
+    fun getStrategyConfig() = strategyRunner.getStrategyConfig()
+
+    fun getRuntimeInfo() = (strategyRunner as PriceChangeStrategyRunner).getRuntimeInfo()
 }

@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.isEqualTo
 import space.dawdawich.repositories.custom.mongo.CustomAnalyzerRepository
 import space.dawdawich.repositories.custom.mongo.model.AnalyzerFilter
+import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
 class CustomAnalyzerRepositoryImpl(private val mongoTemplate: MongoTemplate) : CustomAnalyzerRepository {
@@ -21,7 +22,7 @@ class CustomAnalyzerRepositoryImpl(private val mongoTemplate: MongoTemplate) : C
         page: Pageable,
         filter: AnalyzerFilter,
         sort: Sort?,
-    ): List<GridTableAnalyzerDocument> {
+    ): List<AnalyzerDocument> {
         val query = Query()
 
         filter.statusFilter?.let { status ->
@@ -42,13 +43,13 @@ class CustomAnalyzerRepositoryImpl(private val mongoTemplate: MongoTemplate) : C
         query.with(page)
         sort?.let { query.with(it) }
 
-        return mongoTemplate.find(query, GridTableAnalyzerDocument::class.java)
+        return mongoTemplate.find(query, AnalyzerDocument::class.java)
     }
 
     override fun countActiveAnalyzersInFolder(folderId: String, status: Boolean?, symbols: List<String>): Int {
         val matchOperations = mutableListOf<MatchOperation>()
         val lookup = LookupOperation.newLookup()
-            .from("grid_table_analyzer")
+            .from("analyzer")
             .localField("analyzerId")
             .foreignField("_id")
             .`as`("analyzer")

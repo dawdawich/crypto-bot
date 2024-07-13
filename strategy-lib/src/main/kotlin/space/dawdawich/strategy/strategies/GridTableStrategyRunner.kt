@@ -2,7 +2,7 @@ package space.dawdawich.strategy.strategies
 
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
-import space.dawdawich.strategy.StrategyRunner
+import space.dawdawich.strategy.PriceChangeStrategyRunner
 import space.dawdawich.strategy.model.*
 import space.dawdawich.utils.plusPercent
 import space.dawdawich.utils.trimToStep
@@ -22,17 +22,19 @@ class GridTableStrategyRunner(
     simulateTradeOperations: Boolean,
     moneyChangePostProcessFunction: MoneyChangePostProcessFunction = { _, _ -> },
     updateMiddlePrice: UpdateMiddlePricePostProcessFunction = { _ -> },
-    private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
+    createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
-    private val cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
+    cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
     id: String = UUID.randomUUID().toString(),
-) : StrategyRunner(
+) : PriceChangeStrategyRunner(
+    priceMinStep,
+    minQtyStep,
     money,
     multiplier,
     moneyChangePostProcessFunction,
-    priceMinStep,
-    minQtyStep,
+    createOrderFunction,
+    cancelOrderFunction,
     symbol,
     simulateTradeOperations,
     id

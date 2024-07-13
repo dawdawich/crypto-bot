@@ -1,6 +1,6 @@
 import {AnalyzerModel} from "../model/AnalyzerModel";
 import {SERVER_HOST} from "./Constants";
-import {AnalyzerResponse} from "../model/AnalyzerResponse";
+import {AnalyzerResponse, parseAnalyzerResponse} from "../model/AnalyzerResponse";
 import {AuthInfo} from "../model/AuthInfo";
 import {AnalyzerModelBulk} from "../model/AnalyzerModelBulk";
 import {UnauthorizedError} from "../utils/errors/UnauthorizedError";
@@ -69,12 +69,18 @@ export const fetchAnalyzersList = async (auth: AuthInfo,
         }
     });
     if (response.ok) {
-        return await response.json() as {
-            analyzers: AnalyzerResponse[],
+        const result = await response.json() as {
+            analyzers: any[],
             totalSize: number,
             activeSize: number,
             notActiveSize: number
         };
+
+        let parsedAnalyzers: AnalyzerResponse[] = [];
+
+        result.analyzers.forEach((item) => parsedAnalyzers.push(parseAnalyzerResponse(item)));
+
+        return {analyzers: parsedAnalyzers, totalSize: result.totalSize, activeSize: result.activeSize, notActiveSize: result.notActiveSize};
     } else if (response.status === 401) {
         throw new UnauthorizedError('Signature is invalid');
     }

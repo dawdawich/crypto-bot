@@ -13,18 +13,15 @@ services:
     networks:
       - "crypto-bot-network"
 
-  kafka:
-    image: docker.io/bitnami/kafka:latest
+  rabbitmq:
+    image: rabbitmq:3
+    container_name: rabbitmq
     ports:
-      - "9092:9092"
-    volumes:
-      - "kafka_data:/bitnami"
+      - "5672:5672"   # RabbitMQ message broker port
+      - "15672:15672" # RabbitMQ management console port
     environment:
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_DELETE_TOPIC_ENABLE: true
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-    depends_on:
-      - zookeeper
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
     networks:
       - "crypto-bot-network"
 

@@ -1,14 +1,11 @@
 package space.dawdawich.service.factory
 
 import com.jayway.jsonpath.ParseContext
-import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
-import space.dawdawich.integration.factory.PrivateHttpClientFactory
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitWebSocketClient
+import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import space.dawdawich.managers.Manager
-import space.dawdawich.model.RequestProfitableAnalyzer
-import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import javax.crypto.Mac
@@ -19,9 +16,8 @@ class TradeManagerFactory(
     private val apiAccessTokenRepository: ApiAccessTokenRepository,
     private val jsonPath: ParseContext,
     private val serviceFactory: PrivateHttpClientFactory,
-    private val strategyConfigReplyingTemplate: ReplyingKafkaTemplate<String, RequestProfitableAnalyzer, StrategyConfigModel?>,
-    private val strategyRuntimeDataReplyingTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
-    private val priceListenerFactoryService: PriceTickerListenerFactoryService
+    private val rabbitTemplate: RabbitTemplate,
+    private val priceListenerFactoryService: EventListenerFactoryService
 ) {
 
     fun createTradeManager(tradeManagerData: TradeManagerDocument): Manager {
@@ -38,8 +34,7 @@ class TradeManagerFactory(
         return Manager(
             tradeManagerData,
             serviceFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, encryptor, apiToken.market),
-            strategyConfigReplyingTemplate,
-            strategyRuntimeDataReplyingTemplate,
+            rabbitTemplate,
             ByBitWebSocketClient(
                 apiToken.demoAccount,
                 apiToken.apiKey,

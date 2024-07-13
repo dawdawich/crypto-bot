@@ -18,7 +18,7 @@ import {
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import "../../css/pages/analyzer/AnalyzerContentStyles.css";
 import "../../css/pages/analyzer/SideBlock.css";
-import {AnalyzerResponse} from "../../model/AnalyzerResponse";
+import {AnalyzerResponse, isCandleTailAnalyzerResponse, isGridAnalyzerResponse} from "../../model/AnalyzerResponse";
 import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-icon.svg";
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
@@ -195,6 +195,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                 errorToast("Failed to fetch analyzers.");
                 if (ex instanceof UnauthorizedError) {
                     logout();
+                } else {
+                    console.error(ex);
                 }
             });
     }, [authInfo, logout]);
@@ -536,7 +538,7 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
     };
     const getSignByValue = (value: number) => value > 0 ? '+' : '';
 
-    const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => ({
+    const mapAnalyzerToModel = (analyzer: AnalyzerResponse) => (isGridAnalyzerResponse(analyzer) ? {
         diapason: analyzer.diapason,
         gridSize: analyzer.gridSize,
         multiplier: analyzer.multiplier,
@@ -550,7 +552,20 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
         strategy: analyzer.strategy,
         market: analyzer.market,
         demoAccount: analyzer.demoAccount
-    });
+    } : isCandleTailAnalyzerResponse(analyzer) ? {
+        kLineDuration: analyzer.kLineDuration,
+        multiplier: analyzer.multiplier,
+        stopLoss: analyzer.positionStopLoss,
+        takeProfit: analyzer.positionTakeProfit,
+        symbol: analyzer.symbol,
+        startCapital: analyzer.startCapital,
+        active: analyzer.isActive,
+        public: analyzer.public,
+        folders: [],
+        strategy: analyzer.strategy,
+        market: analyzer.market,
+        demoAccount: analyzer.demoAccount
+    } : null);
 
     const getLoadingRows = () => {
         const columnsNumber = pageType === 'TOP' ? 10 : 13;
@@ -788,8 +803,8 @@ const AnalyzerContent: React.FC<AnalyzerContentProps> = ({folderId, folderName, 
                                                     </div>
                                                 }
                                             </TableCell>}
-                                            <TableCell id="cell">{analyzer.diapason}%</TableCell>
-                                            <TableCell id="cell">{analyzer.gridSize}</TableCell>
+                                            <TableCell id="cell">{isGridAnalyzerResponse(analyzer) ? analyzer.diapason : null}%</TableCell>
+                                            <TableCell id="cell">{isGridAnalyzerResponse(analyzer) ? analyzer.gridSize : null}</TableCell>
                                             <TableCell id="cell">x{analyzer.multiplier}</TableCell>
                                             <TableCell id="cell">{analyzer.positionStopLoss}%</TableCell>
                                             <TableCell id="cell" align="left">{analyzer.positionTakeProfit}%</TableCell>

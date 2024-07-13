@@ -1,35 +1,29 @@
 package space.dawdawich.repositories.mongo.entity
 
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import space.dawdawich.model.constants.Market
-import space.dawdawich.model.constants.TradeStrategy
 
-@Document("grid_table_analyzer")
-data class GridTableAnalyzerDocument(
-    @Id
-    val id: String,
-    @Indexed
-    val accountId: String,
-    val public: Boolean,
+@Document("analyzer")
+class GridTableAnalyzerDocument(
+    id: String,
+    accountId: String,
+    public: Boolean,
     val diapason: Int,
     val gridSize: Int,
-    val multiplier: Int,
-    val positionStopLoss: Int,
-    val positionTakeProfit: Int,
-    val symbolInfo: SymbolInfoDocument,
-    var startCapital: Double,
-    var isActive: Boolean,
-    val demoAccount: Boolean,
-    val market: Market,
-    val strategy: TradeStrategy,
-    var money: Double = startCapital,
-    var middlePrice: Double? = null,
-    var stabilityCoef: Double? = null,
-    val pNl1: Int? = null,
-    val pNl12: Int? = null,
-    val pNl24: Int? = null,
-    val createTime: Long = System.currentTimeMillis(),
-    var updateTime: Long = createTime
-)
+    multiplier: Int,
+    positionStopLoss: Int,
+    positionTakeProfit: Int,
+    symbolInfo: SymbolInfoDocument,
+    startCapital: Double,
+    isActive: Boolean,
+    demoAccount: Boolean,
+    market: Market,
+    val middlePrice: Double? = null,
+    money: Double = startCapital,
+    stabilityCoef: Double? = null,
+    pNl1: Int? = null,
+    pNl12: Int? = null,
+    pNl24: Int? = null,
+    createTime: Long = System.currentTimeMillis(),
+    updateTime: Long = createTime
+) : AnalyzerDocument(id, accountId, public, multiplier, positionStopLoss, positionTakeProfit, symbolInfo, startCapital, isActive, demoAccount, market, money, stabilityCoef, pNl1, pNl12, pNl24, createTime, updateTime)

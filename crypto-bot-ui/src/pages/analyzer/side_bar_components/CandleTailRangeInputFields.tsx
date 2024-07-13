@@ -1,24 +1,24 @@
 import React from "react";
 import {InputField} from "../../../shared/InputComponents";
+import Select from "react-select";
+import {MultiSelectStyle, SelectStyle} from "../../../utils/styles/element-styles";
+import {kLineDurationValues} from "../../../model/AnalyzerResponse";
 
-interface RangeInputFieldsProps {
-    diapason: string;
-    gridSize: string;
+interface CandleTailRangeInputFieldsProps {
+    kLineDurations: number[];
     multiplier: string;
     stopLoss: string;
     takeProfit: string;
     onChange: (value: any) => void;
     onStepChange: (value: any) => void;
+    onSelectChange: (name: string, value: any) => void;
 }
 
-type RangeInputFieldsModel = {
-    diapason: string;
-    gridSize: string;
+type CandleTailRangeInputFieldsModel = {
+    kLineDurations: number[];
     multiplier: string;
     stopLoss: string;
     takeProfit: string;
-    diapasonStep: string;
-    gridSizeStep: string;
     multiplierStep: string;
     stopLossStep: string;
     takeProfitStep: string;
@@ -27,16 +27,12 @@ type RangeInputFieldsModel = {
 const numberRangeRegex = /^(\d+(-\d*)?)?$/;
 const numberRegex = /^\d*$/;
 
-const RangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
-
-    const [inputs, setInputs] = React.useState<RangeInputFieldsModel>({
-        diapason: props.diapason,
-        gridSize: props.gridSize,
+const CandleTailRangeInputFields: React.FC<CandleTailRangeInputFieldsProps> = (props) => {
+    const [inputs, setInputs] = React.useState<CandleTailRangeInputFieldsModel>({
+        kLineDurations: props.kLineDurations,
         multiplier: props.multiplier,
         stopLoss: props.stopLoss,
         takeProfit: props.takeProfit,
-        diapasonStep: '1',
-        gridSizeStep: '1',
         multiplierStep: '1',
         stopLossStep: '1',
         takeProfitStep: '1'
@@ -81,31 +77,24 @@ const RangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
 
     return (
         <div>
-            <div className={'several-fields-container'}>
-                <div className={'range-field-container'}>
-                    Diapason, %
-                    <InputField error={!!inputs.diapason && !validateDiapason(inputs.diapason)} type="text" name="diapason"
-                                value={inputs.diapason} onChange={handleChange}/>
-                </div>
-                <div className="step-field-container">
-                    Step
-                    <InputField
-                        error={!!inputs.diapasonStep && Number(inputs.diapasonStep) < 1} type="text"
-                        value={inputs.diapasonStep} name="diapasonStep" onChange={handleStepChange}/>
-                </div>
-            </div>
-            <div className={'several-fields-container'}>
-                <div className={'range-field-container'}>
-                    Grid Size
-                    <InputField error={!!inputs.gridSize && !validateDiapason(inputs.gridSize)} type="text" name="gridSize"
-                                value={inputs.gridSize} onChange={handleChange}/>
-                </div>
-                <div className="step-field-container">
-                    Step
-                    <InputField
-                        error={!!inputs.gridSizeStep && Number(inputs.gridSizeStep) < 1} type="text"
-                        value={inputs.gridSizeStep} name="gridSizeStep" onChange={handleStepChange}/>
-                </div>
+            <div className="field-container">
+                KLine Duration
+                <Select
+                    placeholder=""
+                    name="kLineDuration"
+                    isSearchable={false}
+                    isMulti
+                    styles={MultiSelectStyle}
+                    onChange={(newValue) => props.onSelectChange("kLineDurations", newValue)}
+                    defaultValue={inputs.kLineDurations.map((duration) => ({
+                        value: duration,
+                        label: duration
+                    }))}
+                    options={kLineDurationValues.map((duration) => ({
+                        value: duration,
+                        label: duration
+                    }))}
+                />
             </div>
             <div className={'several-fields-container'}>
                 <div className={'range-field-container'}>
@@ -123,7 +112,8 @@ const RangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
             <div className={'several-fields-container'}>
                 <div className={'range-field-container'}>
                     Stop Loss, %
-                    <InputField error={!!inputs.stopLoss && !validateDiapason(inputs.stopLoss)} type="text" name="stopLoss"
+                    <InputField error={!!inputs.stopLoss && !validateDiapason(inputs.stopLoss)} type="text"
+                                name="stopLoss"
                                 value={inputs.stopLoss} onChange={handleChange}/>
                 </div>
                 <div className="step-field-container">
@@ -150,4 +140,4 @@ const RangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
     );
 }
 
-export default RangeInputFields;
+export default CandleTailRangeInputFields;

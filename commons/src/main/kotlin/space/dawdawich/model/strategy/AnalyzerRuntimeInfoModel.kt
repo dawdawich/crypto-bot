@@ -18,4 +18,4 @@ data class AnalyzerRuntimeInfoModel(
     val positionDirection: String? = null,
     val positionEntryPrice: Double? = null,
     val positionSize: Double? = null,
-)
+) : java.io.Serializable

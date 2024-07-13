@@ -36,32 +36,32 @@ import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 @Serializable
 @OptIn(ExperimentalSerializationApi::class)
 data class GridTableAnalyzerResponse(
-    val id: String,
+    override val id: String,
     val diapason: Int,
     val gridSize: Int,
-    val multiplier: Int,
-    val positionStopLoss: Int,
-    val positionTakeProfit: Int,
-    val symbol: String,
-    var startCapital: Double,
-    var money: Double,
-    var isActive: Boolean,
-    var demoAccount: Boolean,
-    val strategy: TradeStrategy,
-    val market: Market,
-    val public: Boolean,
-    val createTime: Long,
-    val updateTime: Long,
+    override val multiplier: Int,
+    override val positionStopLoss: Int,
+    override val positionTakeProfit: Int,
+    override val symbol: String,
+    override var startCapital: Double,
+    override var money: Double,
+    override var isActive: Boolean,
+    override var demoAccount: Boolean,
+    override val strategy: TradeStrategy,
+    override val market: Market,
+    override val public: Boolean,
+    override val createTime: Long,
+    override val updateTime: Long,
     @EncodeDefault
-    var stabilityCoef: Double = 0.0,
+    override var stabilityCoef: Double = 0.0,
     @EncodeDefault
-    var pnl1: Int = 0,
+    override var pnl1: Int = 0,
     @EncodeDefault
-    var pnl12: Int = 0,
+    override var pnl12: Int = 0,
     @EncodeDefault
-    var pnl24: Int = 0,
-    val symbolVolatile: Double?
-) {
+    override var pnl24: Int = 0,
+    override val symbolVolatile: Double?
+) : AnalyzerResponse() {
     constructor(documentAnalyzer: GridTableAnalyzerDocument, volatileCoef: Double?) : this(
         documentAnalyzer.id,
         documentAnalyzer.diapason,
@@ -74,7 +74,7 @@ data class GridTableAnalyzerResponse(
         documentAnalyzer.money,
         documentAnalyzer.isActive,
         documentAnalyzer.demoAccount,
-        documentAnalyzer.strategy,
+        TradeStrategy.GRID_TABLE_STRATEGY,
         documentAnalyzer.market,
         documentAnalyzer.public,
         documentAnalyzer.createTime,

@@ -21,7 +21,7 @@ class FolderValidationService(private val folderRepository: FolderRepository) {
      */
     @Throws(FolderNotFoundException::class)
     fun validateFolderExistByIdAndAccountId(folderId: String, accountId: String) {
-        if (!folderRepository.existsByIdAndAccountId(folderId, accountId)) {
+        if (!folderRepository.existsByIdAndAccountId(folderId, accountId) && !folderId.equals("all", true)) {
             throw FolderNotFoundException("Folder with id: '$folderId' is not found")
         }
     }

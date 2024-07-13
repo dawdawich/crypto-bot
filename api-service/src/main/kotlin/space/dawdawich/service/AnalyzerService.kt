@@ -2,31 +2,28 @@ package space.dawdawich.service
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_ANALYZERS_TOPIC
 import space.dawdawich.constants.ACTIVATE_ANALYZER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_ANALYZER_TOPIC
-import space.dawdawich.controller.model.analyzer.CreateAnalyzerBulkRequest
-import space.dawdawich.controller.model.analyzer.CreateAnalyzerRequest
-import space.dawdawich.controller.model.analyzer.GridTableAnalyzerResponse
+import space.dawdawich.controller.model.analyzer.*
 import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
-import space.dawdawich.repositories.mongo.SymbolRepository
-import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
-import space.dawdawich.model.constants.TradeStrategy
-import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.custom.mongo.model.AnalyzerFilter
 import space.dawdawich.repositories.mongo.AccountTransactionRepository
+import space.dawdawich.repositories.mongo.AnalyzerRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
+import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
 import java.util.*
-import kotlin.jvm.Throws
 
 /**
  * Service class that provides functionality for managing analyzers.
@@ -38,7 +35,7 @@ class AnalyzerService(
     private val analyzerStabilityRepository: AnalyzerStabilityRepository,
     private val accountTransactionRepository: AccountTransactionRepository,
     private val symbolRepository: SymbolRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val rabbitTemplate: RabbitTemplate,
     private val publicBybitClient: ByBitPublicHttpClient,
     private val publicBybitTestClient: ByBitPublicHttpClient,
     private val folderService: FolderService,
@@ -50,13 +47,15 @@ class AnalyzerService(
      *
      * @return A list of GridTableAnalyzerResponse objects representing the top analyzers.
      */
-    fun getTopAnalyzers(): List<GridTableAnalyzerResponse> =
+    fun getTopAnalyzers(): List<AnalyzerResponse> =
         analyzerRepository.findAllByPublic().sortedByDescending {
             val difference = it.money - it.startCapital
             val percentDifference = (difference / it.startCapital) * 100
             // The data is sorted by percent difference in descending order
             percentDifference
-        }.take(20).map { GridTableAnalyzerResponse(it, symbolService.volatileCoefficients[it.symbolInfo.symbol]) }
+        }
+            .take(20)
+            .map { AnalyzerResponse.fromDocument(it, symbolService.volatileCoefficients[it.symbolInfo.symbol]) }
 
     /**
      * Retrieves a list of GridTableAnalyzerResponse objects based on the provided parameters.
@@ -80,7 +79,7 @@ class AnalyzerService(
         fieldName: String?,
         orderDirection: String?,
         folderId: String?,
-    ): List<GridTableAnalyzerResponse> {
+    ): List<AnalyzerResponse> {
         val direction =
             if (orderDirection != null && orderDirection.equals("asc", ignoreCase = true)) Sort.Direction.ASC
             else Sort.Direction.DESC
@@ -94,7 +93,7 @@ class AnalyzerService(
             AnalyzerFilter(status, symbols?.split(",")?.toList() ?: emptyList()),
             sort
         ).map { analyzer ->
-            GridTableAnalyzerResponse(
+            AnalyzerResponse.fromDocument(
                 analyzer,
                 symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
             )
@@ -165,7 +164,10 @@ class AnalyzerService(
                     }
                     analyzerRepository.setAnalyzersActiveStatus(analyzerIds, status)
                     analyzerIds.forEach { id ->
-                        kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
+                        rabbitTemplate.convertAndSend(
+                            if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC,
+                            id
+                        )
                     }
                     processChangeStatus(analyzerIds, status)
                 }
@@ -184,14 +186,14 @@ class AnalyzerService(
                 .validateAnalyzersExistByIdAndAccountId(ids, accountId)
                 .let { analyzerRepository.deleteByIdIn(ids) }
                 .let { folderService.removeAnalyzers(ids.toSet()) }
-                .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
+                .let { ids.forEach { id -> rabbitTemplate.convertAndSend(DEACTIVATE_ANALYZER_TOPIC, id) } }
         } else {
             analyzerRepository.findAllByAccountIdAndIdNotIn(accountId, ids)
                 .map { analyzers -> analyzers.id }
                 .let { analyzerIds ->
                     analyzerRepository.deleteByIdIn(analyzerIds)
                     folderService.removeAnalyzers(analyzerIds.toSet())
-                    analyzerIds.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) }
+                    analyzerIds.forEach { id -> rabbitTemplate.convertAndSend(DEACTIVATE_ANALYZER_TOPIC, id) }
                 }
         }
 
@@ -203,13 +205,21 @@ class AnalyzerService(
      * @return A GridTableAnalyzerResponse object representing the analyzer.
      * @throws AnalyzerNotFoundException if the analyzer with the given ID and account ID is not found.
      */
-    fun getAnalyzer(id: String, accountId: String): GridTableAnalyzerResponse {
-        val gridTableAnalyzerDocument = (analyzerRepository.findByIdAndAccountId(id, accountId)
+    fun getAnalyzer(id: String, accountId: String): AnalyzerResponse {
+        val analyzer = (analyzerRepository.findByIdAndAccountId(id, accountId)
             ?: throw AnalyzerNotFoundException("Analyzer '$id' is not found"))
-        return GridTableAnalyzerResponse(
-            gridTableAnalyzerDocument,
-            symbolService.volatileCoefficients[gridTableAnalyzerDocument.symbolInfo.symbol]
-        )
+
+        return when (analyzer) {
+            is GridTableAnalyzerDocument -> GridTableAnalyzerResponse(
+                analyzer,
+                symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
+            )
+
+            is CandleTailStrategyAnalyzerDocument -> CandleTailAnalyzerResponse(
+                analyzer,
+                symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
+            )
+        }
     }
 
     /**
@@ -221,38 +231,72 @@ class AnalyzerService(
      */
     @Throws(AnalyzerLimitExceededException::class)
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
-        analyzerData.apply {
-            if (active) {
-                checkIsUserCanCreateAnalyzers(accountId)
+        when (analyzerData) {
+            is CreateGridAnalyzerRequest -> analyzerData.apply {
+                if (active) {
+                    checkIsUserCanCreateAnalyzers(accountId)
+                }
+
+                val analyzerId = UUID.randomUUID().toString()
+                val gridTableAnalyzerDocument = GridTableAnalyzerDocument(
+                    analyzerId,
+                    accountId,
+                    public,
+                    diapason,
+                    gridSize,
+                    multiplier,
+                    stopLoss,
+                    takeProfit,
+                    symbolRepository.findByIdOrNull(symbol)!!,
+                    startCapital,
+                    active,
+                    demoAccount,
+                    market,
+                )
+                analyzerRepository.insert(gridTableAnalyzerDocument)
+                analyzerData.folders.forEach { folderId ->
+                    folderService.addAnalyzersToFolder(
+                        accountId,
+                        folderId,
+                        setOf(analyzerId)
+                    )
+                }
+                if (active) {
+                    rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
+                }
             }
 
-            val analyzerId = UUID.randomUUID().toString()
-            val gridTableAnalyzerDocument = GridTableAnalyzerDocument(
-                analyzerId,
-                accountId,
-                public,
-                diapason,
-                gridSize,
-                multiplier,
-                stopLoss,
-                takeProfit,
-                symbolRepository.findByIdOrNull(symbol)!!,
-                startCapital,
-                active,
-                demoAccount,
-                market,
-                strategy
-            )
-            analyzerRepository.insert(gridTableAnalyzerDocument)
-            analyzerData.folders.forEach { folderId ->
-                folderService.addAnalyzersToFolder(
+            is CreateCandleTailAnalyzerRequest -> analyzerData.apply {
+                if (active) {
+                    checkIsUserCanCreateAnalyzers(accountId)
+                }
+
+                val analyzerId = UUID.randomUUID().toString()
+                val gridTableAnalyzerDocument = CandleTailStrategyAnalyzerDocument(
+                    analyzerId,
                     accountId,
-                    folderId,
-                    setOf(analyzerId)
+                    public,
+                    multiplier,
+                    stopLoss,
+                    takeProfit,
+                    symbolRepository.findByIdOrNull(symbol)!!,
+                    startCapital,
+                    active,
+                    demoAccount,
+                    market,
+                    kLineDuration,
                 )
-            }
-            if (active) {
-                kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
+                analyzerRepository.insert(gridTableAnalyzerDocument)
+                analyzerData.folders.forEach { folderId ->
+                    folderService.addAnalyzersToFolder(
+                        accountId,
+                        folderId,
+                        setOf(analyzerId)
+                    )
+                }
+                if (active) {
+                    rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
+                }
             }
         }
 
@@ -280,19 +324,37 @@ class AnalyzerService(
      *
      * @param accountId The ID of the account associated with the analyzers.
      * @param request The request object containing the parameters for creating the analyzers.
-     * @throws AnalyzerLimitExceededException if the maximum number of active analyzers is exceeded.
      *
-     * @see [CreateAnalyzerRequest] for bulk create params
+     * @see [CreateGridAnalyzerRequest] for bulk create params
      */
-    @Throws(AnalyzerLimitExceededException::class)
     @SuppressWarnings("kotlin:S3776")
     fun bulkCreate(accountId: String, request: CreateAnalyzerBulkRequest) {
         with(request) {
-
-            if (active) {
-                checkIsUserCanCreateAnalyzers(accountId, request.calculateSize())
+            val analyzersToInsert = when (request) {
+                is CreateGridAnalyzerBulkRequest -> getGroupAnalyzers(accountId, request)
+                is CreateCandleTailAnalyzerBulkRequest -> getGroupAnalyzers(accountId, request)
             }
 
+            analyzerRepository.insert(analyzersToInsert)
+            folders.forEach {
+                folderService.addAnalyzersToFolder(
+                    accountId,
+                    it,
+                    analyzersToInsert.map { analyzer -> analyzer.id }.toSet()
+                )
+            }
+
+            if (request.active) {
+                rabbitTemplate.convertAndSend(ACTIVATE_ANALYZERS_TOPIC, accountId)
+            }
+        }
+    }
+
+    private fun getGroupAnalyzers(
+        accountId: String,
+        request: CreateGridAnalyzerBulkRequest,
+    ): MutableList<GridTableAnalyzerDocument> =
+        with(request) {
             val symbols = symbolRepository.findAllById(symbols)
             val analyzersToInsert = mutableListOf<GridTableAnalyzerDocument>()
 
@@ -300,12 +362,6 @@ class AnalyzerService(
                 val pricesMap = (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice()
                 for (symbol in symbols) {
                     launch {
-//                        val currentPrice = runBlocking {
-//                            (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice(symbol.symbol)
-//                        }
-//                        val instructions = runBlocking {
-//                            (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairInstructions(symbol.symbol)
-//                        }
                         val currentPrice = pricesMap.first { it["symbol"] == symbol.symbol }["lastPrice"]!!.toDouble()
                         for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
                             for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
@@ -331,8 +387,7 @@ class AnalyzerService(
                                                         startCapital,
                                                         active,
                                                         demoAccount,
-                                                        market,
-                                                        TradeStrategy.GRID_TABLE_STRATEGY
+                                                        market
                                                     )
                                                 )
                                             }
@@ -344,21 +399,51 @@ class AnalyzerService(
                     }
                 }
             }
-
-            analyzerRepository.insert(analyzersToInsert)
-            folders.forEach {
-                folderService.addAnalyzersToFolder(
-                    accountId,
-                    it,
-                    analyzersToInsert.map { analyzer -> analyzer.id }.toSet()
-                )
-            }
-
-            if (request.active) {
-                kafkaTemplate.send(ACTIVATE_ANALYZERS_TOPIC, accountId)
-            }
+            return analyzersToInsert
         }
-    }
+
+    private fun getGroupAnalyzers(
+        accountId: String,
+        request: CreateCandleTailAnalyzerBulkRequest,
+    ): MutableList<CandleTailStrategyAnalyzerDocument> =
+        with(request) {
+            val symbols = symbolRepository.findAllById(symbols)
+            val analyzersToInsert = mutableListOf<CandleTailStrategyAnalyzerDocument>()
+
+            runBlocking {
+                for (symbol in symbols) {
+                    launch {
+                        for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
+                            for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
+                                for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
+                                    for (kLineDuration in klineDurations) {
+                                        analyzersToInsert.add(
+                                            CandleTailStrategyAnalyzerDocument(
+                                                UUID.randomUUID().toString(),
+                                                accountId,
+                                                public,
+                                                multiplier,
+                                                stopLoss,
+                                                takeProfit,
+                                                symbol,
+                                                startCapital.toDouble(),
+                                                active,
+                                                demoAccount,
+                                                market,
+                                                kLineDuration
+                                            )
+                                        )
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return analyzersToInsert
+        }
 
     /**
      * Processes the change of status for analyzers.
@@ -369,7 +454,7 @@ class AnalyzerService(
     private fun processChangeStatus(ids: List<String>, status: Boolean) {
         analyzerRepository.setAnalyzersActiveStatus(ids, status)
         ids.forEach { id ->
-            kafkaTemplate.send(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
+            rabbitTemplate.convertAndSend(if (status) ACTIVATE_ANALYZER_TOPIC else DEACTIVATE_ANALYZER_TOPIC, id)
         }
     }
 
@@ -380,7 +465,7 @@ class AnalyzerService(
      * @throws AnalyzerNotFoundException if any of the analyzers are not found.
      */
     private fun resetAnalyzers(ids: List<String>) = let { analyzerRepository.setAnalyzersActiveStatus(ids, false) }
-        .let { ids.forEach { id -> kafkaTemplate.send(DEACTIVATE_ANALYZER_TOPIC, id) } }
+        .let { ids.forEach { id -> rabbitTemplate.convertAndSend(DEACTIVATE_ANALYZER_TOPIC, id) } }
         .let { analyzerRepository.resetAnalyzers(ids) }
         .let {
             runBlocking {
@@ -394,7 +479,7 @@ class AnalyzerService(
             }
         }
         .let { analyzerRepository.setAnalyzersActiveStatus(ids, true) }
-        .let { ids.forEach { id -> kafkaTemplate.send(ACTIVATE_ANALYZER_TOPIC, id) } }
+        .let { ids.forEach { id -> rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, id) } }
 
     /**
      * Checks if a user can create analyzers based on the account ID and the number of analyzers to create.

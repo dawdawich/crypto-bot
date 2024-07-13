@@ -11,6 +11,11 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
     consumer:
       group-id: test
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
 
 server:
   port: 8702

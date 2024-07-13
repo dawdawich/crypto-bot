@@ -1,6 +1,6 @@
 export const StrategyTypes = [{
-    label: 'Grid-Table strategy', value: 'GRID_TABLE_STRATEGY'
-}];
+    label: 'Grid-Table strategy', value: 'GRID_TABLE_STRATEGY',
+}, {label: 'Candle Tail strategy', value: 'CANDLE_TAIL_STRATEGY'}];
 
 export const MarketTypes = [{value: 'BYBIT', label: 'ByBit'}];
 

@@ -1,29 +1,15 @@
 version: "3"
 
 services:
-  zookeeper:
-    image: docker.io/bitnami/zookeeper:latest
+  rabbitmq:
+    image: rabbitmq:3
+    container_name: rabbitmq
     ports:
-      - "2181:2181"
-    volumes:
-      - "zookeeper_data:/bitnami"
+      - "5672:5672"   # RabbitMQ message broker port
+      - "15672:15672" # RabbitMQ management console port
     environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
-      ZOOKEEPER_CLIENT_PORT: 2181
-
-  kafka:
-    image: docker.io/bitnami/kafka:latest
-    ports:
-      - "9092:9092"
-    volumes:
-      - "kafka_data:/bitnami"
-    environment:
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_DELETE_TOPIC_ENABLE: true
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    depends_on:
-      - zookeeper
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
 
   mongodb:
     image: mongo:latest

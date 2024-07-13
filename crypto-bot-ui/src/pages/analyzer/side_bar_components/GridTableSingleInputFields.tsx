@@ -1,7 +1,7 @@
 import React from "react";
 import {InputField} from "../../../shared/InputComponents";
 
-type SingleInputFieldsModel = {
+type GridTableSingleInputFieldsModel = {
     diapason: string;
     gridSize: string;
     multiplier: string;
@@ -12,7 +12,7 @@ type SingleInputFieldsModel = {
 
 const numberRegex = /^[0-9]+$/;
 
-const SingleInputFields: React.FC<SingleInputFieldsModel> = ({
+const GridTableSingleInputFields: React.FC<GridTableSingleInputFieldsModel> = ({
                                                                  diapason,
                                                                  gridSize,
                                                                  multiplier,
@@ -60,4 +60,4 @@ const SingleInputFields: React.FC<SingleInputFieldsModel> = ({
     );
 }
 
-export default SingleInputFields;
+export default GridTableSingleInputFields;

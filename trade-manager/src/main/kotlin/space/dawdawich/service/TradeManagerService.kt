@@ -3,14 +3,14 @@ package space.dawdawich.service
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.springframework.kafka.annotation.KafkaListener
+import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 import space.dawdawich.managers.Manager
+import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.repositories.mongo.ManagerRepository
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
-import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.service.factory.TradeManagerFactory
 import java.util.*
 
@@ -37,7 +37,7 @@ class TradeManagerService(
         })
     }
 
-    @KafkaListener(topics = [ACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group", containerFactory = "jsonKafkaListenerContainerFactory")
+    @RabbitListener(queues = [ACTIVATE_MANAGER_TOPIC])
     fun activateManager(managerConfig: TradeManagerDocument) {
         try {
             tradeManagers.add(tradeManagerFactory.createTradeManager(managerConfig).apply {
@@ -49,7 +49,7 @@ class TradeManagerService(
         }
     }
 
-    @KafkaListener(topics = [DEACTIVATE_MANAGER_TOPIC], groupId = "manager-document-group")
+    @RabbitListener(queues = [DEACTIVATE_MANAGER_TOPIC])
     fun deactivateManager(managerId: String) {
         deactivateTradeManager(managerId, ManagerStatus.INACTIVE, stopDescription = "Stopped by User")
     }

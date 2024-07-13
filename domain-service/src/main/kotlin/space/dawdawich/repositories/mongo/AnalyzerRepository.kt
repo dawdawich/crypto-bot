@@ -4,9 +4,10 @@ import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
 import space.dawdawich.repositories.custom.mongo.CustomAnalyzerRepository
+import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
 
-interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String>, CustomAnalyzerRepository {
+interface AnalyzerRepository : MongoRepository<AnalyzerDocument, String>, CustomAnalyzerRepository {
 
     @Query("{_id:  {\$in: ?0}}")
     @Update("{\$set:  {isActive: ?1, middlePrice: null, updateTime:  ?2}}")
@@ -27,7 +28,7 @@ interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String
     @Update("{\$set:  {\"money\": null, middlePrice: null, pNl1: null, pNl12: null, pNl24: null, stabilityCoef: null, updateTime:  ?1}}")
     fun resetAllAnalyzers(accountId: String, ids: List<String>, updateTime: Long = System.currentTimeMillis())
 
-    fun findAllByAccountIdAndIdNotIn(accountId: String, ids: Collection<String>): List<GridTableAnalyzerDocument>
+    fun findAllByAccountIdAndIdNotIn(accountId: String, ids: Collection<String>): List<AnalyzerDocument>
 
     fun deleteByIdIn(ids: List<String>)
 
@@ -39,12 +40,12 @@ interface AnalyzerRepository : MongoRepository<GridTableAnalyzerDocument, String
     fun countByAccountIdAndSymbolInfoSymbolInAndIsActive(accountId: String, symbols: List<String>, isActive: Boolean = true): Int
 
 
-    fun findByIdAndAccountId(id: String, accountId: String): GridTableAnalyzerDocument?
+    fun findByIdAndAccountId(id: String, accountId: String): AnalyzerDocument?
 
     fun existsByIdAndAccountId(id: String, accountId: String): Boolean
     fun existsByIdInAndAccountId(id: List<String>, accountId: String): Boolean
 
-    fun findAllByPublic(public: Boolean = true): List<GridTableAnalyzerDocument>
+    fun findAllByPublic(public: Boolean = true): List<AnalyzerDocument>
 
-    fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<GridTableAnalyzerDocument>
+    fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<AnalyzerDocument>
 }

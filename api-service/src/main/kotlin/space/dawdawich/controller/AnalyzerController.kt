@@ -5,10 +5,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import space.dawdawich.controller.model.*
-import space.dawdawich.controller.model.analyzer.CreateAnalyzerRequest
-import space.dawdawich.controller.model.analyzer.CreateAnalyzerBulkRequest
-import space.dawdawich.controller.model.analyzer.GetAnalyzersResponse
-import space.dawdawich.controller.model.analyzer.GridTableAnalyzerResponse
+import space.dawdawich.controller.model.analyzer.*
 import space.dawdawich.exception.AnalyzerLimitExceededException
 import space.dawdawich.exception.model.AnalyzerNotFoundException
 import space.dawdawich.service.AnalyzerService
@@ -18,7 +15,7 @@ import space.dawdawich.service.AnalyzerService
 class AnalyzerController(private val analyzerService: AnalyzerService) {
 
     @GetMapping("/top20")
-    fun getTopAnalyzers(): List<GridTableAnalyzerResponse> = analyzerService.getTopAnalyzers()
+    fun getTopAnalyzers() = analyzerService.getTopAnalyzers()
 
     @GetMapping
     fun getAnalyzers(
@@ -58,12 +55,11 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
     fun getAnalyzer(
         authentication: Authentication,
         @PathVariable analyzerId: String,
-    ): ResponseEntity<GridTableAnalyzerResponse> =
-        try {
-            ResponseEntity(analyzerService.getAnalyzer(analyzerId, authentication.name), HttpStatus.OK)
-        } catch (ex: AnalyzerNotFoundException) {
-            ResponseEntity(HttpStatus.NOT_FOUND)
-        }
+    ) = try {
+        ResponseEntity(analyzerService.getAnalyzer(analyzerId, authentication.name), HttpStatus.OK)
+    } catch (ex: AnalyzerNotFoundException) {
+        ResponseEntity(HttpStatus.NOT_FOUND)
+    }
 
     @GetMapping("/active/count")
     fun getActiveAnalyzerCount(authentication: Authentication) =
@@ -79,7 +75,7 @@ class AnalyzerController(private val analyzerService: AnalyzerService) {
         }
 
     @PostMapping
-    fun createAnalyzer(authentication: Authentication, @RequestBody request: CreateAnalyzerRequest) =
+    fun createGridTableAnalyzer(authentication: Authentication, @RequestBody request: CreateAnalyzerRequest) =
         try {
             analyzerService.createAnalyzer(authentication.name, request)
             ResponseEntity<Unit>(HttpStatus.OK)

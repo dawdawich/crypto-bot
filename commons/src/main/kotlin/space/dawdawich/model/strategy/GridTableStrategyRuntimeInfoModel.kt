@@ -19,7 +19,7 @@ import space.dawdawich.model.analyzer.PositionModel
 class GridTableStrategyRuntimeInfoModel(
     override val id: String,
     val prices: Set<Double>,
-    override val currentPrice: Double,
+    val currentPrice: Double,
     val middlePrice: Double,
     val minPrice: Double,
     val maxPrice: Double,

@@ -1,6 +1,6 @@
 package space.dawdawich.service
 
-import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
@@ -27,8 +27,7 @@ class ManagerService(
     private val managerRepository: ManagerRepository,
     private val apiTokenRepository: ApiAccessTokenRepository,
     private val analyzerRepository: AnalyzerRepository,
-    private val kafkaTemplate: KafkaTemplate<String, String>,
-    private val jsonKafkaTemplate: KafkaTemplate<String, TradeManagerDocument>,
+    private val rabbitTemplate: RabbitTemplate
 ) {
 
     /**
@@ -63,7 +62,7 @@ class ManagerService(
         )
     ).apply {
         if (status == ManagerStatus.ACTIVE) {
-            jsonKafkaTemplate.send(ACTIVATE_MANAGER_TOPIC, this)
+            rabbitTemplate.convertAndSend(ACTIVATE_MANAGER_TOPIC, this)
         }
     }.id
 
@@ -100,9 +99,9 @@ class ManagerService(
             managerRepository.updateTradeManagerStatus(it.id, status)
             it.status = status
             if (status == ManagerStatus.ACTIVE) {
-                jsonKafkaTemplate.send(ACTIVATE_MANAGER_TOPIC, it)
+                rabbitTemplate.convertAndSend(ACTIVATE_MANAGER_TOPIC, it)
             } else if (status == ManagerStatus.INACTIVE) {
-                kafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, it.id)
+                rabbitTemplate.convertAndSend(DEACTIVATE_MANAGER_TOPIC, it.id)
             }
             it
         }
@@ -137,7 +136,7 @@ class ManagerService(
      */
     fun deleteTradeManager(managerId: String, accountId: String) {
         if (managerRepository.deleteByIdAndAccountId(managerId, accountId) > 0) {
-            kafkaTemplate.send(DEACTIVATE_MANAGER_TOPIC, managerId)
+            rabbitTemplate.convertAndSend(DEACTIVATE_MANAGER_TOPIC, managerId)
         }
     }
 }

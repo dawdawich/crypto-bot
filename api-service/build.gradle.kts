@@ -15,7 +15,7 @@ dependencies {
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.spring.boot.security)
     implementation(libs.spring.boot.mongo)
-    implementation(libs.spring.kafka)
+    implementation(libs.spring.rabbitmq)
     implementation(libs.spring.websocket)
 
     implementation(libs.web3)

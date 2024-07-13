@@ -1,13 +1,9 @@
 spring:
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      group-id: ticker_group
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
   data:
     mongodb:
       host: localhost

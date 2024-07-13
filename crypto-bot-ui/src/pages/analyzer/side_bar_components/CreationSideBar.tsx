@@ -6,12 +6,15 @@ import Select from "react-select";
 import {AntSwitch, MultiSelectStyle, SelectStyle} from "../../../utils/styles/element-styles";
 import {FolderModel} from "../../../model/FolderModel";
 import {errorToast} from "../../../shared/toast/Toasts";
-import {AnalyzerModel} from "../../../model/AnalyzerModel";
-import {AnalyzerModelBulk} from "../../../model/AnalyzerModelBulk";
+import {AnalyzerModel, CandleAnalyzerModel, GridAnalyzerModel, isGridAnalyzerModel} from "../../../model/AnalyzerModel";
+import {AnalyzerModelBulk, CandleAnalyzerModelBulk, GridAnalyzerModelBulk} from "../../../model/AnalyzerModelBulk";
 import {getMarketOptionFromValue, getStrategyOptionFromValue, StrategyTypes} from "../../../model/AnalyzerConstants";
 import {InputField} from "../../../shared/InputComponents";
-import SingleInputFields from "./SingleInputFields";
-import RangeInputFields from "./RangeInputFields";
+import GridTableSingleInputFields from "./GridTableSingleInputFields";
+import GridTableRangeInputFields from "./GridTableRangeInputFields";
+import {isCandleTailAnalyzerResponse} from "../../../model/AnalyzerResponse";
+import CandleTailSingleInputFields from "./CandleTailSingleInputFields";
+import CandleTailRangeInputFields from "./CandleTailRangeInputFields";
 
 const SideBody = styled('div')({
     padding: '16px',
@@ -32,19 +35,39 @@ interface InitialProps {
     symbols: string[],
     predefinedAnalyzerProps: AnalyzerModel | null;
     folders: FolderModel[],
-    createAnalyzerFunction: (analyzer: AnalyzerModel) => void;
-    createAnalyzerBulkFunction: (analyzer: AnalyzerModelBulk) => void;
+    createAnalyzerFunction: (analyzer: AnalyzerModel | GridAnalyzerModel | CandleAnalyzerModel) => void;
+    createAnalyzerBulkFunction: (analyzer: AnalyzerModelBulk | GridAnalyzerModelBulk | CandleAnalyzerModelBulk) => void;
     closeAction: () => void;
 }
 
 const PATTERN = /\d+(-\d+)?/;
 
+type GridAnalyzerAdditionalProps = {
+    diapason?: number | undefined;
+    gridSize?: number | undefined;
+};
+
+type RangeGridAnalyzerAdditionalProps = {
+    diapasonMin?: number | undefined;
+    diapasonMax?: number | undefined;
+    diapasonStep?: number;
+    gridSizeMin?: number | undefined;
+    gridSizeMax?: number | undefined;
+    gridSizeStep?: number;
+};
+
+type CandleAnalyzerAdditionalProps = {
+    kLineDuration?: number | undefined
+}
+
+type RangeCandleAnalyzerAdditionalProps = {
+    kLineDurations?: number[] | undefined
+}
+
 type AnalyzerFieldsModel = {
     folders: string[];
     symbol: string | undefined;
     strategy: string | undefined;
-    diapason: number | undefined;
-    gridSize: number | undefined;
     multiplier: number | undefined;
     stopLoss: number | undefined;
     takeProfit: number | undefined;
@@ -53,18 +76,12 @@ type AnalyzerFieldsModel = {
     demo: boolean | undefined;
     activate: boolean;
     public: boolean;
-};
+} & GridAnalyzerAdditionalProps & CandleAnalyzerAdditionalProps;
 
 type MultiAnalyzerFieldsModel = {
     folders: string[];
     symbol: string[];
     strategy: string | undefined;
-    diapasonMin: number | undefined;
-    diapasonMax: number | undefined;
-    diapasonStep: number;
-    gridSizeMin: number | undefined;
-    gridSizeMax: number | undefined;
-    gridSizeStep: number;
     multiplierMin: number | undefined;
     multiplierMax: number | undefined;
     multiplierStep: number;
@@ -79,7 +96,7 @@ type MultiAnalyzerFieldsModel = {
     demo: boolean | undefined;
     activate: boolean;
     public: boolean;
-};
+} & RangeCandleAnalyzerAdditionalProps & RangeGridAnalyzerAdditionalProps;
 const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, ref) => {
     const [creationMode, setCreationMode] = useState<CreationMode>('SINGLE');
     const [singleAnalyzerModel, setSingleAnalyzerModel] = useState<AnalyzerFieldsModel>({
@@ -101,12 +118,6 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
         folders: [],
         symbol: [],
         strategy: undefined,
-        diapasonMin: undefined,
-        diapasonMax: undefined,
-        diapasonStep: 1,
-        gridSizeMin: undefined,
-        gridSizeMax: undefined,
-        gridSizeStep: 1,
         multiplierMin: undefined,
         multiplierMax: undefined,
         multiplierStep: 1,
@@ -126,12 +137,22 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     useEffect(() => {
         if (props.predefinedAnalyzerProps !== null) {
             const analyzer = props.predefinedAnalyzerProps;
+            const additionalProps = isGridAnalyzerModel(analyzer) ? {
+                diapason: analyzer.diapason,
+                gridSize: analyzer.gridSize
+            } : isCandleTailAnalyzerResponse(analyzer) ? {kLineDuration: analyzer.kLineDuration} : {};
+            const additionalRangeProps = isGridAnalyzerModel(analyzer) ? {
+                diapasonMin: analyzer.diapason,
+                diapasonMax: undefined,
+                diapasonStep: 1,
+                gridSizeMin: analyzer.gridSize,
+                gridSizeMax: undefined,
+                gridSizeStep: 1,
+            } : isCandleTailAnalyzerResponse(analyzer) ? {kLineDurations: [analyzer.kLineDuration]} : {};
             setSingleAnalyzerModel({
                 folders: [],
                 symbol: analyzer.symbol,
                 strategy: analyzer.strategy,
-                diapason: analyzer.diapason,
-                gridSize: analyzer.gridSize,
                 multiplier: analyzer.multiplier,
                 stopLoss: analyzer.stopLoss,
                 takeProfit: analyzer.takeProfit,
@@ -139,18 +160,13 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                 market: analyzer.market,
                 demo: analyzer.demoAccount,
                 activate: analyzer.active,
-                public: analyzer.public
+                public: analyzer.public,
+                ...additionalProps
             });
             setMultiAnalyzerModel({
                     folders: [],
                     symbol: [analyzer.symbol],
                     strategy: analyzer.strategy,
-                    diapasonMin: analyzer.diapason,
-                    diapasonMax: undefined,
-                    diapasonStep: 1,
-                    gridSizeMin: analyzer.gridSize,
-                    gridSizeMax: undefined,
-                    gridSizeStep: 1,
                     multiplierMin: analyzer.multiplier,
                     multiplierMax: undefined,
                     multiplierStep: 1,
@@ -164,7 +180,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     market: analyzer.market,
                     demo: analyzer.demoAccount,
                     activate: analyzer.active,
-                    public: analyzer.public
+                    public: analyzer.public,
+                    ...additionalRangeProps
                 }
             );
         }
@@ -241,6 +258,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
 
     const validateStrategyField = () => creationMode === 'SINGLE' ? singleAnalyzerModel.strategy !== undefined : multiAnalyzerModel.strategy !== undefined;
 
+    const validateKLineDurationField = () => validateField('kLineDuration') && singleAnalyzerModel.kLineDuration! > 0;
     const validateDiapasonField = () => validateField('diapason') && singleAnalyzerModel.diapason! > 0 && singleAnalyzerModel.diapason! < 51;
     const validateGridSizeField = () => validateField('gridSize') && singleAnalyzerModel.gridSize! > 1;
     const validateMultiplierField = () => validateField('multiplier') && singleAnalyzerModel.multiplier! > 0 && singleAnalyzerModel.multiplier! < 151;
@@ -257,8 +275,13 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     const validateStopLossStepField = () => validateRangeFields('stopLoss');
     const validateTakeProfitStepField = () => validateRangeFields('takeProfit');
 
-    const validateAllFieldsSingle = () => validateSymbolField() && validateStrategyField() && validateDiapasonField() &&
-        validateGridSizeField() && validateMultiplierField() && validateStopLossField() && validateTakeProfitField() &&
+    const validateAllFieldsSingle = () => validateSymbolField() && validateStrategyField()
+        &&
+        ((validateDiapasonField() && // grid table check
+                validateGridSizeField()) ||
+            validateKLineDurationField()) // candle tail check
+        &&
+        validateMultiplierField() && validateStopLossField() && validateTakeProfitField() &&
         validateStartCapitalField() && validateMarketField() && validateDemoField();
 
     const validateAllFieldsMulti = () => validateSymbolField() && validateStrategyField() && validateDiapasonStepField() &&
@@ -322,10 +345,13 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     const createAnalyzer = () => {
         if ((creationMode === 'SINGLE' && validateAllFieldsSingle()) || (creationMode === 'MULTI' && validateAllFieldsMulti())) {
             if (creationMode === 'SINGLE') {
+                const additionalProps = singleAnalyzerModel.diapason != null ? {
+                    diapason: singleAnalyzerModel.diapason as number,
+                    gridSize: singleAnalyzerModel.gridSize as number
+                } : {kLineDuration: singleAnalyzerModel.kLineDuration as number};
+
                 props.createAnalyzerFunction(
                     {
-                        diapason: singleAnalyzerModel.diapason as number,
-                        gridSize: singleAnalyzerModel.gridSize as number,
                         multiplier: singleAnalyzerModel.multiplier as number,
                         stopLoss: singleAnalyzerModel.stopLoss as number,
                         takeProfit: singleAnalyzerModel.takeProfit as number,
@@ -336,10 +362,20 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                         folders: singleAnalyzerModel.folders,
                         strategy: singleAnalyzerModel.strategy as string,
                         market: singleAnalyzerModel.market as string,
-                        demoAccount: singleAnalyzerModel.demo as boolean
+                        demoAccount: singleAnalyzerModel.demo as boolean,
+                        ...additionalProps
                     }
                 );
             } else {
+                const additionalProps = multiAnalyzerModel.diapasonMin != null ? {
+                    diapasonMin: multiAnalyzerModel.diapasonMin as number,
+                    diapasonMax: multiAnalyzerModel.diapasonMax as number,
+                    diapasonStep: multiAnalyzerModel.diapasonStep,
+                    gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
+                    gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
+                    gridSizeStep: multiAnalyzerModel.gridSizeStep,
+                } : {kLineDurations: multiAnalyzerModel.kLineDurations};
+
                 props.createAnalyzerBulkFunction({
                     symbols: multiAnalyzerModel.symbol,
                     stopLossMin: multiAnalyzerModel.stopLossMin as number,
@@ -348,12 +384,6 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     takeProfitMin: multiAnalyzerModel.takeProfitMin as number,
                     takeProfitMax: multiAnalyzerModel.takeProfitMax as number,
                     takeProfitStep: multiAnalyzerModel.takeProfitStep,
-                    diapasonMin: multiAnalyzerModel.diapasonMin as number,
-                    diapasonMax: multiAnalyzerModel.diapasonMax as number,
-                    diapasonStep: multiAnalyzerModel.diapasonStep,
-                    gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
-                    gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
-                    gridSizeStep: multiAnalyzerModel.gridSizeStep,
                     multiplierMin: multiAnalyzerModel.multiplierMin as number,
                     multiplierMax: multiAnalyzerModel.multiplierMax as number,
                     multiplierStep: multiAnalyzerModel.multiplierStep,
@@ -363,7 +393,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     active: multiAnalyzerModel.activate,
                     public: multiAnalyzerModel.public,
                     strategy: multiAnalyzerModel.strategy as string,
-                    folders: multiAnalyzerModel.folders
+                    folders: multiAnalyzerModel.folders,
+                    ...additionalProps
                 });
             }
             return;
@@ -432,23 +463,45 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                         options={StrategyTypes}
                     />
                 </div>
-                {/*Rangeble Input Fields*/}
                 {creationMode === 'SINGLE' ?
-                    <SingleInputFields
-                        diapason={!!singleAnalyzerModel.diapason ? singleAnalyzerModel.diapason.toString() : ''}
-                        gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
-                        multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
-                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
-                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
-                        onChange={handleChange}/> :
-                    <RangeInputFields diapason={!!multiAnalyzerModel.diapasonMin ? multiAnalyzerModel.diapasonMin.toString() : ''}
-                                      gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
-                                      multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
-                                      stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
-                                      takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
-                                      onChange={applyDiapasonField}
-                                      onStepChange={applyStepField}/>}
-                {/*-----------------------------*/}
+
+
+                    singleAnalyzerModel.strategy === 'GRID_TABLE_STRATEGY' ?
+                        <GridTableSingleInputFields
+                            diapason={!!singleAnalyzerModel.diapason ? singleAnalyzerModel.diapason.toString() : ''}
+                            gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
+                            multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                            stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                            takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                            onChange={handleChange}/> : singleAnalyzerModel.strategy === 'CANDLE_TAIL_STRATEGY' ?
+                            <CandleTailSingleInputFields
+                                kLineDuration={!!singleAnalyzerModel.kLineDuration ? singleAnalyzerModel.kLineDuration.toString() : ''}
+                                multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                                stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                                takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                                onChange={handleChange}
+                                onSelectChange={handleSelectChange}/>
+                            : null
+
+                    :
+                    multiAnalyzerModel.strategy === 'GRID_TABLE_STRATEGY' ?
+                        <GridTableRangeInputFields
+                            diapason={!!multiAnalyzerModel.diapasonMin ? multiAnalyzerModel.diapasonMin.toString() : ''}
+                            gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
+                            multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                            stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
+                            takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
+                            onChange={applyDiapasonField}
+                            onStepChange={applyStepField}/> : multiAnalyzerModel.strategy === 'CANDLE_TAIL_STRATEGY' ?
+                            <CandleTailRangeInputFields
+                                kLineDurations={!!multiAnalyzerModel.kLineDurations ? multiAnalyzerModel.kLineDurations : []}
+                                multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                                stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
+                                takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
+                                onChange={applyDiapasonField} onStepChange={applyStepField}
+                                onSelectChange={handleSelectChange}/>
+                            : null
+                }
                 <div className="field-container">
                     Start Capital, $
                     <InputField
@@ -482,7 +535,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                         options={[{value: true, label: 'True'}, {value: false, label: 'False'}]}
                     />
                 </div>
-                {creationMode === 'MULTI' &&
+                {
+                    creationMode === 'MULTI' &&
                     <div className="count-field-container">
                         ! Will be created {calculateAnalyzersToCreate()} Analyzers !
                     </div>
@@ -518,7 +572,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                 </div>
             </SideBody>
         </div>
-    );
+    )
+        ;
 })
 
 export default CreationSideBar;

@@ -3,13 +3,12 @@ package space.dawdawich.managers
 import kotlinx.coroutines.*
 import mu.KLogger
 import mu.KotlinLogging
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.MDC
-import org.springframework.kafka.listener.AcknowledgingMessageListener
-import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
-import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
-import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer
 import space.dawdawich.client.ByBitWebSocketClient
+import space.dawdawich.constants.BYBIT_TEST_TICKER_TOPIC
+import space.dawdawich.constants.BYBIT_TICKER_TOPIC
 import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
 import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
 import space.dawdawich.exception.ApiTokenExpiredException
@@ -17,18 +16,19 @@ import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.constants.Market
+import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
 import space.dawdawich.model.strategy.GridStrategyConfigModel
 import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyConfigModel
-import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
-import space.dawdawich.service.factory.PriceTickerListenerFactoryService
+import space.dawdawich.service.factory.EventListenerFactoryService
 import space.dawdawich.strategy.StrategyRunner
+import space.dawdawich.strategy.model.KLine
 import space.dawdawich.strategy.model.Trend
+import space.dawdawich.strategy.strategies.CandleTailStrategyRunner
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import space.dawdawich.utils.Timer
 import java.nio.channels.UnresolvedAddressException
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.properties.Delegates
 import kotlin.time.Duration.Companion.minutes
@@ -37,10 +37,9 @@ import kotlin.time.Duration.Companion.minutes
 class Manager(
     private val tradeManagerData: TradeManagerDocument,
     private val bybitService: PrivateHttpClient,
-    private val replayingStrategyConfigKafkaTemplate: ReplyingKafkaTemplate<String, RequestProfitableAnalyzer, StrategyConfigModel?>,
-    private val replayingStrategyDataKafkaTemplate: ReplyingKafkaTemplate<String, String, StrategyRuntimeInfoModel?>,
+    private val rabbitTemplate: RabbitTemplate,
     private val webSocket: ByBitWebSocketClient,
-    private val priceListenerFactory: PriceTickerListenerFactoryService,
+    private val eventListenerFactory: EventListenerFactoryService,
     private val market: Market,
     private val demoAccount: Boolean,
 ) {
@@ -58,7 +57,8 @@ class Manager(
     var active: Boolean = true
         private set
     private var lastRefreshTime = System.currentTimeMillis()
-    private var listener: ConcurrentMessageListenerContainer<String, String>? = null
+    private var priceListener: MessageListenerContainer? = null
+    private var kLineListener: MessageListenerContainer? = null
     private var strategyRunner: StrategyRunner? = null
     private var previousPositionTrend: Trend? = null
     private lateinit var crashPostAction: (ex: Exception?) -> Unit
@@ -78,7 +78,10 @@ class Manager(
     }
     private var currentPrice: Double by Delegates.observable(0.0) { _, oldPrice, newPrice ->
         if (active && !pauseTimer.isTimerActive() && strategyRunner != null && oldPrice > 0 && newPrice > 0) {
-            if (strategyRunner?.position == null || strategyRunner!!.position!!.calculateProfit(newPrice) > 0.0) {
+            if (strategyRunner?.position == null || strategyRunner!!.position!!.calculateProfit(
+                    newPrice
+                ) > 0.0
+            ) {
                 refreshStrategyConfig()
             }
             synchronized(synchronizationObject) {
@@ -133,9 +136,10 @@ class Manager(
                 logger { it.info { "DEACTIVATION: closing web socket" } }
                 webSocket.close()
             }
-            if (listener?.isRunning == true) {
+            if (priceListener?.isRunning == true) {
                 logger { it.info { "DEACTIVATION: stopping message listener" } }
-                listener?.stop()
+                priceListener?.stop()
+                kLineListener?.stop()
             }
             if (onlyStrategy) {
                 logger { it.info { "Manager strategy stopped" } }
@@ -147,21 +151,16 @@ class Manager(
 
     private fun getAnalyzerConfig(strategyConfigModel: StrategyConfigModel? = null): StrategyConfigModel? {
         try {
-            return replayingStrategyConfigKafkaTemplate.sendAndReceive(
-                ProducerRecord(
-                    REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC,
-                    RequestProfitableAnalyzer(
-                        tradeManagerData.accountId,
-                        tradeManagerData.chooseStrategy,
-                        strategyConfigModel?.id,
-                        money,
-                        demoAccount,
-                        market
-                    )
+            return rabbitTemplate.convertSendAndReceive(
+                REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(
+                    tradeManagerData.accountId,
+                    tradeManagerData.chooseStrategy,
+                    strategyConfigModel?.id,
+                    money,
+                    demoAccount,
+                    market
                 )
-            )[1, TimeUnit.MINUTES].value()
-        } catch (ex: KafkaReplyTimeoutException) {
-            logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
+            ) as StrategyConfigModel?
         } catch (ex: TimeoutException) {
             logger { it.debug { "Do not found strategy for manager. Timestamp '${System.currentTimeMillis()}}'" } }
         }
@@ -184,70 +183,114 @@ class Manager(
         runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
 
         strategyRunner = when (strategyConfig) {
-            is GridStrategyConfigModel -> {
-                GridTableStrategyRunner(
-                    strategyConfig.symbol,
-                    strategyConfig.diapason,
-                    strategyConfig.gridSize,
-                    strategyConfig.stopLoss,
-                    strategyConfig.takeProfit,
-                    strategyConfig.multiplier,
-                    money,
-                    strategyConfig.priceMinStep,
-                    strategyConfig.minQtyStep,
-                    false,
-                    createOrderFunction = getCreateOrderFunction(strategyConfig, bybitService),
-                    cancelOrderFunction = { symbol, orderId ->
-                        logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
-                        runBlocking { bybitService.cancelOrder(symbol, orderId) }
-                    },
-                    id = strategyConfig.id
-                ).apply {
-                    setDiapasonConfigs(strategyConfig)
-                    setClosePosition { isStopLoss ->
-                        try {
-                            logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
-                            closeOrdersAndPosition()
-                            if (isStopLoss) {
-                                pauseTimer.setTimer(5.minutes.inWholeMilliseconds)
-                                lastRefreshTime = 0
-                                refreshStrategyConfig()
-                            } else {
-                                refreshStrategyConfig()
-                            }
-                        } catch (e: Exception) {
-                            crashPostAction(e)
+            is GridStrategyConfigModel -> GridTableStrategyRunner(
+                strategyConfig.symbol,
+                strategyConfig.diapason,
+                strategyConfig.gridSize,
+                strategyConfig.stopLoss,
+                strategyConfig.takeProfit,
+                strategyConfig.multiplier,
+                money,
+                strategyConfig.priceMinStep,
+                strategyConfig.minQtyStep,
+                false,
+                createOrderFunction = getCreateOrderFunction(strategyConfig, bybitService),
+                cancelOrderFunction = { symbol, orderId ->
+                    logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
+                    runBlocking { bybitService.cancelOrder(symbol, orderId) }
+                },
+                id = strategyConfig.id
+            ).apply {
+                setDiapasonConfigs(strategyConfig)
+                setClosePosition { isStopLoss ->
+                    try {
+                        logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
+                        closeOrdersAndPosition()
+                        if (isStopLoss) {
+                            pauseTimer.setTimer(5.minutes.inWholeMilliseconds)
+                            lastRefreshTime = 0
+                            refreshStrategyConfig()
+                        } else {
+                            refreshStrategyConfig()
                         }
-                    }
-
-                    with(webSocket) {
-                        positionUpdateCallback = { position ->
-                            previousPositionTrend = strategyRunner?.position?.trend
-                            this@apply.updatePosition(position)
-                            if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
-                                refreshStrategyConfig()
-                            }
-                            this@Manager.money = runBlocking {
-                                bybitService.getAccountBalance()
-                            }
-                        }
-                        fillOrderCallback = { orderId ->
-                            this@apply.fillOrder(orderId)
-                        }
-                        logger { it.info { "Complete initializing websocket" } }
+                    } catch (e: Exception) {
+                        crashPostAction(e)
                     }
                 }
+
+                with(webSocket) {
+                    positionUpdateCallback = { position ->
+                        previousPositionTrend = strategyRunner?.position?.trend
+                        this@apply.updatePosition(position)
+                        if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
+                            refreshStrategyConfig()
+                        }
+                        this@Manager.money = runBlocking {
+                            bybitService.getAccountBalance()
+                        }
+                    }
+                    fillOrderCallback = { orderId ->
+                        this@apply.fillOrder(orderId)
+                    }
+                    logger { it.info { "Complete initializing websocket" } }
+                }
+                priceListener?.stop()
+                kLineListener?.stop()
+
+                priceListener =
+                    eventListenerFactory.getPriceListener<Double>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { newPrice ->
+                        currentPrice = newPrice
+                    }.apply {
+                        start()
+                    }
+
+            }
+            is CandleTailStrategyConfigModel -> CandleTailStrategyRunner(
+                strategyConfig.money,
+                strategyConfig.multiplier,
+                strategyConfig.symbol,
+                false,
+                strategyConfig.kLineDuration,
+                strategyConfig.stopLoss,
+                strategyConfig.takeProfit,
+                strategyConfig.minQtyStep,
+                strategyConfig.id,
+                { _, _ -> },
+                createOrderFunction = getCreateOrderFunction(strategyConfig, bybitService),
+                cancelOrderFunction = { symbol, orderId ->
+                    logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
+                    runBlocking { bybitService.cancelOrder(symbol, orderId) }
+                },
+            ).apply {
+                setClosePosition { isStopLoss ->
+                    try {
+                        logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
+                        closeOrdersAndPosition()
+                        if (isStopLoss) {
+                            lastRefreshTime = 0
+                            refreshStrategyConfig()
+                        } else {
+                            refreshStrategyConfig()
+                        }
+                    } catch (e: Exception) {
+                        crashPostAction(e)
+                    }
+                }
+                priceListener?.stop()
+                kLineListener?.stop()
+
+                priceListener =
+                    eventListenerFactory.getPriceListener<Double>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { newPrice ->
+                        currentPrice = newPrice
+                    }.apply {
+                        start()
+                    }
+                kLineListener = eventListenerFactory.getPriceListener<KLine>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { kLine ->
+                    acceptKLine(kLine)
+                }.apply { start() }
             }
         }
 
-        listener?.stop()
-        listener = priceListenerFactory.getPriceListener(strategyConfig.symbol, demoAccount).apply {
-            setupMessageListener(AcknowledgingMessageListener<String, String> { message, acknowledgment ->
-                acknowledgment?.acknowledge()
-                currentPrice = message.value().toDouble()
-            })
-            start()
-        }
     }
 
     private fun acceptGridTableStrategyPriceChange(previousPrice: Double, newPrice: Double) {
@@ -267,14 +310,7 @@ class Manager(
                 val (minPrice, maxPrice) = strategyRunner.getPriceBounds()
                 it.info { "Price not in price bound. Min Price: '$minPrice'; Max Price: '$maxPrice'; Current: '$newPrice'" }
             }
-            replayingStrategyDataKafkaTemplate
-                .sendAndReceive(
-                    ProducerRecord(
-                        REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC,
-                        strategyRunner.id
-                    )
-                )[5, TimeUnit.SECONDS]
-                .value()
+            rabbitTemplate.convertSendAndReceive(REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC, strategyRunner.id)
                 ?.let { strategyRuntimeInfo ->
                     when (strategyRuntimeInfo) {
                         is GridTableStrategyRuntimeInfoModel -> {

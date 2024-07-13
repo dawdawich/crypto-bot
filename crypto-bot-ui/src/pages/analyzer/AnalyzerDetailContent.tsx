@@ -5,7 +5,7 @@ import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import "../../css/pages/analyzer/AnalyzerDetailStyles.css";
-import {AnalyzerResponse} from "../../model/AnalyzerResponse";
+import {AnalyzerResponse, isGridAnalyzerResponse} from "../../model/AnalyzerResponse";
 import {
     changeBulkAnalyzerStatus,
     deleteAnalyzerBulk,
@@ -300,7 +300,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                     Diapason
                                 </LeftItemDiv>
                                 <RightItemDiv>
-                                    {analyzer.diapason}%
+                                    {isGridAnalyzerResponse(analyzer) ? analyzer.diapason : null}%
                                 </RightItemDiv>
                             </div>
                             <div className="analyzer-detail-card-content-item">
@@ -308,7 +308,7 @@ const AnalyzerDetailContent: React.FC<AnalyzerDetailProps> = ({
                                     Grid Size
                                 </LeftItemDiv>
                                 <RightItemDiv>
-                                    {analyzer.gridSize}
+                                    {isGridAnalyzerResponse(analyzer) ? analyzer.gridSize : null}
                                 </RightItemDiv>
                             </div>
                             <div className="analyzer-detail-card-content-item">

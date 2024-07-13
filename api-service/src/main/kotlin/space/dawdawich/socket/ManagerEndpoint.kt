@@ -2,19 +2,16 @@ package space.dawdawich.socket
 
 import jakarta.websocket.*
 import jakarta.websocket.server.ServerEndpoint
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.configuration.WebSocketConfigurator
 
 /**
  * The ManagerEndpoint class represents the WebSocket endpoint for the manager.
  * It handles the WebSocket connection, messages, closing, and errors.
- *
- * @param kafkaTemplate The Kafka template used for sending messages to a Kafka topic.
  */
 @Service
 @ServerEndpoint(value = "/ws/manager", configurator = WebSocketConfigurator::class)
-class ManagerEndpoint(private val kafkaTemplate: KafkaTemplate<String, String>) {
+class ManagerEndpoint {
 
     @OnOpen
     fun onOpen(session: Session?, config: EndpointConfig?) {

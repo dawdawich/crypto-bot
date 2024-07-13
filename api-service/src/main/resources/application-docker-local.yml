@@ -4,11 +4,11 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
-  kafka:
-    bootstrap-servers: kafka:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: user
+    password: password
   mvc:
     dispatch-options-request: true
 

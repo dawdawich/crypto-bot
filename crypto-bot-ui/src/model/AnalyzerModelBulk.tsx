@@ -6,12 +6,6 @@ export interface AnalyzerModelBulk {
     takeProfitMin: number;
     takeProfitMax: number;
     takeProfitStep: number;
-    diapasonMin: number;
-    diapasonMax: number;
-    diapasonStep: number;
-    gridSizeMin: number;
-    gridSizeMax: number;
-    gridSizeStep: number;
     multiplierMin: number;
     multiplierMax: number;
     multiplierStep: number;
@@ -22,4 +16,17 @@ export interface AnalyzerModelBulk {
     public: boolean;
     strategy: string;
     folders: string[];
+}
+
+export interface GridAnalyzerModelBulk extends AnalyzerModelBulk {
+    diapasonMin: number;
+    diapasonMax: number;
+    diapasonStep: number;
+    gridSizeMin: number;
+    gridSizeMax: number;
+    gridSizeStep: number;
+}
+
+export interface CandleAnalyzerModelBulk extends AnalyzerModelBulk {
+    kLineDurations: number[];
 }
