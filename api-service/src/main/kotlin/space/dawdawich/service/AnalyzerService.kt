@@ -417,23 +417,24 @@ class AnalyzerService(
                             for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
                                 for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
                                     for (kLineDuration in kLineDurations) {
-                                        analyzersToInsert.add(
-                                            CandleTailStrategyAnalyzerDocument(
-                                                UUID.randomUUID().toString(),
-                                                accountId,
-                                                public,
-                                                multiplier,
-                                                stopLoss,
-                                                takeProfit,
-                                                symbol,
-                                                startCapital.toDouble(),
-                                                active,
-                                                demoAccount,
-                                                market,
-                                                kLineDuration
+                                        if (multiplier <= symbol.maxLeverage) {
+                                            analyzersToInsert.add(
+                                                CandleTailStrategyAnalyzerDocument(
+                                                    UUID.randomUUID().toString(),
+                                                    accountId,
+                                                    public,
+                                                    multiplier,
+                                                    stopLoss,
+                                                    takeProfit,
+                                                    symbol,
+                                                    startCapital.toDouble(),
+                                                    active,
+                                                    demoAccount,
+                                                    market,
+                                                    kLineDuration
+                                                )
                                             )
-                                        )
-
+                                        }
                                     }
                                 }
                             }
