@@ -99,6 +99,7 @@ class Manager(
                     strategyConfig = getAnalyzerConfig()
                     if (strategyConfig == null) {
                         delay(tradeManagerData.refreshAnalyzerMinutes.minutes)
+                        logger { it.info { "No suitable analyzer not found for manager '${tradeManagerData.id}'" } }
                     }
                 }
 
