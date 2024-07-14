@@ -22,4 +22,4 @@ data class TradeManagerDocument(
     var errorDescription: String? = null,
     val createTime: Long = System.currentTimeMillis(),
     var updateTime: Long = System.currentTimeMillis()
-)
+) : java.io.Serializable
