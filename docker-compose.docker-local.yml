@@ -45,6 +45,7 @@ services:
       dockerfile: dockerfiles/EventListenerDockerfile
     environment:
       spring.profiles.active: docker-local
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
     depends_on:
       mongodb:
         condition: service_healthy
@@ -93,6 +94,7 @@ services:
       dockerfile: dockerfiles/TradeManagerDockerfile
     environment:
       spring.profiles.active: docker-local
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
     depends_on:
       mongodb:
         condition: service_healthy
