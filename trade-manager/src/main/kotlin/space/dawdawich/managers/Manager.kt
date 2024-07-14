@@ -84,7 +84,10 @@ class Manager(
                 refreshStrategyConfig()
             }
             synchronized(synchronizationObject) {
-                acceptGridTableStrategyPriceChange(oldPrice, newPrice)
+                when(strategyRunner) {
+                    is GridTableStrategyRunner -> acceptGridTableStrategyPriceChange(oldPrice, newPrice)
+                    is CandleTailStrategyRunner -> (strategyRunner as CandleTailStrategyRunner).acceptPriceChange(oldPrice, newPrice)
+                }
             }
         }
     }
