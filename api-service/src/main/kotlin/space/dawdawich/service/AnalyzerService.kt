@@ -233,9 +233,9 @@ class AnalyzerService(
     fun createAnalyzer(accountId: String, analyzerData: CreateAnalyzerRequest) =
         when (analyzerData) {
             is CreateGridAnalyzerRequest -> analyzerData.apply {
-                if (active) {
-                    checkIsUserCanCreateAnalyzers(accountId)
-                }
+//                if (active) {
+//                    checkIsUserCanCreateAnalyzers(accountId)
+//                }
 
                 val analyzerId = UUID.randomUUID().toString()
                 val gridTableAnalyzerDocument = GridTableAnalyzerDocument(

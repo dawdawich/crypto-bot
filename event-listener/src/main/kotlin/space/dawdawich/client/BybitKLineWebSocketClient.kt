@@ -24,7 +24,7 @@ class BybitKLineWebSocketClient(private val rabbitManager: RabbitManager, connec
                         val symbol = messageTopic.split(".")[2]
 
                         read<List<LinkedHashMap<String, String>>>("\$.data[?(@.confirm == true)]").forEach {
-                            rabbitManager.sendKLineEvent(topicName, symbol, KLineRecord(
+                            rabbitManager.sendKLineEvent(topicName, "${it["interval"]!!}.$symbol", KLineRecord(
                                 it["interval"]!!,
                                 it["open"]!!.toDouble(),
                                 it["close"]!!.toDouble(),

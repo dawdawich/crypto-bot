@@ -1,7 +1,7 @@
 import React from "react";
 import {InputField} from "../../../shared/InputComponents";
 import Select from "react-select";
-import {MultiSelectStyle, SelectStyle} from "../../../utils/styles/element-styles";
+import {SelectStyle} from "../../../utils/styles/element-styles";
 import {kLineDurationValues} from "../../../model/AnalyzerResponse";
 
 type CandleLineSingleInputFieldsModel = {
@@ -42,7 +42,7 @@ const CandleTailSingleInputFields: React.FC<CandleLineSingleInputFieldsModel> = 
                     name="kLineDuration"
                     isSearchable={false}
                     styles={SelectStyle}
-                    onChange={(newValue) => onSelectChange("kLineDuration", newValue)}
+                    onChange={(newValue) => onSelectChange("kLineDuration", (newValue as any).value)}
                     defaultInputValue={kLineDuration}
                     options={kLineDurationValues.map((duration) => ({
                         value: duration,

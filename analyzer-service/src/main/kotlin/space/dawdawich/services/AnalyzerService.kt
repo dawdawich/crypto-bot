@@ -23,6 +23,7 @@ import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
+import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
@@ -226,7 +227,7 @@ class AnalyzerService(
         }.addObserver(analyzer::acceptPriceChange)
         if (analyzer is KLineStrategyAnalyzer) {
             kLineListeners.getOrPut(analyzer.symbol) {
-                EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, analyzer.symbol, object : TypeReference<KLineRecord>() {})
+                EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "${(analyzer.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration}.${analyzer.symbol}", object : TypeReference<KLineRecord>() {})
             }.addObserver(analyzer::acceptCandle)
         }
 

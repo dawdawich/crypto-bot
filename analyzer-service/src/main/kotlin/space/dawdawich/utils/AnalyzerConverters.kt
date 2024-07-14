@@ -57,5 +57,6 @@ fun CandleTailStrategyAnalyzerDocument.convert(
     symbolInfo.symbol,
     accountId,
     market,
-    demoAccount
+    demoAccount,
+    id
 )

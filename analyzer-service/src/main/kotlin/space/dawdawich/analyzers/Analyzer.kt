@@ -1,7 +1,6 @@
 package space.dawdawich.analyzers
 
 import space.dawdawich.model.constants.Market
-import space.dawdawich.strategy.PriceChangeStrategyRunner
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.utils.findLargestRange
 import space.dawdawich.utils.findLowestRange
@@ -57,5 +56,5 @@ abstract class Analyzer(
 
     fun getStrategyConfig() = strategyRunner.getStrategyConfig()
 
-    fun getRuntimeInfo() = (strategyRunner as PriceChangeStrategyRunner).getRuntimeInfo()
+    fun getRuntimeInfo() = strategyRunner.getRuntimeInfo()
 }

@@ -19,7 +19,7 @@ class ActionListener(
 ) {
 
     companion object {
-        private val defaultKLineIntervals = arrayOf(3, 5, 15, 30, 60)
+        private val defaultKLineIntervals = arrayOf(1, 3, 5, 15, 30, 60, 120)
     }
 
     @PostConstruct
