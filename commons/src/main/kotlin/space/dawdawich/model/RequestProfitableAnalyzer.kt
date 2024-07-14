@@ -20,4 +20,4 @@ data class RequestProfitableAnalyzer(
         val managerMoney: Double,
         val demoAccount: Boolean,
         val market: Market
-)
+) : java.io.Serializable
