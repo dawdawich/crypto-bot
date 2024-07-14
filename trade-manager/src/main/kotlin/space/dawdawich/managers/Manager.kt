@@ -8,10 +8,7 @@ import org.slf4j.MDC
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer
 import space.dawdawich.client.ByBitWebSocketClient
-import space.dawdawich.constants.BYBIT_TEST_TICKER_TOPIC
-import space.dawdawich.constants.BYBIT_TICKER_TOPIC
-import space.dawdawich.constants.REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC
-import space.dawdawich.constants.REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC
+import space.dawdawich.constants.*
 import space.dawdawich.exception.ApiTokenExpiredException
 import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.integration.client.PrivateHttpClient
@@ -291,7 +288,7 @@ class Manager(
                     }.apply {
                         start()
                     }
-                kLineListener = eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol, object : TypeReference<KLineRecord>() {}) { kLine ->
+                kLineListener = eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "${getStrategyConfig().kLineDuration}.$symbol", object : TypeReference<KLineRecord>() {}) { kLine ->
                     acceptKLine(KLine(kLine.open, kLine.close, kLine.high, kLine.low))
                 }.apply { start() }
             }
