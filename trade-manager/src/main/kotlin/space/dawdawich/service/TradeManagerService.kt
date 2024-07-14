@@ -62,5 +62,6 @@ class TradeManagerService(
             tradeManagers.remove(it)
         }
         managerRepository.updateTradeManagerStatus(managerId, status, stopDescription, ex?.message)
+        ex?.let { logger.error("Manager '$managerId' got an error.'", it) }
     }
 }
