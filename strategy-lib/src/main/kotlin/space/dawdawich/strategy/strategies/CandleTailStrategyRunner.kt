@@ -34,10 +34,10 @@ class CandleTailStrategyRunner(
         }
 
         val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
-            val moneyToUse = lowerShadow / totalRange
+            val moneyToUse = (lowerShadow / totalRange) * money
             createOrderFunction(kLine.closePrice, symbol, (moneyToUse / kLine.closePrice) * multiplier, -1.0, -1.0, Trend.LONG)
         } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
-            val moneyToUse = upperShadow / totalRange
+            val moneyToUse = (upperShadow / totalRange) * money
             createOrderFunction(kLine.closePrice, symbol, (moneyToUse / kLine.closePrice) * multiplier, -1.0, -1.0, Trend.SHORT)
         } else {
             null
