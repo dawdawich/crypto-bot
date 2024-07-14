@@ -25,29 +25,45 @@ class CandleTailStrategyRunner(
 ) : KLineStrategyRunner(money, multiplier, moneyChangeFunction, createOrderFunction, cancelOrderFunction, minQtyStep, symbol, simulateTradeOperations, kLineDuration, id) {
 
     override fun acceptKLine(kLine: KLine) {
-        val body = abs(kLine.closePrice - kLine.openPrice)
-        val lowerShadow = kLine.openPrice.coerceAtMost(kLine.closePrice) - kLine.lowPrice
-        val upperShadow = kLine.highPrice - kLine.openPrice.coerceAtLeast(kLine.closePrice)
-        var totalRange = upperShadow + body + lowerShadow
-        if (totalRange == 0.0) {
-            totalRange = 1.0
-        }
+        if (money > 0) {
+            val body = abs(kLine.closePrice - kLine.openPrice)
+            val lowerShadow = kLine.openPrice.coerceAtMost(kLine.closePrice) - kLine.lowPrice
+            val upperShadow = kLine.highPrice - kLine.openPrice.coerceAtLeast(kLine.closePrice)
+            var totalRange = upperShadow + body + lowerShadow
+            if (totalRange == 0.0) {
+                totalRange = 1.0
+            }
 
-        val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
-            val moneyToUse = (lowerShadow / totalRange) * money
-            createOrderFunction(kLine.closePrice, symbol, (moneyToUse / kLine.closePrice) * multiplier, -1.0, -1.0, Trend.LONG)
-        } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
-            val moneyToUse = (upperShadow / totalRange) * money
-            createOrderFunction(kLine.closePrice, symbol, (moneyToUse / kLine.closePrice) * multiplier, -1.0, -1.0, Trend.SHORT)
-        } else {
-            null
-        }
+            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
+                val moneyToUse = (lowerShadow / totalRange) * money
+                createOrderFunction(
+                    kLine.closePrice,
+                    symbol,
+                    (moneyToUse / kLine.closePrice) * multiplier,
+                    -1.0,
+                    -1.0,
+                    Trend.LONG
+                )
+            } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
+                val moneyToUse = (upperShadow / totalRange) * money
+                createOrderFunction(
+                    kLine.closePrice,
+                    symbol,
+                    (moneyToUse / kLine.closePrice) * multiplier,
+                    -1.0,
+                    -1.0,
+                    Trend.SHORT
+                )
+            } else {
+                null
+            }
 
-        if (order != null) {
-            if (position == null) {
-                position = Position(order.inPrice, order.count, order.trend)
-            } else if (order.trend == position!!.trend) {
-                position!!.updateSizeAndEntryPrice(order)
+            if (order != null && simulateTradeOperations) {
+                if (position == null) {
+                    position = Position(order.inPrice, order.count, order.trend)
+                } else if (order.trend == position!!.trend) {
+                    position!!.updateSizeAndEntryPrice(order)
+                }
             }
         }
     }
@@ -60,16 +76,20 @@ class CandleTailStrategyRunner(
     override fun getRuntimeInfo(): StrategyRuntimeInfoModel = CandleTailStrategyRuntimeInfoModel(id, position?.convertToInfo())
 
     private fun checkPosition(currentPrice: Double) {
-        position?.let {
-            val profit = it.calculateProfit(currentPrice)
-            moneyWithProfit += profit
-            if (profit <= -stopLoss) {
-                closePositionFunction(true)
-                money += profit
-            } else if (profit >= takeProfit) {
-                closePositionFunction(false)
-                money += profit
+        if (money > 0) {
+            position?.let {
+                val profit = it.calculateProfit(currentPrice)
+                moneyWithProfit += profit
+                if (profit <= -stopLoss) {
+                    closePositionFunction(true)
+                    money += profit
+                } else if (profit >= takeProfit) {
+                    closePositionFunction(false)
+                    money += profit
+                }
             }
+        } else {
+            money = 0.0
         }
     }
 }
