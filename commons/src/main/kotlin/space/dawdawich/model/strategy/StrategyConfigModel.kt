@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
  * Represents the base class for strategy config models. Uses as base DTO object.
  */
 @Serializable
-sealed class StrategyConfigModel {
+sealed class StrategyConfigModel : java.io.Serializable {
     abstract val id: String
     abstract val symbol: String
     abstract val money: Double

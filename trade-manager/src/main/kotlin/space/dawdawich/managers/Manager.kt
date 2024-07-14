@@ -150,13 +150,13 @@ class Manager(
         }
     }
 
-    private fun getAnalyzerConfig(strategyConfigModel: StrategyConfigModel? = null): StrategyConfigModel? {
+    private fun getAnalyzerConfig(currentStrategyId: String? = null): StrategyConfigModel? {
         try {
             return rabbitTemplate.convertSendAndReceive(
                 REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC, RequestProfitableAnalyzer(
                     tradeManagerData.accountId,
                     tradeManagerData.chooseStrategy,
-                    strategyConfigModel?.id,
+                    currentStrategyId,
                     money,
                     demoAccount,
                     market
@@ -171,7 +171,7 @@ class Manager(
     private fun refreshStrategyConfig() {
         if ((System.currentTimeMillis() - lastRefreshTime) > tradeManagerData.refreshAnalyzerMinutes.minutes.inWholeMilliseconds) {
             logger { it.info { "Try to find more suitable analyzer" } }
-            getAnalyzerConfig(strategyRunner?.getStrategyConfig())?.let { config ->
+            getAnalyzerConfig(strategyRunner?.getStrategyConfig()?.id)?.let { config ->
                 logger { it.info { "Found more suitable analyzer '${config.id}'" } }
                 deactivate(true)
                 setupStrategyRunner(config)
