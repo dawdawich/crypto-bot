@@ -9,8 +9,8 @@ import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
 class RabbitMQConfiguration {
 
     @Bean
-    fun activateManagerTopic() = Queue(space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC)
+    fun activateManagerTopic() = Queue(space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC, false)
 
     @Bean
-    fun deactivateManagerTopic() = Queue(DEACTIVATE_MANAGER_TOPIC)
+    fun deactivateManagerTopic() = Queue(DEACTIVATE_MANAGER_TOPIC, false)
 }

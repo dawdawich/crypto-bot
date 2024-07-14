@@ -15,7 +15,7 @@ class EventListener<T>(connectionFactory: ConnectionFactory, topicName: String, 
     init {
         connectionFactory.createConnection().use {
             it.createChannel(false).use { channel ->
-                val queue = channel.queueDeclare("$topicName.$queueName", true, false, true, emptyMap()).queue
+                val queue = channel.queueDeclare("$topicName.$queueName", false, false, true, emptyMap()).queue
                 channel.queueBind(queue, topicName, queueName)
 
                 val container = SimpleMessageListenerContainer(connectionFactory)

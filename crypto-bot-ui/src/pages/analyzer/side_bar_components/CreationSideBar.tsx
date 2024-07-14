@@ -378,10 +378,10 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                 const additionalProps = multiAnalyzerModel.diapasonMin != null ? {
                     diapasonMin: multiAnalyzerModel.diapasonMin as number,
                     diapasonMax: multiAnalyzerModel.diapasonMax as number,
-                    diapasonStep: multiAnalyzerModel.diapasonStep,
+                    diapasonStep: multiAnalyzerModel.diapasonStep as number,
                     gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
                     gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
-                    gridSizeStep: multiAnalyzerModel.gridSizeStep,
+                    gridSizeStep: multiAnalyzerModel.gridSizeStep as number,
                 } : {kLineDurations: multiAnalyzerModel.kLineDurations};
 
                 props.createAnalyzerBulkFunction({

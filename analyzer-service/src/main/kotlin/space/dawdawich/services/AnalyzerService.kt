@@ -276,7 +276,7 @@ class AnalyzerService(
             .filter { it.market == request.market }
             .filter { it.accountId == request.accountId }
             .toList()
-        val maxMoney = copiedAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney()
+        val maxMoney = copiedAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney() // TODO fix NPE
         val mostProfitableAnalyzers = copiedAnalyzers.filter { it.getMoney() == maxMoney }
         if (mostProfitableAnalyzers.none { it.id == request.currentAnalyzerId }) {
             return mostProfitableAnalyzers
