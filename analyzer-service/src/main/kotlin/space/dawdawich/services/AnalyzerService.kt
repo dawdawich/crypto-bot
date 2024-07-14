@@ -3,8 +3,6 @@ package space.dawdawich.services
 import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
@@ -52,7 +50,7 @@ class AnalyzerService(
     private val log = KotlinLogging.logger { }
 
     private val priceListeners = mutableMapOf<String, EventListener<Double>>()
-    private val kLineListeners = mutableMapOf<String, EventListener<KLineRecord>>()
+    private val kLineListeners = mutableMapOf<Pair<String, Int>, EventListener<KLineRecord>>()
     private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
     private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
@@ -112,7 +110,7 @@ class AnalyzerService(
 
     @RabbitListener(queues = [REQUEST_ANALYZER_STRATEGY_RUNTIME_DATA_TOPIC])
     fun requestAnalyzerData(analyzerId: String) =
-        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()?.let { Json.encodeToString(it) }
+        analyzers.find { analyzerId == it.id }?.getRuntimeInfo()
 
     @RabbitListener(queues = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC])
     fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
@@ -226,7 +224,7 @@ class AnalyzerService(
             EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, analyzer.symbol, object : TypeReference<Double>() {})
         }.addObserver(analyzer::acceptPriceChange)
         if (analyzer is KLineStrategyAnalyzer) {
-            kLineListeners.getOrPut(analyzer.symbol) {
+            kLineListeners.getOrPut(analyzer.symbol to (analyzer.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration) {
                 EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "${(analyzer.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration}.${analyzer.symbol}", object : TypeReference<KLineRecord>() {})
             }.addObserver(analyzer::acceptCandle)
         }
@@ -238,7 +236,7 @@ class AnalyzerService(
         analyzers.find { it.id == analyzerId }?.let {
             priceListeners[it.symbol]?.removeObserver(it::acceptPriceChange)
             if (it is KLineStrategyAnalyzer) {
-                kLineListeners[it.symbol]?.removeObserver(it::acceptCandle)
+                kLineListeners[it.symbol to (it.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration]?.removeObserver(it::acceptCandle)
             }
         }
 
