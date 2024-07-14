@@ -1,5 +1,6 @@
 package space.dawdawich.managers
 
+import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.*
 import mu.KLogger
 import mu.KotlinLogging
@@ -15,6 +16,7 @@ import space.dawdawich.exception.ApiTokenExpiredException
 import space.dawdawich.exception.InsufficientBalanceException
 import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
+import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.Market
 import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
 import space.dawdawich.model.strategy.GridStrategyConfigModel
@@ -239,9 +241,12 @@ class Manager(
                 kLineListener?.stop()
 
                 priceListener =
-                    eventListenerFactory.getPriceListener<Double>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { newPrice ->
-                        currentPrice = newPrice
-                    }.apply {
+                    eventListenerFactory.getPriceListener<Double>(
+                        if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC,
+                        symbol, object : TypeReference<Double>() {})
+                        { newPrice ->
+                            currentPrice = newPrice
+                        }.apply {
                         start()
                     }
 
@@ -281,13 +286,13 @@ class Manager(
                 kLineListener?.stop()
 
                 priceListener =
-                    eventListenerFactory.getPriceListener<Double>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { newPrice ->
+                    eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol, object : TypeReference<Double>() {}) { newPrice ->
                         currentPrice = newPrice
                     }.apply {
                         start()
                     }
-                kLineListener = eventListenerFactory.getPriceListener<KLine>(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol) { kLine ->
-                    acceptKLine(kLine)
+                kLineListener = eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol, object : TypeReference<KLineRecord>() {}) { kLine ->
+                    acceptKLine(KLine(kLine.open, kLine.close, kLine.high, kLine.low))
                 }.apply { start() }
             }
         }
