@@ -84,9 +84,12 @@ class Manager(
                 refreshStrategyConfig()
             }
             synchronized(synchronizationObject) {
-                when(strategyRunner) {
+                when (strategyRunner) {
                     is GridTableStrategyRunner -> acceptGridTableStrategyPriceChange(oldPrice, newPrice)
-                    is CandleTailStrategyRunner -> (strategyRunner as CandleTailStrategyRunner).acceptPriceChange(oldPrice, newPrice)
+                    is CandleTailStrategyRunner -> (strategyRunner as CandleTailStrategyRunner).acceptPriceChange(
+                        oldPrice,
+                        newPrice
+                    )
                 }
             }
         }
@@ -244,13 +247,14 @@ class Manager(
                     eventListenerFactory.getPriceListener<Double>(
                         if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC,
                         symbol, object : TypeReference<Double>() {})
-                        { newPrice ->
-                            currentPrice = newPrice
-                        }.apply {
+                    { newPrice ->
+                        currentPrice = newPrice
+                    }.apply {
                         start()
                     }
 
             }
+
             is CandleTailStrategyConfigModel -> CandleTailStrategyRunner(
                 strategyConfig.money,
                 strategyConfig.multiplier,
@@ -285,15 +289,32 @@ class Manager(
                 priceListener?.stop()
                 kLineListener?.stop()
 
-                priceListener =
-                    eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, symbol, object : TypeReference<Double>() {}) { newPrice ->
-                        currentPrice = newPrice
-                    }.apply {
-                        start()
-                    }
-                kLineListener = eventListenerFactory.getPriceListener(if (demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "${getStrategyConfig().kLineDuration}.$symbol", object : TypeReference<KLineRecord>() {}) { kLine ->
+                priceListener = eventListenerFactory.getPriceListener(
+                    if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC,
+                    symbol,
+                    object : TypeReference<Double>() {}) { newPrice ->
+                    currentPrice = newPrice
+                }.apply { start() }
+                kLineListener = eventListenerFactory.getPriceListener(
+                    if (demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC,
+                    "${getStrategyConfig().kLineDuration}.$symbol",
+                    object : TypeReference<KLineRecord>() {}) { kLine ->
                     acceptKLine(KLine(kLine.open, kLine.close, kLine.high, kLine.low))
                 }.apply { start() }
+
+                with(webSocket) {
+                    positionUpdateCallback = { position ->
+                        previousPositionTrend = strategyRunner?.position?.trend
+                        this@apply.updatePosition(position)
+                        if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
+                            refreshStrategyConfig()
+                        }
+                        this@Manager.money = runBlocking {
+                            bybitService.getAccountBalance()
+                        }
+                    }
+                    logger { it.info { "Complete initializing websocket" } }
+                }
             }
         }
 
