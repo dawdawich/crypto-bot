@@ -9,7 +9,3 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
-
-logging:
-  level:
-    org.springframework: INFO
