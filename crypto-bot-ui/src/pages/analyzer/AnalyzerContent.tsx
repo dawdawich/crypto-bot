@@ -12,8 +12,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TableSortLabel,
-    Tooltip
+    TableSortLabel
 } from "@mui/material";
 import plexFont from "../../assets/fonts/IBM_Plex_Sans/IBMPlexSans-Regular.ttf";
 import "../../css/pages/analyzer/AnalyzerContentStyles.css";
@@ -22,7 +21,6 @@ import {AnalyzerResponse, isCandleTailAnalyzerResponse, isGridAnalyzerResponse} 
 import {ReactComponent as ActiveIcon} from "../../assets/images/analyzer/active-icon.svg";
 import {ReactComponent as NotActiveIcon} from "../../assets/images/analyzer/not-active-icon.svg";
 import {ReactComponent as MenuIcon} from "../../assets/images/analyzer/menu-icon.svg";
-import {getSymbolIcon} from "../../utils/symbols-utils";
 import {
     changeBulkAnalyzerStatus,
     createAnalyzer,

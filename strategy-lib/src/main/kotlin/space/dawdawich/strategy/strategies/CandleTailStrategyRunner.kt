@@ -62,6 +62,7 @@ class CandleTailStrategyRunner(
     private fun checkPosition(currentPrice: Double) {
         position?.let {
             val profit = it.calculateProfit(currentPrice)
+            moneyWithProfit += profit
             if (profit <= -stopLoss) {
                 closePositionFunction(true)
                 money += profit
