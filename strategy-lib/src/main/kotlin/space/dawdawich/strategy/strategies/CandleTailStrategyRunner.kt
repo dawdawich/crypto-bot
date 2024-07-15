@@ -40,7 +40,7 @@ class CandleTailStrategyRunner(
             logger.debug { "Order creation info: body - $body, lowerShadow - $lowerShadow, upperShadow - $upperShadow, moneyToUse - $moneyToUse, money - $money" }
             val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow && (position?.trend?.equals(Trend.LONG) != false)) {
 
-                moneyToUse = if (position?.trend?.equals(Trend.LONG) != false) moneyToUse else money * (lowerShadow / totalRange).coerceAtMost(0.7)
+                moneyToUse = (if (position?.trend?.equals(Trend.LONG) != false) moneyToUse else money) * (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
@@ -51,7 +51,7 @@ class CandleTailStrategyRunner(
                 )
             } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
 
-                moneyToUse = if (position?.trend?.equals(Trend.SHORT) != false) moneyToUse else money * (upperShadow / totalRange).coerceAtMost(0.7)
+                moneyToUse = (if (position?.trend?.equals(Trend.SHORT) != false) moneyToUse else money) * (upperShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
