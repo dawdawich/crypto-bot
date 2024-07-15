@@ -38,7 +38,7 @@ class CandleTailStrategyRunner(
             var moneyToUse = money - ((position?.getPositionValue() ?: 0.0) / multiplier)
 
             logger.debug { "Order creation info: body - $body, lowerShadow - $lowerShadow, upperShadow - $upperShadow, moneyToUse - $moneyToUse, money - $money" }
-            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow && (position?.trend?.equals(Trend.LONG) != false)) {
+            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
 
                 moneyToUse = (if (position?.trend?.equals(Trend.LONG) != false) moneyToUse else money) * (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
