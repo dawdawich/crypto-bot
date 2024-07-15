@@ -13,3 +13,4 @@ spring:
 logging:
   level:
     space.dawdawich.strategy.strategies: DEBUG
+    space.dawdawich.integration.client.bybit: DEBUG

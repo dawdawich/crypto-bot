@@ -140,7 +140,9 @@ class ByBitPrivateHttpClient(
         val query = "accountType=UNIFIED&coin=USDT"
         val response: HttpResponse =
             repeatCount repeatTry { get(GET_ACCOUNT_BALANCE, query, getByBitHeadersWithSign(query)) }
-        val parsedJson = jsonPath.parse(response.bodyAsText())
+        val bodyAsText = response.bodyAsText()
+        logger.debug { "Account balance response: $bodyAsText" }
+        val parsedJson = jsonPath.parse(bodyAsText)
 
         return when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
             0 -> parsedJson.read<String>("$.result.list[0].coin[0].equity").toDouble()
