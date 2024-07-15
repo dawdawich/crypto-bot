@@ -11,7 +11,7 @@ import space.dawdawich.strategy.model.Trend
 import space.dawdawich.utils.trimToStep
 import java.util.*
 val logger = KotlinLogging.logger {}
-fun getCreateOrderFunction(strategyConfig: StrategyConfigModel, marketService: PrivateHttpClient): CreateOrderFunction {
+fun getCreateOrderFunction(strategyConfig: StrategyConfigModel, marketService: PrivateHttpClient, repeatCount: Int = 1): CreateOrderFunction {
     val createOrderFunction: CreateOrderFunction = {
             inPrice: Double,
             orderSymbol: String,
@@ -30,7 +30,8 @@ fun getCreateOrderFunction(strategyConfig: StrategyConfigModel, marketService: P
                     inPrice,
                     orderQty,
                     trend.directionBoolean,
-                    orderId
+                    orderId,
+                    repeatCount = repeatCount
                 )
             }
         if (isSuccess) {

@@ -35,13 +35,12 @@ class CandleTailStrategyRunner(
             if (totalRange == 0.0) {
                 totalRange = 1.0
             }
-            // TODO: add check that qty and price greater than min qty and min price
             var moneyToUse = money - ((position?.getPositionValue() ?: 0.0) / multiplier)
 
             logger.debug { "Order creation info: body - $body, lowerShadow - $lowerShadow, upperShadow - $upperShadow, moneyToUse - $moneyToUse, money - $money" }
             val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow && (position?.trend?.equals(Trend.LONG) != false)) {
 
-                moneyToUse *= (lowerShadow / totalRange).coerceAtMost(0.7)
+                moneyToUse = if (position?.trend?.equals(Trend.LONG) != false) moneyToUse else money * (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
@@ -50,8 +49,9 @@ class CandleTailStrategyRunner(
                     -1.0,
                     Trend.LONG
                 )
-            } else if (upperShadow != 0.0 && lowerShadow < upperShadow && (position?.trend?.equals(Trend.SHORT) != false)) {
-                moneyToUse *= (upperShadow / totalRange).coerceAtMost(0.7)
+            } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
+
+                moneyToUse = if (position?.trend?.equals(Trend.SHORT) != false) moneyToUse else money * (upperShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
