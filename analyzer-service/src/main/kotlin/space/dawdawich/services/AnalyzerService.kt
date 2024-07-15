@@ -114,7 +114,7 @@ class AnalyzerService(
 
     @RabbitListener(queues = [REQUEST_PROFITABLE_ANALYZER_STRATEGY_CONFIG_TOPIC])
     fun requestAnalyzer(request: RequestProfitableAnalyzer): StrategyConfigModel? {
-        return when (request.chooseStrategy) {
+        return when (request.chooseStrategy) { // TODO: add filtering by folder
             AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.TEST -> getFilteredAnalyzerConfig(request)

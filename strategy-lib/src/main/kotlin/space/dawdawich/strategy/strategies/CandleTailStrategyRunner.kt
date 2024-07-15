@@ -5,6 +5,7 @@ import space.dawdawich.model.strategy.CandleTailStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.strategy.KLineStrategyRunner
 import space.dawdawich.strategy.model.*
+import space.dawdawich.utils.calculatePercentageDifference
 import kotlin.math.abs
 
 class CandleTailStrategyRunner(
@@ -33,9 +34,11 @@ class CandleTailStrategyRunner(
             if (totalRange == 0.0) {
                 totalRange = 1.0
             }
+            // TODO: add check that qty and price greater than min qty and min price
             var moneyToUse = money - ((position?.getPositionValue() ?: 0.0) / multiplier)
             val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
-                moneyToUse *= (lowerShadow / totalRange)
+
+                moneyToUse *= (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
@@ -45,7 +48,7 @@ class CandleTailStrategyRunner(
                     Trend.LONG
                 )
             } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
-                moneyToUse *= (upperShadow / totalRange)
+                moneyToUse *= (upperShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
