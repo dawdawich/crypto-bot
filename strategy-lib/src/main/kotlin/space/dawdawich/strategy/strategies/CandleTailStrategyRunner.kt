@@ -1,11 +1,11 @@
 package space.dawdawich.strategy.strategies
 
+import mu.KotlinLogging
 import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
 import space.dawdawich.model.strategy.CandleTailStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.strategy.KLineStrategyRunner
 import space.dawdawich.strategy.model.*
-import space.dawdawich.utils.calculatePercentageDifference
 import kotlin.math.abs
 
 class CandleTailStrategyRunner(
@@ -24,6 +24,7 @@ class CandleTailStrategyRunner(
     },
     cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
 ) : KLineStrategyRunner(money, multiplier, moneyChangeFunction, createOrderFunction, cancelOrderFunction, minQtyStep, symbol, simulateTradeOperations, kLineDuration, id) {
+    private val logger = KotlinLogging.logger {}
 
     override fun acceptKLine(kLine: KLine) {
         if (money > 0) {
@@ -36,7 +37,9 @@ class CandleTailStrategyRunner(
             }
             // TODO: add check that qty and price greater than min qty and min price
             var moneyToUse = money - ((position?.getPositionValue() ?: 0.0) / multiplier)
-            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
+
+            logger.debug { "Order creation info: body - $body, lowerShadow - $lowerShadow, upperShadow - $upperShadow, moneyToUse - $moneyToUse" }
+            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow && (position?.trend?.equals(Trend.LONG) != false)) {
 
                 moneyToUse *= (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
@@ -47,7 +50,7 @@ class CandleTailStrategyRunner(
                     -1.0,
                     Trend.LONG
                 )
-            } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
+            } else if (upperShadow != 0.0 && lowerShadow < upperShadow && (position?.trend?.equals(Trend.SHORT) != false)) {
                 moneyToUse *= (upperShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,

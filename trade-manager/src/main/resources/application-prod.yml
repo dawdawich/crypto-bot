@@ -9,3 +9,7 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
+
+logging:
+  level:
+    space.dawdawich.strategy.strategies: DEBUG
