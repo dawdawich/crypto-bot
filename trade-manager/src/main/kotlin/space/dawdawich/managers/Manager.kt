@@ -64,7 +64,7 @@ class Manager(
 
     private var money: Double by Delegates.observable(runBlocking { bybitService.getAccountBalance() }) { _, _, newValue ->
         try {
-            logger { it.info { "Update strategy money to '$newValue'" } }
+            logger { it.debug { "Update strategy money to '$newValue'" } }
             strategyRunner?.updateMoney(newValue)
         } catch (e: InsufficientBalanceException) {
             logger { it.warn("Insufficient balance to make this operation") }
@@ -257,7 +257,7 @@ class Manager(
             }
 
             is CandleTailStrategyConfigModel -> CandleTailStrategyRunner(
-                strategyConfig.money,
+                money,
                 strategyConfig.multiplier,
                 strategyConfig.symbol,
                 false,
