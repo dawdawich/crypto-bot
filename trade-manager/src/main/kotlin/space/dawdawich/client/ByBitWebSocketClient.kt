@@ -59,49 +59,53 @@ class ByBitWebSocketClient(
                 }
             }
 
-            if (positionUpdateCallback != null && fillOrderCallback != null) {
+            if (positionUpdateCallback != null || fillOrderCallback != null) {
                 response.read<String?>("\$.topic")?.let { topic ->
                     if (topic == "position.linear") {
-                        val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
-                            .let { list ->
-                                if (list.size > 1) {
-                                    throw UnsupportedConfigurationException("User's account enabled in hedge mode.")
+                        positionUpdateCallback?.let { checkedPositionUpdateCallback ->
+                            val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
+                                .let { list ->
+                                    if (list.size > 1) {
+                                        throw UnsupportedConfigurationException("User's account enabled in hedge mode.")
+                                    }
+                                    list[0]
                                 }
-                                list[0]
-                            }
-                            .let { position ->
-                                val side = position["side"].toString()
-                                val curRealizedPnL = position["curRealisedPnl"].toString().toDouble()
-                                if (side.isNotBlank()) {
-                                    val trend = Trend.fromDirection(side)
-                                    Position(
-                                        position["entryPrice"].toString().toDouble(),
-                                        position["size"].toString().toDouble(),
-                                        trend,
-                                        curRealizedPnL
-                                    )
-                                } else null
-                            }
-                        logger.info { "Get position data to update: $positionsToUpdate" }
-                        positionUpdateCallback?.invoke(positionsToUpdate)
+                                .let { position ->
+                                    val side = position["side"].toString()
+                                    val curRealizedPnL = position["curRealisedPnl"].toString().toDouble()
+                                    if (side.isNotBlank()) {
+                                        val trend = Trend.fromDirection(side)
+                                        Position(
+                                            position["entryPrice"].toString().toDouble(),
+                                            position["size"].toString().toDouble(),
+                                            trend,
+                                            curRealizedPnL
+                                        )
+                                    } else null
+                                }
+                            logger.info { "Get position data to update: $positionsToUpdate" }
+                            checkedPositionUpdateCallback.invoke(positionsToUpdate)
+                        }
                     } else if (topic == "order.linear") {
-                        response.read<List<Map<String, Any>>>("\$.data")
-                            .map { orderResponse ->
-                                val id = orderResponse["orderLinkId"].toString()
-                                val status = orderResponse["orderStatus"].toString()
-                                id to status
-                            }
-                            .filter { order ->
-                                logger.info { "Obtain order to process. id: '${order.first}'; status: ${order.second}" }
-                                order.first.isNotBlank() && when (order.second.lowercase()) {
-                                    "filled", "deactivated", "rejected", "cancelled" -> true
-                                    else -> false
+                        fillOrderCallback?.let { checkedFillOrderCallback ->
+                            response.read<List<Map<String, Any>>>("\$.data")
+                                .map { orderResponse ->
+                                    val id = orderResponse["orderLinkId"].toString()
+                                    val status = orderResponse["orderStatus"].toString()
+                                    id to status
                                 }
-                            }
-                            .forEach { order ->
-                                logger.info { "Get order data to update: '${order.first}'; filled: '${order.second}'" }
-                                fillOrderCallback?.invoke(order.first)
-                            }
+                                .filter { order ->
+                                    logger.info { "Obtain order to process. id: '${order.first}'; status: ${order.second}" }
+                                    order.first.isNotBlank() && when (order.second.lowercase()) {
+                                        "filled", "deactivated", "rejected", "cancelled" -> true
+                                        else -> false
+                                    }
+                                }
+                                .forEach { order ->
+                                    logger.info { "Get order data to update: '${order.first}'; filled: '${order.second}'" }
+                                    checkedFillOrderCallback.invoke(order.first)
+                                }
+                        }
                     }
                     response
                 }
