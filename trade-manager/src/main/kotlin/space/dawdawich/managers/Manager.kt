@@ -267,7 +267,24 @@ class Manager(
                 strategyConfig.minQtyStep,
                 strategyConfig.id,
                 { _, _ -> },
-                createOrderFunction = getCreateOrderFunction(strategyConfig, bybitService, 4),
+                createOrderFunction = {
+                        inPrice: Double,
+                        orderSymbol: String,
+                        qty: Double,
+                        refreshTokenUpperBorder: Double,
+                        refreshTokenLowerBorder: Double,
+                        trend: Trend,
+                    ->
+                    closeOrdersAndPosition()
+                    getCreateOrderFunction(strategyConfig, bybitService, 4)(
+                        inPrice,
+                        orderSymbol,
+                        qty,
+                        refreshTokenUpperBorder,
+                        refreshTokenLowerBorder,
+                        trend
+                    )
+                },
                 cancelOrderFunction = { symbol, orderId ->
                     logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
                     runBlocking { bybitService.cancelOrder(symbol, orderId) }
