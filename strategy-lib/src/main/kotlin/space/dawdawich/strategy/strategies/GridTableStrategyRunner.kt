@@ -123,7 +123,7 @@ class GridTableStrategyRunner(
             minPrice,
             maxPrice,
             step,
-            orderPriceGrid.keys
+            orderPriceGrid.keys.toList()
         )
 
     override fun acceptPriceChange(previousPrise: Double, currentPrice: Double) {

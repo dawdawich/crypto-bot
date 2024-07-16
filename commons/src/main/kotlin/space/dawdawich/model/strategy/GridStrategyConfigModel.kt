@@ -37,5 +37,5 @@ class GridStrategyConfigModel(
     val minPrice: Double,
     val maxPrice: Double,
     val step: Double,
-    val pricesGrid: Set<Double>
+    val pricesGrid: List<Double>
 ) : StrategyConfigModel(), java.io.Serializable
