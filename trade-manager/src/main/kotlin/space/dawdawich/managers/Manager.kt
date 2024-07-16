@@ -277,7 +277,7 @@ class Manager(
                     ->
                     runBlocking {
                         launch { bybitService.cancelAllOrder(strategyConfig.symbol, 10) }
-                        getCreateOrderFunction(strategyConfig, bybitService, 4)(
+                        getCreateOrderFunction(strategyConfig, bybitService, 4, false)(
                             inPrice,
                             orderSymbol,
                             qty,

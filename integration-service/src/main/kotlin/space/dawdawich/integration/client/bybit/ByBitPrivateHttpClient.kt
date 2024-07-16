@@ -45,11 +45,12 @@ class ByBitPrivateHttpClient(
         orderId: String,
         positionIdx: Int,
         repeatCount: Int,
+        isLimitOrder: Boolean,
     ): Boolean {
         val request = buildJsonObject {
             put("symbol", symbol)
             put("side", if (isLong) "Buy" else "Sell")
-            put("orderType", "Limit")
+            put("orderType", if (isLimitOrder) "Limit" else "Market")
             put("qty", qty.toString())
             put("price", entryPrice.toString())
             put("timeInForce", "GTC")
@@ -64,7 +65,7 @@ class ByBitPrivateHttpClient(
             val parsedJson = jsonPath.parse(response.bodyAsText())
             when (val returnCode = parsedJson.read<Int>(RET_CODE_KEY)) {
                 0 -> return true
-                10002 -> createOrder(symbol, entryPrice, qty, isLong, orderId, positionIdx, repeatCount)
+                10002 -> createOrder(symbol, entryPrice, qty, isLong, orderId, positionIdx, repeatCount, true)
                 10001 -> {
                     logger.info { "Failed to create order. Reason:\n${parsedJson.jsonString()}" }
                     return false
@@ -73,7 +74,7 @@ class ByBitPrivateHttpClient(
                 10004 -> throw InvalidSignatureException()
                 110009 -> {
                     cancelAllOrder(symbol)
-                    return createOrder(symbol, entryPrice, qty, isLong, orderId)
+                    return createOrder(symbol, entryPrice, qty, isLong, orderId, isLimitOrder = true)
                 }
 
                 110007 -> throw InsufficientBalanceException()

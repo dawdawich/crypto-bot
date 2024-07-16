@@ -13,7 +13,8 @@ interface PrivateHttpClient : PublicHttpClient {
         isLong: Boolean,
         orderId: String,
         positionIdx: Int = 0,
-        repeatCount: Int = 0
+        repeatCount: Int = 0,
+        isLimitOrder: Boolean
     ): Boolean
 
     suspend fun cancelAllOrder(symbol: String, repeatCount: Int = 2)
