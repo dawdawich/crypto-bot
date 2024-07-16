@@ -275,15 +275,17 @@ class Manager(
                         refreshTokenLowerBorder: Double,
                         trend: Trend,
                     ->
-                    closeOrdersAndPosition()
-                    getCreateOrderFunction(strategyConfig, bybitService, 4)(
-                        inPrice,
-                        orderSymbol,
-                        qty,
-                        refreshTokenUpperBorder,
-                        refreshTokenLowerBorder,
-                        trend
-                    )
+                    runBlocking {
+                        launch { bybitService.cancelAllOrder(strategyConfig.symbol, 10) }
+                        getCreateOrderFunction(strategyConfig, bybitService, 4)(
+                            inPrice,
+                            orderSymbol,
+                            qty,
+                            refreshTokenUpperBorder,
+                            refreshTokenLowerBorder,
+                            trend
+                        )
+                    }
                 },
                 cancelOrderFunction = { symbol, orderId ->
                     logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
