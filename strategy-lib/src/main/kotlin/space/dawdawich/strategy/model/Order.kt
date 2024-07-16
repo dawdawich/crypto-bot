@@ -12,7 +12,7 @@ data class Order(
     var isFilled: Boolean = false,
     val createTime: Long = System.currentTimeMillis(),
     var id: String = UUID.randomUUID().toString()
-) {
+) : java.io.Serializable {
     fun isPriceOutOfRefreshBorder(currentPrice: Double): Boolean =
         (trend == Trend.LONG && (currentPrice <= refreshTokenUpperBorder || currentPrice >= refreshTokenLowerBorder)) ||
                 (trend == Trend.SHORT && (currentPrice >= refreshTokenUpperBorder || currentPrice <= refreshTokenLowerBorder))
