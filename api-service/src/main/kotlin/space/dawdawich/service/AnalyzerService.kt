@@ -151,7 +151,7 @@ class AnalyzerService(
                 .validateAnalyzersExistByIdAndAccountId(ids, accountId)
                 .let {
                     if (status) {
-                        checkIsUserCanCreateAnalyzers(accountId, ids.size)
+//                        checkIsUserCanCreateAnalyzers(accountId, ids.size)
                     }
                 }
                 .let { processChangeStatus(ids, status) }
@@ -160,7 +160,7 @@ class AnalyzerService(
                 .map { analyzer -> analyzer.id }
                 .let { analyzerIds ->
                     if (status) {
-                        checkIsUserCanCreateAnalyzers(accountId, analyzerIds.size)
+//                        checkIsUserCanCreateAnalyzers(accountId, analyzerIds.size)
                     }
                     analyzerRepository.setAnalyzersActiveStatus(analyzerIds, status)
                     analyzerIds.forEach { id ->
