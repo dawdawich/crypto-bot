@@ -25,4 +25,4 @@ class GridTableStrategyRuntimeInfoModel(
     val maxPrice: Double,
     val step: Double,
     override val position: PositionModel?
-) : StrategyRuntimeInfoModel()
+) : StrategyRuntimeInfoModel(), java.io.Serializable

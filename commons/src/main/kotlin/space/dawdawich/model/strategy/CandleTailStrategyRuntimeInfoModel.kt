@@ -7,4 +7,4 @@ import space.dawdawich.model.analyzer.PositionModel
 class CandleTailStrategyRuntimeInfoModel(
     override val id: String,
     override val position: PositionModel?
-) : StrategyRuntimeInfoModel()
+) : StrategyRuntimeInfoModel(), java.io.Serializable
