@@ -258,7 +258,7 @@ class AnalyzerService(
         val maxStabilityCoef = copiedAnalyzers
             .asSequence()
             .filter { it.getMoney() > request.managerMoney }
-            .maxBy { it.stabilityCoef }.stabilityCoef
+            .maxByOrNull { it.stabilityCoef }?.stabilityCoef
 
         val mostStableAnalyzers = copiedAnalyzers.filter { it.stabilityCoef == maxStabilityCoef }
 
