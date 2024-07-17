@@ -29,7 +29,7 @@ abstract class AbstractWebSocketClient(connectionUrl: String) :
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.warn { "Websocket connection closed. Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
-        if (remote) {
+        if (remote || reason == "Connection timed out") {
             GlobalScope.launch { reconnect() }
         }
     }
