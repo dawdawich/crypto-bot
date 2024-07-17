@@ -18,7 +18,7 @@ import space.dawdawich.model.analyzer.PositionModel
 @Serializable
 class GridTableStrategyRuntimeInfoModel(
     override val id: String,
-    val prices: Set<Double>,
+    val prices: List<Double>,
     val currentPrice: Double,
     val middlePrice: Double,
     val minPrice: Double,

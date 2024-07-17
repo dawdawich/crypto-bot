@@ -98,7 +98,7 @@ class GridTableStrategyRunner(
 
     override fun getRuntimeInfo() = GridTableStrategyRuntimeInfoModel(
         id,
-        orderPriceGrid.keys,
+        orderPriceGrid.keys.toList(),
         currentPrice,
         middlePrice,
         minPrice,
