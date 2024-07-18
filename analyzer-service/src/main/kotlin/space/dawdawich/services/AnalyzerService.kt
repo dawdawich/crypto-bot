@@ -249,6 +249,7 @@ class AnalyzerService(
     }
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        log.info { "Try to find analyzer for account id '${request.accountId}' by stability" }
         val copiedAnalyzers = analyzers
             .asSequence()
             .filter { it.demoAccount == request.demoAccount }
@@ -270,13 +271,14 @@ class AnalyzerService(
     }
 
     private fun getBiggestByMoneyAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        log.info { "Try to find analyzer for account id '${request.accountId}' by money" }
         val copiedAnalyzers = analyzers
             .asSequence()
             .filter { it.demoAccount == request.demoAccount }
             .filter { it.market == request.market }
             .filter { it.accountId == request.accountId }
             .toList()
-        val maxMoney = copiedAnalyzers.maxBy { analyzer -> analyzer.getMoney() }.getMoney() // TODO fix NPE
+        val maxMoney = copiedAnalyzers.maxByOrNull { analyzer -> analyzer.getMoney() }?.getMoney()
         val mostProfitableAnalyzers = copiedAnalyzers.filter { it.getMoney() == maxMoney }
         if (mostProfitableAnalyzers.none { it.id == request.currentAnalyzerId }) {
             return mostProfitableAnalyzers
