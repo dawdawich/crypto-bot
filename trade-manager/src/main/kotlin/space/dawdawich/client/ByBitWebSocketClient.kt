@@ -115,7 +115,7 @@ class ByBitWebSocketClient(
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Web socket closed. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
-        if (code == 1006) {
+        if (code == 1006 || reason?.equals("Connection refused") == true) {
             logger.info { "Reconnect web socket." }
             GlobalScope.launch { reconnect() }
         }
