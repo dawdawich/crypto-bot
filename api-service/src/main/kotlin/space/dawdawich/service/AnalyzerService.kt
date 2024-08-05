@@ -402,8 +402,11 @@ class AnalyzerService(
             runBlocking {
                 val pricesMap = (if (demoAccount) publicBybitTestClient else publicBybitClient).getPairCurrentPrice()
                 for (symbol in symbols) {
+                    val currentPrice = pricesMap.first { it["symbol"] == symbol.symbol }["lastPrice"]?.toDouble()
+                    if (currentPrice == null) {
+                        continue
+                    }
                     launch {
-                        val currentPrice = pricesMap.first { it["symbol"] == symbol.symbol }["lastPrice"]!!.toDouble()
                         for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
                             for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
                                 for (diapason in diapasonMin..diapasonMax step diapasonStep) {
