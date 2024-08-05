@@ -6,6 +6,7 @@ import space.dawdawich.model.strategy.CandleTailStrategyRuntimeInfoModel
 import space.dawdawich.model.strategy.StrategyRuntimeInfoModel
 import space.dawdawich.strategy.KLineStrategyRunner
 import space.dawdawich.strategy.model.*
+import space.dawdawich.utils.plusPercent
 import kotlin.math.abs
 
 class CandleTailStrategyRunner(
@@ -23,6 +24,7 @@ class CandleTailStrategyRunner(
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
     cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
+    private val inverseMode: Boolean = false
 ) : KLineStrategyRunner(money, multiplier, moneyChangeFunction, createOrderFunction, cancelOrderFunction, minQtyStep, symbol, simulateTradeOperations, kLineDuration, id) {
     private val logger = KotlinLogging.logger {}
 
@@ -38,27 +40,27 @@ class CandleTailStrategyRunner(
             var moneyToUse = money - ((position?.getPositionValue() ?: 0.0) / multiplier)
 
             logger.debug { "Order creation info: body - $body, lowerShadow - $lowerShadow, upperShadow - $upperShadow, moneyToUse - $moneyToUse, money - $money" }
-            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {
-
-                moneyToUse = (if (position?.trend?.equals(Trend.LONG) != false) moneyToUse else money) * (lowerShadow / totalRange).coerceAtMost(0.7)
+            val lowerShadowOrderDirection = if (inverseMode) Trend.SHORT else Trend.LONG
+            val upperShadowOrderDirection = if (inverseMode) Trend.LONG else Trend.SHORT
+            val order = if (lowerShadow != 0.0 && lowerShadow > upperShadow) {// && (position == null || Trend.LONG == position!!.trend)) {
+                moneyToUse = (if (position?.trend?.equals(Trend.LONG) != false && !inverseMode) moneyToUse else money) * (lowerShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
                     (moneyToUse / kLine.closePrice) * multiplier,
                     -1.0,
                     -1.0,
-                    Trend.LONG
+                    lowerShadowOrderDirection
                 )
-            } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {
-
-                moneyToUse = (if (position?.trend?.equals(Trend.SHORT) != false) moneyToUse else money) * (upperShadow / totalRange).coerceAtMost(0.7)
+            } else if (upperShadow != 0.0 && lowerShadow < upperShadow) {// && (position == null || Trend.SHORT == position!!.trend)) {
+                moneyToUse = (if (position?.trend?.equals(Trend.SHORT) != false  && !inverseMode) moneyToUse else money) * (upperShadow / totalRange).coerceAtMost(0.7)
                 createOrderFunction(
                     kLine.closePrice,
                     symbol,
                     (moneyToUse / kLine.closePrice) * multiplier,
                     -1.0,
                     -1.0,
-                    Trend.SHORT
+                    upperShadowOrderDirection
                 )
             } else {
                 null
@@ -67,7 +69,7 @@ class CandleTailStrategyRunner(
             if (order != null && simulateTradeOperations) {
                 if (position == null) {
                     position = Position(order.inPrice, order.count, order.trend)
-                } else if (order.trend == position!!.trend) {
+                } else {
                     position!!.updateSizeAndEntryPrice(order)
                 }
             }
@@ -85,11 +87,12 @@ class CandleTailStrategyRunner(
         if (money > 0) {
             position?.let {
                 val profit = it.calculateProfit(currentPrice)
-                moneyWithProfit += profit
-                if (profit <= -stopLoss) {
+                moneyWithProfit = money + profit
+
+                if (moneyWithProfit <= money.plusPercent(-stopLoss)) {
                     closePositionFunction(true)
                     money += profit
-                } else if (profit >= takeProfit) {
+                } else if (moneyWithProfit >= money.plusPercent(takeProfit)) {
                     closePositionFunction(false)
                     money += profit
                 }

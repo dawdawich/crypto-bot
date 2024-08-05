@@ -12,5 +12,5 @@ class KLineStrategyAnalyzer(
 ) : Analyzer(strategyRunner, currentPrice, startCapital, symbol, accountId, market, demoAccount, id) {
 
     fun acceptCandle(candle: KLineRecord) =
-        (strategyRunner as KLineStrategyRunner).acceptKLine(KLine(candle.open, candle.close, candle.high, candle.low))
+        (strategyRunner as KLineStrategyRunner).acceptKLine(KLine(candle.open, candle.close, candle.high, candle.low, candle.rsi))
 }

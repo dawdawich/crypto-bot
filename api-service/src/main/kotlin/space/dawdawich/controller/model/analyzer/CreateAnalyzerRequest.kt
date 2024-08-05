@@ -12,5 +12,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 @JsonSubTypes(
     JsonSubTypes.Type(value = CreateGridAnalyzerRequest::class, name = "GRID_TABLE_STRATEGY"),
     JsonSubTypes.Type(value = CreateCandleTailAnalyzerRequest::class, name = "CANDLE_TAIL_STRATEGY"),
+    JsonSubTypes.Type(value = CreateRSIGridAnalyzerRequest::class, name = "RSI_GRID_TABLE_STRATEGY"),
 )
 sealed class CreateAnalyzerRequest

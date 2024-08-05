@@ -15,17 +15,16 @@ import space.dawdawich.integration.client.PrivateHttpClient
 import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.Market
-import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
-import space.dawdawich.model.strategy.GridStrategyConfigModel
-import space.dawdawich.model.strategy.GridTableStrategyRuntimeInfoModel
-import space.dawdawich.model.strategy.StrategyConfigModel
+import space.dawdawich.model.strategy.*
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.service.factory.EventListenerFactoryService
+import space.dawdawich.strategy.KLineStrategyRunner
 import space.dawdawich.strategy.StrategyRunner
 import space.dawdawich.strategy.model.KLine
 import space.dawdawich.strategy.model.Trend
 import space.dawdawich.strategy.strategies.CandleTailStrategyRunner
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import space.dawdawich.strategy.strategies.RSIGridTableStrategyRunner
 import space.dawdawich.utils.Timer
 import java.nio.channels.UnresolvedAddressException
 import java.util.concurrent.TimeoutException
@@ -87,7 +86,7 @@ class Manager(
             synchronized(synchronizationObject) {
                 when (strategyRunner) {
                     is GridTableStrategyRunner -> acceptGridTableStrategyPriceChange(oldPrice, newPrice)
-                    is CandleTailStrategyRunner -> (strategyRunner as CandleTailStrategyRunner).acceptPriceChange(
+                    is KLineStrategyRunner -> (strategyRunner as KLineStrategyRunner).acceptPriceChange(
                         oldPrice,
                         newPrice
                     )
@@ -143,8 +142,8 @@ class Manager(
                 logger { it.info { "DEACTIVATION: closing web socket" } }
                 webSocket.close()
             }
-            if (priceListener?.isRunning == true) {
-                logger { it.info { "DEACTIVATION: stopping message listener" } }
+            if (priceListener?.isRunning == true || kLineListener?.isRunning == true) {
+                logger { it.info { "DEACTIVATION: stopping message listeners" } }
                 priceListener?.stop()
                 kLineListener?.stop()
             }
@@ -187,7 +186,7 @@ class Manager(
     }
 
     private fun setupStrategyRunner(strategyConfig: StrategyConfigModel) {
-        runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier) }
+        runBlocking { bybitService.setMarginMultiplier(strategyConfig.symbol, strategyConfig.multiplier.toDouble()) }
 
         strategyRunner = when (strategyConfig) {
             is GridStrategyConfigModel -> GridTableStrategyRunner(
@@ -243,9 +242,8 @@ class Manager(
                 }
                 priceListener?.stop()
                 kLineListener?.stop()
-
                 priceListener =
-                    eventListenerFactory.getPriceListener<Double>(
+                    eventListenerFactory.getPriceListener(
                         if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC,
                         symbol, object : TypeReference<Double>() {})
                     { newPrice ->
@@ -253,7 +251,6 @@ class Manager(
                     }.apply {
                         start()
                     }
-
             }
 
             is CandleTailStrategyConfigModel -> CandleTailStrategyRunner(
@@ -291,6 +288,7 @@ class Manager(
                     logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
                     runBlocking { bybitService.cancelOrder(symbol, orderId) }
                 },
+                true
             ).apply {
                 setClosePosition { isStopLoss ->
                     try {
@@ -320,6 +318,88 @@ class Manager(
                     "${getStrategyConfig().kLineDuration}.$symbol",
                     object : TypeReference<KLineRecord>() {}) { kLine ->
                     acceptKLine(KLine(kLine.open, kLine.close, kLine.high, kLine.low))
+                }.apply { start() }
+
+                with(webSocket) {
+                    positionUpdateCallback = { position ->
+                        previousPositionTrend = strategyRunner?.position?.trend
+                        this@apply.updatePosition(position)
+                        if (strategyRunner?.position == null || strategyRunner?.position?.trend != previousPositionTrend) {
+                            refreshStrategyConfig()
+                        }
+                        this@Manager.money = runBlocking {
+                            bybitService.getAccountBalance()
+                        }
+                    }
+                    logger { it.info { "Complete initializing websocket" } }
+                }
+            }
+
+            is RSIGridStrategyConfigModel -> RSIGridTableStrategyRunner(
+                money,
+                strategyConfig.multiplier,
+                strategyConfig.minQtyStep,
+                strategyConfig.symbol,
+                false,
+                strategyConfig.kLineDuration,
+                strategyConfig.gridSize,
+                strategyConfig.stopLoss,
+                strategyConfig.takeProfit,
+                strategyConfig.id,
+                { _, _ -> },
+                createOrderFunction = {
+                        inPrice: Double,
+                        orderSymbol: String,
+                        qty: Double,
+                        refreshTokenUpperBorder: Double,
+                        refreshTokenLowerBorder: Double,
+                        trend: Trend,
+                    ->
+                    runBlocking {
+                        launch { bybitService.cancelAllOrder(strategyConfig.symbol, 10) }
+                        getCreateOrderFunction(strategyConfig, bybitService, 4, false)(
+                            inPrice,
+                            orderSymbol,
+                            qty,
+                            refreshTokenUpperBorder,
+                            refreshTokenLowerBorder,
+                            trend
+                        )
+                    }
+                },
+                cancelOrderFunction = { symbol, orderId ->
+                    logger { it.info { "CLOSING Order: $orderId; Symbol: $symbol" } }
+                    runBlocking { bybitService.cancelOrder(symbol, orderId) }
+                }
+            ).apply {
+                setClosePosition { isStopLoss ->
+                    try {
+                        logger { it.info { "CLOSE POSITION: Exceed ${if (isStopLoss) "SL" else "TP"};\n'${position}'" } }
+                        closeOrdersAndPosition()
+                        if (isStopLoss) {
+                            lastRefreshTime = 0
+                            refreshStrategyConfig()
+                        } else {
+                            refreshStrategyConfig()
+                        }
+                    } catch (e: Exception) {
+                        crashPostAction(e)
+                    }
+                }
+                priceListener?.stop()
+                kLineListener?.stop()
+
+                priceListener = eventListenerFactory.getPriceListener(
+                    if (demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC,
+                    symbol,
+                    object : TypeReference<Double>() {}) { newPrice ->
+                    currentPrice = newPrice
+                }.apply { start() }
+                kLineListener = eventListenerFactory.getPriceListener(
+                    if (demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC,
+                    "${getStrategyConfig().kLineDuration}.$symbol",
+                    object : TypeReference<KLineRecord>() {}) { kLine ->
+                    acceptKLine(KLine(kLine.open, kLine.close, kLine.high, kLine.low, kLine.rsi))
                 }.apply { start() }
 
                 with(webSocket) {

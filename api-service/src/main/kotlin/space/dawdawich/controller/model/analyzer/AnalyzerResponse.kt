@@ -5,12 +5,14 @@ import space.dawdawich.model.constants.TradeStrategy
 import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.RSIGridTableAnalyzerDocument
 
 sealed class AnalyzerResponse {
     companion object {
         fun fromDocument(document: AnalyzerDocument, volatileCoefficient: Double?) = when (document) {
             is GridTableAnalyzerDocument -> GridTableAnalyzerResponse(document, volatileCoefficient)
             is CandleTailStrategyAnalyzerDocument -> CandleTailAnalyzerResponse(document, volatileCoefficient)
+            is RSIGridTableAnalyzerDocument -> RSIGridTableAnalyzerResponse(document, volatileCoefficient)
         }
     }
 

@@ -13,6 +13,7 @@ import space.dawdawich.model.constants.Market
 @JsonSubTypes(
     JsonSubTypes.Type(value = CreateGridAnalyzerBulkRequest::class, name = "GRID_TABLE_STRATEGY"),
     JsonSubTypes.Type(value = CreateCandleTailAnalyzerBulkRequest::class, name = "CANDLE_TAIL_STRATEGY"),
+    JsonSubTypes.Type(value = CreateRSIGridAnalyzerBulkRequest::class, name = "RSI_GRID_TABLE_STRATEGY"),
 )
 sealed class CreateAnalyzerBulkRequest {
     abstract val stopLossMin: Int

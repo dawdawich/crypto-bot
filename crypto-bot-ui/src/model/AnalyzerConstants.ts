@@ -1,6 +1,8 @@
-export const StrategyTypes = [{
-    label: 'Grid-Table strategy', value: 'GRID_TABLE_STRATEGY',
-}, {label: 'Candle Tail strategy', value: 'CANDLE_TAIL_STRATEGY'}];
+export const StrategyTypes = [
+    {label: 'Grid-Table strategy', value: 'GRID_TABLE_STRATEGY'},
+    {label: 'Candle Tail strategy', value: 'CANDLE_TAIL_STRATEGY'},
+    {label: 'RSI Grid-Table strategy', value: 'RSI_GRID_TABLE_STRATEGY'}
+];
 
 export const MarketTypes = [{value: 'BYBIT', label: 'ByBit'}];
 

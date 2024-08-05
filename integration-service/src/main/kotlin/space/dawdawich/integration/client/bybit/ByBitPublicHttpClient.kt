@@ -59,15 +59,16 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, val json
         }
     }
 
-    override suspend fun getKLineClosePrices(symbol: String): List<Double> {
+    override suspend fun getKLineClosePrices(symbol: String, interval: Int): List<Double> {
         val queryString =
-            "category=linear&symbol=$symbol&interval=5&limit=1000&start=${(System.currentTimeMillis() - 1.days.inWholeMilliseconds)}"
-        val response = 3 repeatTry { get(GET_KLINE, queryString) }
+            "category=linear&symbol=$symbol&interval=$interval&limit=1000"
+        val response = 6 repeatTry { get(GET_KLINE, queryString) }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                return parsedJson.read<List<String>>("\$.result.list[*][4]").map { price -> price.toDouble() }
+                return parsedJson.read<List<List<String>>>("\$.result.list[*]").sortedBy { it[0].toDouble() }
+                    .map { it[4].toDouble() }.toMutableList().apply { if (isNotEmpty())removeLast() }
             }
 
             else -> throw UnknownRetCodeException(returnCode, queryString)

@@ -87,7 +87,7 @@ class SymbolService(
     fun calculateVolatility() {
         runBlocking {
             symbolRepository.findAll().forEach { symbol ->
-                val kLineClosePrices = publicBybitClient.getKLineClosePrices(symbol.symbol)
+                val kLineClosePrices = publicBybitClient.getKLineClosePrices(symbol.symbol, 5)
 
                 launch {
                     val mean = kLineClosePrices.average()

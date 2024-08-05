@@ -21,6 +21,6 @@ interface PrivateHttpClient : PublicHttpClient {
     suspend fun cancelOrder(symbol: String, orderId: String, repeatCount: Int = 2): Boolean
     suspend fun getAccountBalance(repeatCount: Int = 2): Double
     suspend fun getPositionInfo(symbol: String, retryCount: Int = 2): List<PositionInfo>
-    suspend fun setMarginMultiplier(symbol: String, multiplier: Int, retryCount: Int = 2)
+    suspend fun setMarginMultiplier(symbol: String, multiplier: Double, retryCount: Int = 2)
     suspend fun closePosition(symbol: String, isLong: Boolean, size: Double, positionIdx: Int = 0, repeatCount: Int = 2)
 }

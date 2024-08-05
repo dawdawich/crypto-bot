@@ -7,6 +7,7 @@ class Position(
     var size: Double,
     val trend: Trend,
     realizedPnL: Double? = null,
+    val createTime: Long = System.currentTimeMillis()
 ) {
     private var realizedPnL = -(entryPrice * 0.00055 * size)
 

@@ -15,6 +15,8 @@ import GridTableRangeInputFields from "./GridTableRangeInputFields";
 import {isCandleTailAnalyzerResponse} from "../../../model/AnalyzerResponse";
 import CandleTailSingleInputFields from "./CandleTailSingleInputFields";
 import CandleTailRangeInputFields from "./CandleTailRangeInputFields";
+import RSIGridTableSingleInputFields from "./RSIGridTableSingleInputFileds";
+import RSIGridTableRangeInputFields from "./RSIGridTableRangeInputFields";
 
 const SideBody = styled('div')({
     padding: '16px',
@@ -64,6 +66,18 @@ type RangeCandleAnalyzerAdditionalProps = {
     kLineDurations?: number[] | undefined
 }
 
+type RSIGridAnalyzerAdditionalProps = {
+    gridSize?: number | undefined;
+    kLineDuration?: number | undefined
+}
+
+type RangeRSIGridAnalyzerAdditionalProps = {
+    gridSizeMin?: number | undefined;
+    gridSizeMax?: number | undefined;
+    gridSizeStep?: number;
+    kLineDurations?: number[] | undefined
+}
+
 type AnalyzerFieldsModel = {
     folders: string[];
     symbol: string | undefined;
@@ -76,7 +90,7 @@ type AnalyzerFieldsModel = {
     demo: boolean | undefined;
     activate: boolean;
     public: boolean;
-} & GridAnalyzerAdditionalProps & CandleAnalyzerAdditionalProps;
+} & GridAnalyzerAdditionalProps & CandleAnalyzerAdditionalProps & RSIGridAnalyzerAdditionalProps;
 
 type MultiAnalyzerFieldsModel = {
     folders: string[];
@@ -96,7 +110,7 @@ type MultiAnalyzerFieldsModel = {
     demo: boolean | undefined;
     activate: boolean;
     public: boolean;
-} & RangeCandleAnalyzerAdditionalProps & RangeGridAnalyzerAdditionalProps;
+} & RangeCandleAnalyzerAdditionalProps & RangeGridAnalyzerAdditionalProps & RangeRSIGridAnalyzerAdditionalProps;
 const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, ref) => {
     const [creationMode, setCreationMode] = useState<CreationMode>('SINGLE');
     const [singleAnalyzerModel, setSingleAnalyzerModel] = useState<AnalyzerFieldsModel>({
@@ -290,8 +304,8 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
 
     const validateAllFieldsMulti = () => validateSymbolField() && validateStrategyField() &&
         ((validateDiapasonStepField() &&
-        validateGridSizeStepField()) ||
-        validateKLineRangeField())
+                validateGridSizeStepField()) ||
+            validateKLineRangeField())
         && validateMultiplierStepField() && validateStopLossStepField() && validateTakeProfitStepField() &&
         validateStartCapitalField() && validateMarketField() && validateDemoField();
 
@@ -353,10 +367,28 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
     const createAnalyzer = () => {
         if ((creationMode === 'SINGLE' && validateAllFieldsSingle()) || (creationMode === 'MULTI' && validateAllFieldsMulti())) {
             if (creationMode === 'SINGLE') {
-                const additionalProps = singleAnalyzerModel.diapason != null ? {
-                    diapason: singleAnalyzerModel.diapason as number,
-                    gridSize: singleAnalyzerModel.gridSize as number
-                } : {kLineDuration: singleAnalyzerModel.kLineDuration as number};
+                let additionalProps;
+                switch (singleAnalyzerModel.strategy) {
+                    case 'GRID_TABLE_STRATEGY':
+                        additionalProps = {
+                            diapason: singleAnalyzerModel.diapason as number,
+                            gridSize: singleAnalyzerModel.gridSize as number
+                        }
+                        break;
+                    case 'CANDLE_TAIL_STRATEGY':
+                        additionalProps = {
+                            kLineDuration: singleAnalyzerModel.kLineDuration as number
+                        }
+                        break;
+                    case 'RSI_GRID_TABLE_STRATEGY':
+                        additionalProps = {
+                            kLineDuration: singleAnalyzerModel.kLineDuration as number,
+                            gridSize: singleAnalyzerModel.gridSize as number
+                        }
+                        break;
+                    default:
+                        additionalProps = {}
+                }
 
                 props.createAnalyzerFunction(
                     {
@@ -375,14 +407,34 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                     }
                 );
             } else {
-                const additionalProps = multiAnalyzerModel.diapasonMin != null ? {
-                    diapasonMin: multiAnalyzerModel.diapasonMin as number,
-                    diapasonMax: multiAnalyzerModel.diapasonMax as number,
-                    diapasonStep: multiAnalyzerModel.diapasonStep as number,
-                    gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
-                    gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
-                    gridSizeStep: multiAnalyzerModel.gridSizeStep as number,
-                } : {kLineDurations: multiAnalyzerModel.kLineDurations};
+                let additionalProps;
+                switch (multiAnalyzerModel.strategy) {
+                    case 'GRID_TABLE_STRATEGY':
+                        additionalProps = {
+                            diapasonMin: multiAnalyzerModel.diapasonMin as number,
+                            diapasonMax: multiAnalyzerModel.diapasonMax as number,
+                            diapasonStep: multiAnalyzerModel.diapasonStep as number,
+                            gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
+                            gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
+                            gridSizeStep: multiAnalyzerModel.gridSizeStep as number,
+                        }
+                        break;
+                    case 'CANDLE_TAIL_STRATEGY':
+                        additionalProps = {
+                            kLineDurations: multiAnalyzerModel.kLineDurations
+                        }
+                        break;
+                    case 'RSI_GRID_TABLE_STRATEGY':
+                        additionalProps = {
+                            kLineDurations: multiAnalyzerModel.kLineDurations,
+                            gridSizeMin: multiAnalyzerModel.gridSizeMin as number,
+                            gridSizeMax: multiAnalyzerModel.gridSizeMax as number,
+                            gridSizeStep: multiAnalyzerModel.gridSizeStep as number,
+                        }
+                        break;
+                    default:
+                        additionalProps = {}
+                }
 
                 props.createAnalyzerBulkFunction({
                     symbols: multiAnalyzerModel.symbol,
@@ -408,6 +460,70 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
             return;
         }
         errorToast("All fields should be filled");
+    }
+
+    const getFieldsForStrategy = () => {
+        if (creationMode === 'SINGLE') {
+            switch (singleAnalyzerModel.strategy) {
+                case 'GRID_TABLE_STRATEGY':
+                    return <GridTableSingleInputFields
+                        diapason={!!singleAnalyzerModel.diapason ? singleAnalyzerModel.diapason.toString() : ''}
+                        gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
+                        multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                        onChange={handleChange}/>
+                case 'CANDLE_TAIL_STRATEGY':
+                    return <CandleTailSingleInputFields
+                        kLineDuration={!!singleAnalyzerModel.kLineDuration ? singleAnalyzerModel.kLineDuration.toString() : ''}
+                        multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                        onChange={handleChange}
+                        onSelectChange={handleSelectChange}/>
+                case 'RSI_GRID_TABLE_STRATEGY':
+                    return <RSIGridTableSingleInputFields
+                        gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
+                        kLineDuration={!!singleAnalyzerModel.kLineDuration ? singleAnalyzerModel.kLineDuration.toString() : ''}
+                        multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
+                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                        onChange={handleChange} onSelectChange={handleSelectChange}/>
+                default:
+                    return null
+            }
+        } else {
+            switch (multiAnalyzerModel.strategy) {
+                case 'GRID_TABLE_STRATEGY':
+                    return <GridTableRangeInputFields
+                        diapason={!!multiAnalyzerModel.diapasonMin ? multiAnalyzerModel.diapasonMin.toString() : ''}
+                        gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
+                        multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                        stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
+                        takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
+                        onChange={applyDiapasonField}
+                        onStepChange={applyStepField}/>
+                case 'CANDLE_TAIL_STRATEGY':
+                    return <CandleTailRangeInputFields
+                        kLineDurations={!!multiAnalyzerModel.kLineDurations ? multiAnalyzerModel.kLineDurations : []}
+                        multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                        stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
+                        takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
+                        onChange={applyDiapasonField} onStepChange={applyStepField}
+                        onSelectChange={handleSelectChange}/>
+                case 'RSI_GRID_TABLE_STRATEGY':
+                    return <RSIGridTableRangeInputFields
+                        kLineDurations={!!multiAnalyzerModel.kLineDurations ? multiAnalyzerModel.kLineDurations : []}
+                        gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
+                        multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
+                        stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
+                        takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
+                        onChange={applyDiapasonField} onStepChange={applyStepField}
+                        onSelectChange={handleSelectChange}/>
+                default:
+                    return null
+            }
+        }
     }
 
     return (
@@ -471,45 +587,7 @@ const CreationSideBar = React.forwardRef<HTMLDivElement, InitialProps>((props, r
                         options={StrategyTypes}
                     />
                 </div>
-                {creationMode === 'SINGLE' ?
-
-
-                    singleAnalyzerModel.strategy === 'GRID_TABLE_STRATEGY' ?
-                        <GridTableSingleInputFields
-                            diapason={!!singleAnalyzerModel.diapason ? singleAnalyzerModel.diapason.toString() : ''}
-                            gridSize={!!singleAnalyzerModel.gridSize ? singleAnalyzerModel.gridSize.toString() : ''}
-                            multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
-                            stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
-                            takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
-                            onChange={handleChange}/> : singleAnalyzerModel.strategy === 'CANDLE_TAIL_STRATEGY' ?
-                            <CandleTailSingleInputFields
-                                kLineDuration={!!singleAnalyzerModel.kLineDuration ? singleAnalyzerModel.kLineDuration.toString() : ''}
-                                multiplier={!!singleAnalyzerModel.multiplier ? singleAnalyzerModel.multiplier.toString() : ''}
-                                stopLoss={!!singleAnalyzerModel.stopLoss ? singleAnalyzerModel.stopLoss.toString() : ''}
-                                takeProfit={!!singleAnalyzerModel.takeProfit ? singleAnalyzerModel.takeProfit.toString() : ''}
-                                onChange={handleChange}
-                                onSelectChange={handleSelectChange}/>
-                            : null
-
-                    :
-                    multiAnalyzerModel.strategy === 'GRID_TABLE_STRATEGY' ?
-                        <GridTableRangeInputFields
-                            diapason={!!multiAnalyzerModel.diapasonMin ? multiAnalyzerModel.diapasonMin.toString() : ''}
-                            gridSize={!!multiAnalyzerModel.gridSizeMin ? multiAnalyzerModel.gridSizeMin.toString() : ''}
-                            multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
-                            stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
-                            takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
-                            onChange={applyDiapasonField}
-                            onStepChange={applyStepField}/> : multiAnalyzerModel.strategy === 'CANDLE_TAIL_STRATEGY' ?
-                            <CandleTailRangeInputFields
-                                kLineDurations={!!multiAnalyzerModel.kLineDurations ? multiAnalyzerModel.kLineDurations : []}
-                                multiplier={!!multiAnalyzerModel.multiplierMin ? multiAnalyzerModel.multiplierMin.toString() : ''}
-                                stopLoss={!!multiAnalyzerModel.stopLossMin ? multiAnalyzerModel.stopLossMin.toString() : ''}
-                                takeProfit={!!multiAnalyzerModel.takeProfitMin ? multiAnalyzerModel.takeProfitMin.toString() : ''}
-                                onChange={applyDiapasonField} onStepChange={applyStepField}
-                                onSelectChange={handleSelectChange}/>
-                            : null
-                }
+                {getFieldsForStrategy()}
                 <div className="field-container">
                     Start Capital, $
                     <InputField

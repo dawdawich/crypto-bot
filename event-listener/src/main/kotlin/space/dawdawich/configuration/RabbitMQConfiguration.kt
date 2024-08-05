@@ -1,7 +1,6 @@
 package space.dawdawich.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.amqp.core.DirectExchange
 import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.annotation.EnableRabbit
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
@@ -19,16 +18,19 @@ import space.dawdawich.constants.BYBIT_TICKER_TOPIC
 class RabbitMQConfiguration {
 
     @Bean
-    fun klineTopicExchange() = DirectExchange(BYBIT_KLINE_TOPIC)
+    fun klineTopicExchange() = TopicExchange(BYBIT_KLINE_TOPIC)
 
     @Bean
-    fun klineDemoTopicExchange() = DirectExchange(BYBIT_TEST_KLINE_TOPIC)
+    fun klineDemoTopicExchange() = TopicExchange(BYBIT_TEST_KLINE_TOPIC)
 
     @Bean
-    fun tickerTopicExchange() = DirectExchange(BYBIT_TICKER_TOPIC)
+    fun tickerTopicExchange() = TopicExchange(BYBIT_TICKER_TOPIC)
 
     @Bean
-    fun tickerDemoTopicExchange() = DirectExchange(BYBIT_TEST_TICKER_TOPIC)
+    fun tickerDemoTopicExchange() = TopicExchange(BYBIT_TEST_TICKER_TOPIC)
+
+    @Bean
+    fun tickerWithRSITopicExchange() = TopicExchange("tickerWithRSI")
 
     @Bean
     fun jsonMessageConverter(): Jackson2JsonMessageConverter =

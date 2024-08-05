@@ -4,10 +4,12 @@ import space.dawdawich.analyzers.KLineStrategyAnalyzer
 import space.dawdawich.analyzers.PriceChangeStrategyAnalyzer
 import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.RSIGridTableAnalyzerDocument
 import space.dawdawich.strategy.model.MoneyChangePostProcessFunction
 import space.dawdawich.strategy.model.UpdateMiddlePricePostProcessFunction
 import space.dawdawich.strategy.strategies.CandleTailStrategyRunner
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import space.dawdawich.strategy.strategies.RSIGridTableStrategyRunner
 
 fun GridTableAnalyzerDocument.convert(
     changeMoneyCallback: MoneyChangePostProcessFunction,
@@ -50,7 +52,33 @@ fun CandleTailStrategyAnalyzerDocument.convert(
         positionTakeProfit,
         symbolInfo.minOrderQty,
         id,
-        changeMoneyCallback
+        changeMoneyCallback,
+        inverseMode = true
+    ),
+    0.0,
+    startCapital,
+    symbolInfo.symbol,
+    accountId,
+    market,
+    demoAccount,
+    id
+)
+
+fun RSIGridTableAnalyzerDocument.convert(
+    changeMoneyCallback: MoneyChangePostProcessFunction,
+): KLineStrategyAnalyzer = KLineStrategyAnalyzer(
+    RSIGridTableStrategyRunner(
+        money,
+        multiplier,
+        symbolInfo.minOrderQty,
+        symbolInfo.symbol,
+        true,
+        kLineDuration,
+        gridSize,
+        positionStopLoss,
+        positionTakeProfit,
+        id,
+        changeMoneyCallback,
     ),
     0.0,
     startCapital,

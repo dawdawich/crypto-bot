@@ -1,6 +1,9 @@
 package space.dawdawich.service
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.client.BybitKLineWebSocketClient
@@ -18,16 +21,19 @@ class ActionListener(
     private val symbolRepository: SymbolRepository,
 ) {
 
+    private val log = KotlinLogging.logger {}
+
     companion object {
-        private val defaultKLineIntervals = arrayOf(1, 3, 5, 15, 30, 60, 120)
+        private val defaultKLineIntervals = arrayOf(1, 3, 5)
     }
 
     @PostConstruct
     fun postInit() = symbolRepository.findAll().let { allSymbols ->
         initializeTickerTopics(allSymbols, byBitTickerClient)
-        initializeTickerTopics(allSymbols, byBitTickerDemoClient)
+//        initializeTickerTopics(allSymbols, byBitTickerDemoClient)
         initializeKLineTopics(allSymbols, byBitKLineTickerClient)
-        initializeKLineTopics(allSymbols, byBitKLineTickerDemoClient)
+//        initializeKLineTopics(allSymbols, byBitKLineTickerDemoClient)
+        log.info { "Complete initialization" }
     }
 
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.SECONDS)
@@ -38,6 +44,12 @@ class ActionListener(
         if (byBitTickerDemoClient.isClosed) {
             byBitTickerDemoClient.reconnect()
         }
+        if (byBitKLineTickerClient.isClosed) {
+            byBitKLineTickerClient.reconnect()
+        }
+        if (byBitKLineTickerDemoClient.isClosed) {
+            byBitKLineTickerDemoClient.reconnect()
+        }
     }
 
     private fun initializeTickerTopics(symbols: List<SymbolInfoDocument>, client: BybitTickerWebSocketClient) =
@@ -46,9 +58,15 @@ class ActionListener(
         }
 
     private fun initializeKLineTopics(symbols: List<SymbolInfoDocument>, client: BybitKLineWebSocketClient) =
-        symbols.filter { !client.symbols.contains(it.symbol) }.forEach { symbol ->
-            defaultKLineIntervals.forEach { interval ->
-                client.addSubscription(symbol.symbol, interval)
+        try {
+            runBlocking {
+                symbols.filter { !client.symbols.contains(it.symbol) }.forEach { symbol ->
+                    defaultKLineIntervals.forEach { interval ->
+                        client.addSubscription(symbol.symbol, interval)
+                    }
+                }
             }
+        } catch (e: Exception) {
+            log.error(e) { "Error during initialization" }
         }
 }

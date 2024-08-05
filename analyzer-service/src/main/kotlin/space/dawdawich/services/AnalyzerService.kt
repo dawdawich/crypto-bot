@@ -22,11 +22,13 @@ import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
 import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
+import space.dawdawich.model.strategy.KLineStrategyConfigModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.mongo.entity.AnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.RSIGridTableAnalyzerDocument
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.repositories.redis.entity.AnalyzerMoneyModel
 import space.dawdawich.utils.calculatePercentageChange
@@ -224,8 +226,9 @@ class AnalyzerService(
             EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, analyzer.symbol, object : TypeReference<Double>() {})
         }.addObserver(analyzer::acceptPriceChange)
         if (analyzer is KLineStrategyAnalyzer) {
-            kLineListeners.getOrPut(analyzer.symbol to (analyzer.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration) {
-                EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "${(analyzer.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration}.${analyzer.symbol}", object : TypeReference<KLineRecord>() {})
+            val kLineDuration = (analyzer.getStrategyConfig() as KLineStrategyConfigModel).kLineDuration
+            kLineListeners.getOrPut(analyzer.symbol to kLineDuration) {
+                EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_KLINE_TOPIC else BYBIT_KLINE_TOPIC, "$kLineDuration.${analyzer.symbol}", object : TypeReference<KLineRecord>() {})
             }.addObserver(analyzer::acceptCandle)
         }
 
@@ -236,7 +239,7 @@ class AnalyzerService(
         analyzers.find { it.id == analyzerId }?.let {
             priceListeners[it.symbol]?.removeObserver(it::acceptPriceChange)
             if (it is KLineStrategyAnalyzer) {
-                kLineListeners[it.symbol to (it.getStrategyConfig() as CandleTailStrategyConfigModel).kLineDuration]?.removeObserver(it::acceptCandle)
+                kLineListeners[it.symbol to (it.getStrategyConfig() as KLineStrategyConfigModel).kLineDuration]?.removeObserver(it::acceptCandle)
             }
         }
 
@@ -246,6 +249,7 @@ class AnalyzerService(
     private fun AnalyzerDocument.convert() = when (this) {
         is GridTableAnalyzerDocument -> convert({ _, newValue -> moneyUpdateQueue += id to newValue }, { middlePrice -> middlePriceUpdateQueue += id to middlePrice },)
         is CandleTailStrategyAnalyzerDocument -> convert { _, newValue -> moneyUpdateQueue += id to newValue }
+        is RSIGridTableAnalyzerDocument -> convert { _, newValue -> moneyUpdateQueue += id to newValue }
     }
 
     private fun getMostStableAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {

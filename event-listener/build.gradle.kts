@@ -6,6 +6,8 @@ version = "0.0.1-SNAPSHOT"
 dependencies {
     implementation(project(":domain-service"))
     implementation(project(":commons"))
+    implementation(project(":integration-service"))
+    implementation(libs.bundles.ktor)
 
     implementation(libs.websocket)
     implementation(libs.kotlinx.coroutines)

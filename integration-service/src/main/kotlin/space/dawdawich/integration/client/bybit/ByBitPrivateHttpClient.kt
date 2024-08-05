@@ -180,7 +180,7 @@ class ByBitPrivateHttpClient(
         }
     }
 
-    override suspend fun setMarginMultiplier(symbol: String, multiplier: Int, retryCount: Int) {
+    override suspend fun setMarginMultiplier(symbol: String, multiplier: Double, retryCount: Int) {
         val request: String = buildJsonObject {
             put("category", "linear")
             put("symbol", symbol)

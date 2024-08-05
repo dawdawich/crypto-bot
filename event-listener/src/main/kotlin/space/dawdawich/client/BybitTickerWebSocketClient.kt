@@ -19,6 +19,9 @@ class BybitTickerWebSocketClient(private val rabbitManager: RabbitManager, conne
                 read<String?>("\$.data.lastPrice")?.let { checkedPrice ->
                     read<String?>("\$.data.symbol")?.let { symbol ->
                         rabbitManager.sendTickerEvent(topicName, symbol, checkedPrice.toDouble())
+                        rsiIndicators[symbol to "5"]?.let { rsi ->
+                            rabbitManager.sendKLineEvent("tickerWithRSI", symbol, "$checkedPrice&${rsi.calculateRSI(checkedPrice.toDouble())}")
+                        }
                     }
                 }
             }

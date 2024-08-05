@@ -40,7 +40,7 @@ const GridTableRangeInputFields: React.FC<RangeInputFieldsProps> = (props) => {
         multiplierStep: '1',
         stopLossStep: '1',
         takeProfitStep: '1'
-    })
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (numberRangeRegex.test(e.target.value)) {

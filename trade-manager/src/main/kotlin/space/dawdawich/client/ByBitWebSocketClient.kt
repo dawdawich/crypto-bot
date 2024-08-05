@@ -27,6 +27,7 @@ class ByBitWebSocketClient(
 
     var positionUpdateCallback: PositionUpdateCallback? = null
     var fillOrderCallback: FillOrderCallback? = null
+    var customUpdatePositionCallback: ((List<Pair<String, Position?>>) -> Unit)? = null
 
     companion object {
         const val BYBIT_SERVER_URL = "wss://stream.bybit.com/v5/private"
@@ -110,12 +111,36 @@ class ByBitWebSocketClient(
                     response
                 }
             }
+
+            customUpdatePositionCallback?.let { function ->
+                response.read<String?>("\$.topic")?.let { topic ->
+                    if (topic == "position.linear") {
+                        val positionsToUpdate = response.read<List<Map<String, Any>>>("\$.data")
+                            .map { data ->
+                                val side = data["side"].toString()
+                                val curRealizedPnL = data["curRealisedPnl"].toString().toDouble()
+                                data["symbol"].toString() to
+                                        if (side.isNotBlank()) {
+                                            val trend = Trend.fromDirection(side)
+                                            Position(
+                                                data["entryPrice"].toString().toDouble(),
+                                                data["size"].toString().toDouble(),
+                                                trend,
+                                                curRealizedPnL,
+                                                data["createdTime"].toString().toLong()
+                                            )
+                                        } else null
+                            }.toList()
+                        function.invoke(positionsToUpdate)
+                    }
+                }
+            }
         }
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Web socket closed. Reason Code: '$code'; Reason: '$reason'; Remote: '$remote'" }
-        if (code == 1006 || reason?.equals("Connection refused") == true) {
+        if (code == 1006 || (reason?.equals("Connection refused") == true || reason?.equals("Socket is closed") == true)) {
             logger.info { "Reconnect web socket." }
             GlobalScope.launch { reconnect() }
         }

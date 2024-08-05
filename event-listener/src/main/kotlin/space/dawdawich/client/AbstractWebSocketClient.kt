@@ -21,7 +21,7 @@ abstract class AbstractWebSocketClient(connectionUrl: String) :
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
-        logger.info { "Websocket successfully opened" }
+        logger.info { "Websocket successfully opened. ${this::class.qualifiedName}" }
         // Subscribe to the desired topics after connecting
         symbols.forEach {
             send("{\"op\":\"subscribe\",\"args\":[\"$socketTopicName.$it\"]}")

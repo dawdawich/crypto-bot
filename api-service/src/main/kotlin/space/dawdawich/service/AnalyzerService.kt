@@ -20,6 +20,7 @@ import space.dawdawich.repositories.mongo.AnalyzerRepository
 import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
 import space.dawdawich.repositories.mongo.entity.GridTableAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.RSIGridTableAnalyzerDocument
 import space.dawdawich.repositories.redis.AnalyzerStabilityRepository
 import space.dawdawich.service.validation.AnalyzerValidationService
 import space.dawdawich.utils.plusPercent
@@ -219,6 +220,11 @@ class AnalyzerService(
                 analyzer,
                 symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
             )
+
+            is RSIGridTableAnalyzerDocument -> RSIGridTableAnalyzerResponse(
+                analyzer,
+                symbolService.volatileCoefficients[analyzer.symbolInfo.symbol]
+            )
         }
     }
 
@@ -267,12 +273,12 @@ class AnalyzerService(
             }
 
             is CreateCandleTailAnalyzerRequest -> analyzerData.apply {
-                if (active) {
-                    checkIsUserCanCreateAnalyzers(accountId)
-                }
+//                if (active) {
+//                    checkIsUserCanCreateAnalyzers(accountId)
+//                }
 
                 val analyzerId = UUID.randomUUID().toString()
-                val gridTableAnalyzerDocument = CandleTailStrategyAnalyzerDocument(
+                val analyzerDocument = CandleTailStrategyAnalyzerDocument(
                     analyzerId,
                     accountId,
                     public,
@@ -286,7 +292,7 @@ class AnalyzerService(
                     market,
                     kLineDuration,
                 )
-                analyzerRepository.insert(gridTableAnalyzerDocument)
+                analyzerRepository.insert(analyzerDocument)
                 analyzerData.folders.forEach { folderId ->
                     folderService.addAnalyzersToFolder(
                         accountId,
@@ -295,7 +301,41 @@ class AnalyzerService(
                     )
                 }
                 if (active) {
-                    rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, gridTableAnalyzerDocument.id)
+                    rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, analyzerDocument.id)
+                }
+            }
+
+            is CreateRSIGridAnalyzerRequest -> analyzerData.apply {
+//                if (active) {
+//                    checkIsUserCanCreateAnalyzers(accountId)
+//                }
+
+                val analyzerId = UUID.randomUUID().toString()
+                val analyzerDocument = RSIGridTableAnalyzerDocument(
+                    analyzerId,
+                    accountId,
+                    public,
+                    gridSize,
+                    multiplier,
+                    stopLoss,
+                    takeProfit,
+                    symbolRepository.findByIdOrNull(symbol)!!,
+                    startCapital,
+                    active,
+                    demoAccount,
+                    market,
+                    kLineDuration,
+                )
+                analyzerRepository.insert(analyzerDocument)
+                analyzerData.folders.forEach { folderId ->
+                    folderService.addAnalyzersToFolder(
+                        accountId,
+                        folderId,
+                        setOf(analyzerId)
+                    )
+                }
+                if (active) {
+                    rabbitTemplate.convertAndSend(ACTIVATE_ANALYZER_TOPIC, analyzerDocument.id)
                 }
             }
         }
@@ -333,6 +373,7 @@ class AnalyzerService(
             val analyzersToInsert = when (request) {
                 is CreateGridAnalyzerBulkRequest -> getGroupAnalyzers(accountId, request)
                 is CreateCandleTailAnalyzerBulkRequest -> getGroupAnalyzers(accountId, request)
+                is CreateRSIGridAnalyzerBulkRequest -> getGroupAnalyzers(accountId, request)
             }
 
             analyzerRepository.insert(analyzersToInsert)
@@ -434,6 +475,53 @@ class AnalyzerService(
                                                     kLineDuration
                                                 )
                                             )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return analyzersToInsert
+        }
+
+    private fun getGroupAnalyzers(
+        accountId: String,
+        request: CreateRSIGridAnalyzerBulkRequest,
+    ): MutableList<RSIGridTableAnalyzerDocument> =
+        with(request) {
+            val symbols = symbolRepository.findAllById(symbols)
+            val analyzersToInsert = mutableListOf<RSIGridTableAnalyzerDocument>()
+
+            runBlocking {
+                for (symbol in symbols) {
+                    launch {
+                        for (stopLoss in stopLossMin..stopLossMax step stopLossStep) {
+                            for (takeProfit in takeProfitMin..takeProfitMax step takeProfitStep) {
+                                for (multiplier in multiplierMin..multiplierMax step multiplierStep) {
+                                    for (kLineDuration in kLineDurations) {
+                                        for (gridSize in gridSizeMin..gridSizeMax step gridSizeStep) {
+                                            if (multiplier <= symbol.maxLeverage) {
+                                                analyzersToInsert.add(
+                                                    RSIGridTableAnalyzerDocument(
+                                                        UUID.randomUUID().toString(),
+                                                        accountId,
+                                                        public,
+                                                        gridSize,
+                                                        multiplier,
+                                                        stopLoss,
+                                                        takeProfit,
+                                                        symbol,
+                                                        startCapital.toDouble(),
+                                                        active,
+                                                        demoAccount,
+                                                        market,
+                                                        kLineDuration
+                                                    )
+                                                )
+                                            }
                                         }
                                     }
                                 }

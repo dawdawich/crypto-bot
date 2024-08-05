@@ -7,9 +7,11 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.ACTIVATE_MANAGER_TOPIC
 import space.dawdawich.constants.DEACTIVATE_MANAGER_TOPIC
+import space.dawdawich.managers.CustomRSIOutOfBoundManager
 import space.dawdawich.managers.Manager
 import space.dawdawich.repositories.constants.ManagerStatus
 import space.dawdawich.repositories.mongo.ManagerRepository
+import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.TradeManagerDocument
 import space.dawdawich.service.factory.TradeManagerFactory
 import java.util.*
@@ -17,16 +19,19 @@ import java.util.*
 @Service
 class TradeManagerService(
     private val managerRepository: ManagerRepository,
-    private val tradeManagerFactory: TradeManagerFactory
+    private val tradeManagerFactory: TradeManagerFactory,
+    symbolRepository: SymbolRepository
 ) {
     private val logger = KotlinLogging.logger {}
 
     private val tradeManagers: MutableList<Manager> = Collections.synchronizedList(mutableListOf())
+//    private final val customManager: CustomRSIOutOfBoundManager
 
     init {
         managerRepository.findAllByStatus(ManagerStatus.ACTIVE).forEach { config ->
             activateManager(config)
         }
+//        customManager = tradeManagerFactory.createCustomManager(symbolRepository.findAll())
         Runtime.getRuntime().addShutdownHook(Thread {
             runBlocking {
                 tradeManagers.forEach {

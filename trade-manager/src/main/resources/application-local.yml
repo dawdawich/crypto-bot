@@ -13,6 +13,7 @@ spring:
 logging:
   level:
     org.springframework: INFO
+    space.dawdawich.strategy.strategies: DEBUG
 
 server:
   port: 8703

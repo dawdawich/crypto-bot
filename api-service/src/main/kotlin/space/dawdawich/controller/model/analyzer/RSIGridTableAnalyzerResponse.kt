@@ -5,13 +5,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import space.dawdawich.model.constants.Market
 import space.dawdawich.model.constants.TradeStrategy
-import space.dawdawich.repositories.mongo.entity.CandleTailStrategyAnalyzerDocument
+import space.dawdawich.repositories.mongo.entity.RSIGridTableAnalyzerDocument
 
 @Serializable
-class CandleTailAnalyzerResponse(
+class RSIGridTableAnalyzerResponse(
     override val id: String,
     @SerialName("kLineDuration") val kLineDuration: Int,
     override val multiplier: Int,
+    val gridSize: Int,
     override val positionStopLoss: Int,
     override val positionTakeProfit: Int,
     override val symbol: String,
@@ -34,10 +35,11 @@ class CandleTailAnalyzerResponse(
     override var pnl24: Int = 0,
     override val symbolVolatile: Double?
 ) : AnalyzerResponse() {
-    constructor(documentAnalyzer: CandleTailStrategyAnalyzerDocument, volatileCoef: Double?) : this(
+    constructor(documentAnalyzer: RSIGridTableAnalyzerDocument, volatileCoef: Double?) : this(
         documentAnalyzer.id,
         documentAnalyzer.kLineDuration,
         documentAnalyzer.multiplier,
+        documentAnalyzer.gridSize,
         documentAnalyzer.positionStopLoss,
         documentAnalyzer.positionTakeProfit,
         documentAnalyzer.symbolInfo.symbol,
@@ -45,7 +47,7 @@ class CandleTailAnalyzerResponse(
         documentAnalyzer.money,
         documentAnalyzer.isActive,
         documentAnalyzer.demoAccount,
-        TradeStrategy.CANDLE_TAIL_STRATEGY,
+        TradeStrategy.RSI_GRID_TABLE_STRATEGY,
         documentAnalyzer.market,
         documentAnalyzer.public,
         documentAnalyzer.createTime,

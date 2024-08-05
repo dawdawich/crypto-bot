@@ -6,7 +6,7 @@ import kotlin.math.abs
 
 fun Double.calculatePercentageChange(value: Double): Double = ((value - this) / abs(this)) * 100.0
 
-fun Double.calculatePercentageDifference(value: Double): Double = (value * 100.0) / this
+fun Double.calculatePercentageDifference(value: Double): Double = ((value * 100.0) / this) - 100
 
 fun Double.plusPercentAccurate(value: Number): Double {
     return BigDecimal(this).multiply(BigDecimal(1 + value.toDouble() / 100)).toDouble()
