@@ -1,7 +1,7 @@
 package space.dawdawich.configuration
 
-import org.springframework.amqp.core.DirectExchange
 import org.springframework.amqp.core.Queue
+import org.springframework.amqp.core.TopicExchange
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import space.dawdawich.constants.*
@@ -10,16 +10,16 @@ import space.dawdawich.constants.*
 class RabbitMQConfiguration {
 
     @Bean
-    fun klineTopicExchange() = DirectExchange(BYBIT_KLINE_TOPIC)
+    fun klineTopicExchange() = TopicExchange(BYBIT_KLINE_TOPIC)
 
     @Bean
-    fun klineDemoTopicExchange() = DirectExchange(BYBIT_TEST_KLINE_TOPIC)
+    fun klineDemoTopicExchange() = TopicExchange(BYBIT_TEST_KLINE_TOPIC)
 
     @Bean
-    fun tickerTopicExchange() = DirectExchange(BYBIT_TICKER_TOPIC)
+    fun tickerTopicExchange() = TopicExchange(BYBIT_TICKER_TOPIC)
 
     @Bean
-    fun tickerDemoTopicExchange() = DirectExchange(BYBIT_TEST_TICKER_TOPIC)
+    fun tickerDemoTopicExchange() = TopicExchange(BYBIT_TEST_TICKER_TOPIC)
 
     @Bean
     fun deactivateAnalyzerTopic() = Queue(DEACTIVATE_ANALYZER_TOPIC, false)
