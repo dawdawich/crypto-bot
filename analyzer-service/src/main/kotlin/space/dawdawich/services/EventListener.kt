@@ -25,6 +25,7 @@ class EventListener<T>(connectionFactory: ConnectionFactory, topicName: String, 
                 container.setMessageListener { message ->
                     val startTime = System.currentTimeMillis()
                     val event = mapper.readValue(message.body, typeRef)
+                    log.info { "Reacived event: $event for $topicName/$queueName" }
                     runBlocking {
                         observers.forEach { execute -> launch { execute(event) } }
                     }
