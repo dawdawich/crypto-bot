@@ -13,6 +13,7 @@ class EventListener<T>(connectionFactory: ConnectionFactory, topicName: String, 
     private val observers = mutableListOf<(T) -> Unit>()
 
     init {
+        log.info { "Initializing listener $topicName for $queueName" }
         connectionFactory.createConnection().use {
             it.createChannel(false).use { channel ->
                 val queue = channel.queueDeclare("$topicName.$queueName", false, false, true, emptyMap()).queue
