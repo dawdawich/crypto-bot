@@ -51,8 +51,8 @@ class AnalyzerService(
 
     private val log = KotlinLogging.logger { }
 
-    private val priceListeners = mutableMapOf<String, EventListener<Double>>()
-    private val kLineListeners = mutableMapOf<Pair<String, Int>, EventListener<KLineRecord>>()
+    private val priceListeners = mutableMapOf<Pair<String, Boolean>, EventListener<Double>>()
+    private val kLineListeners = mutableMapOf<Pair<String, Int>, EventListener<KLineRecord>>() // TODO: Add separator for demo acs
     private val analyzers: MutableList<Analyzer> = mutableListOf()
     private val moneyUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
     private val middlePriceUpdateQueue: ConcurrentSkipListSet<Pair<String, Double>> = ConcurrentSkipListSet(comparator)
@@ -222,7 +222,7 @@ class AnalyzerService(
     }
 
     private fun addAnalyzer(analyzer: Analyzer) {
-        priceListeners.getOrPut(analyzer.symbol) {
+        priceListeners.getOrPut(analyzer.symbol to analyzer.demoAccount) {
             EventListener(connectionFactory, if (analyzer.demoAccount) BYBIT_TEST_TICKER_TOPIC else BYBIT_TICKER_TOPIC, analyzer.symbol, object : TypeReference<Double>() {})
         }.addObserver(analyzer::acceptPriceChange)
         if (analyzer is KLineStrategyAnalyzer) {
@@ -237,7 +237,7 @@ class AnalyzerService(
 
     private fun removeAnalyzer(analyzerId: String) {
         analyzers.find { it.id == analyzerId }?.let {
-            priceListeners[it.symbol]?.removeObserver(it::acceptPriceChange)
+            priceListeners[it.symbol to it.demoAccount]?.removeObserver(it::acceptPriceChange)
             if (it is KLineStrategyAnalyzer) {
                 kLineListeners[it.symbol to (it.getStrategyConfig() as KLineStrategyConfigModel).kLineDuration]?.removeObserver(it::acceptCandle)
             }

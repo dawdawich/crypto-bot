@@ -13,7 +13,6 @@ class EventListener<T>(connectionFactory: ConnectionFactory, topicName: String, 
     private val observers = mutableListOf<(T) -> Unit>()
 
     init {
-        log.info { "Initializing listener $topicName for $queueName" }
         connectionFactory.createConnection().use {
             it.createChannel(false).use { channel ->
                 val queue = channel.queueDeclare("$topicName.$queueName", false, false, true, emptyMap()).queue
@@ -26,7 +25,6 @@ class EventListener<T>(connectionFactory: ConnectionFactory, topicName: String, 
                 container.setMessageListener { message ->
                     val startTime = System.currentTimeMillis()
                     val event = mapper.readValue(message.body, typeRef)
-                    log.info { "Reacived event: $event for $topicName/$queueName" }
                     runBlocking {
                         observers.forEach { execute -> launch { execute(event) } }
                     }
