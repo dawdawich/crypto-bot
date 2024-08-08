@@ -113,10 +113,10 @@ class GridTableStrategyRunner(
             symbol,
             money,
             multiplier,
-            diapason,
-            gridSize,
             stopLoss,
             takeProfit,
+            diapason,
+            gridSize,
             priceMinStep,
             minQtyStep,
             middlePrice,
@@ -125,6 +125,23 @@ class GridTableStrategyRunner(
             step,
             orderPriceGrid.keys.toList()
         )
+//        GridStrategyConfigModel(
+//            id,
+//            symbol,
+//            money,
+//            multiplier,
+//            diapason,
+//            gridSize,
+//            stopLoss,
+//            takeProfit,
+//            priceMinStep,
+//            minQtyStep,
+//            middlePrice,
+//            minPrice,
+//            maxPrice,
+//            step,
+//            orderPriceGrid.keys.toList()
+//        )
 
     override fun acceptPriceChange(previousPrise: Double, currentPrice: Double) {
         synchronized(synchronizeObject) {
