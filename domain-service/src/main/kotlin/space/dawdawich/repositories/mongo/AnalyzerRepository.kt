@@ -50,10 +50,6 @@ interface AnalyzerRepository : MongoRepository<AnalyzerDocument, String>, Custom
 
     fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<AnalyzerDocument>
 
-    @Aggregation(pipeline = [
-        "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true}",
-        "{ \$sort: { pNl10M: -1 } }",
-        "{ \$limit: 1 }"
-    ])
+    @Query(value = "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true, \$limit: 1}", sort = "{ \$sort: { pNl10M: -1 } }")
     fun findMoreProfitableByLast10Minutes(accountId: String, isDemo: Boolean, market: String): AnalyzerDocument
 }
