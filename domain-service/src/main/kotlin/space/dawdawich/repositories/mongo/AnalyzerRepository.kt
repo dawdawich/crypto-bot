@@ -50,7 +50,6 @@ interface AnalyzerRepository : MongoRepository<AnalyzerDocument, String>, Custom
 
     fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<AnalyzerDocument>
 
-    @Query("{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true}")
     @Aggregation(pipeline = [
         "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true}",
         "{ \$sort: { pNl10M: -1 } }",
