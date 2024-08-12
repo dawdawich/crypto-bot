@@ -38,9 +38,9 @@ const AnalyzerStrategyOption = [
         value: 'BIGGEST_BY_MONEY', label: 'Choose best by money'
     }, {
         value: 'MOST_STABLE', label: 'Choose best by stability'
-    }/*, {
-        value: 'TEST', label: 'Test New Strategy'
-    }*/
+    }, {
+        value: 'CUSTOM', label: 'Best for last 10m'
+    }
 ];
 
 const CreateManagerDialog: React.FC<AddApiTokenDialogProps> = ({authInfo, logout, open, onClose, onCreate, apiTokens, folders}) => {
