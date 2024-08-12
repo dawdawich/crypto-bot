@@ -283,8 +283,8 @@ class AnalyzerService(
         log.info { "Try to find analyzer for account id '${request.accountId}' by profit for last 10 minutes" }
         val moreSuitableAnalyzer = analyzerRepository.findMoreProfitableByLast10Minutes(request.accountId, request.demoAccount, request.market.name)
 
-        return if (moreSuitableAnalyzer.id != request.currentAnalyzerId) {
-            analyzers.firstOrNull { it.id == moreSuitableAnalyzer.id }?.getStrategyConfig()
+        return if (moreSuitableAnalyzer.none { it.id != request.currentAnalyzerId}) {
+            analyzers.firstOrNull { it.id == moreSuitableAnalyzer.maxBy { it.pNl10M!! }.id }?.getStrategyConfig()
         } else null
     }
 

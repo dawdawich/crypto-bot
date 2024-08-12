@@ -50,6 +50,6 @@ interface AnalyzerRepository : MongoRepository<AnalyzerDocument, String>, Custom
 
     fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<AnalyzerDocument>
 
-    @Query(value = "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true, \$limit: 1}", sort = "{ \$sort: { pNl10M: -1 } }")
-    fun findMoreProfitableByLast10Minutes(accountId: String, isDemo: Boolean, market: String): AnalyzerDocument
+    @Query(value = "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true, pNl10M:  {\$gt:  2}}", sort = "{ \$sort: { pNl10M: -1 } }")
+    fun findMoreProfitableByLast10Minutes(accountId: String, isDemo: Boolean, market: String): List<AnalyzerDocument>
 }
