@@ -23,6 +23,7 @@ class RSIGridTableAnalyzerDocument(
     pNl1: Int? = null,
     pNl12: Int? = null,
     pNl24: Int? = null,
+    pNl10M: Int? = null,
     createTime: Long = System.currentTimeMillis(),
     updateTime: Long = createTime,
-) : AnalyzerDocument(id, accountId, public, multiplier, positionStopLoss, positionTakeProfit, symbolInfo, startCapital, isActive, demoAccount, market, money, stabilityCoef, pNl1, pNl12, pNl24, createTime, updateTime)
+) : AnalyzerDocument(id, accountId, public, multiplier, positionStopLoss, positionTakeProfit, symbolInfo, startCapital, isActive, demoAccount, market, money, stabilityCoef, pNl1, pNl12, pNl24, pNl10M, createTime, updateTime)

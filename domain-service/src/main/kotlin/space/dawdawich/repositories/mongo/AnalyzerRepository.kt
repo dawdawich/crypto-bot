@@ -1,5 +1,6 @@
 package space.dawdawich.repositories.mongo
 
+import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.Update
@@ -48,4 +49,12 @@ interface AnalyzerRepository : MongoRepository<AnalyzerDocument, String>, Custom
     fun findAllByPublic(public: Boolean = true): List<AnalyzerDocument>
 
     fun findAllByAccountIdAndPublic(accountId: String, public: Boolean): List<AnalyzerDocument>
+
+    @Query("{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true}")
+    @Aggregation(pipeline = [
+        "{accountId: ?0, demoAccount:  ?1, market:  ?2, isActive:  true}",
+        "{ \$sort: { pNl10M: -1 } }",
+        "{ \$limit: 1 }"
+    ])
+    fun findMoreProfitableByLast10Minutes(accountId: String, isDemo: Boolean, market: String): AnalyzerDocument
 }

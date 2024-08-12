@@ -21,7 +21,6 @@ import space.dawdawich.model.RequestProfitableAnalyzer
 import space.dawdawich.model.analyzer.KLineRecord
 import space.dawdawich.model.constants.AnalyzerChooseStrategy
 import space.dawdawich.model.strategy.AnalyzerRuntimeInfoModel
-import space.dawdawich.model.strategy.CandleTailStrategyConfigModel
 import space.dawdawich.model.strategy.KLineStrategyConfigModel
 import space.dawdawich.model.strategy.StrategyConfigModel
 import space.dawdawich.repositories.mongo.AnalyzerRepository
@@ -36,6 +35,7 @@ import space.dawdawich.utils.convert
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 @Service
 class AnalyzerService(
@@ -120,7 +120,7 @@ class AnalyzerService(
             AnalyzerChooseStrategy.MOST_STABLE -> getMostStableAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.BIGGEST_BY_MONEY -> getBiggestByMoneyAnalyzerStrategyConfig(request)
             AnalyzerChooseStrategy.TEST -> getFilteredAnalyzerConfig(request)
-            AnalyzerChooseStrategy.CUSTOM -> throw NotImplementedError("No such analyzer strategy : %s".format(request.chooseStrategy))
+            AnalyzerChooseStrategy.CUSTOM -> getMostProfitableForLast10MinutesAnalyzerStrategyConfig(request)
         }
     }
 
@@ -171,11 +171,16 @@ class AnalyzerService(
                             .let { snapshots ->
                                 val update = Update()
                                 val now = System.currentTimeMillis()
+                                val tenMinutesBefore = now - 10.minutes.inWholeMilliseconds
                                 val oneOurBefore = now - 1.hours.inWholeMilliseconds
                                 val twelveOurBefore = now - 12.hours.inWholeMilliseconds
                                 val twentyFourOurBefore = now - 24.hours.inWholeMilliseconds
                                 analyzer.calculateStabilityCoef(snapshots.map { snap -> snap.money }).let {
                                     update["stabilityCoef"] = it
+                                }
+                                snapshots.firstOrNull { it.timestamp > tenMinutesBefore }?.let { snapshot ->
+                                    val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
+                                    update["pNl10M"] = pNl
                                 }
                                 snapshots.firstOrNull { it.timestamp > oneOurBefore }?.let { snapshot ->
                                     val pNl = snapshot.money.calculatePercentageChange(analyzer.getMoney()).toInt()
@@ -271,6 +276,15 @@ class AnalyzerService(
             mostStableAnalyzers
                 .filter { it.startCapital < it.getStrategyConfig().money }
                 .maxByOrNull { it.getMoney() }?.getStrategyConfig()
+        } else null
+    }
+
+    private fun getMostProfitableForLast10MinutesAnalyzerStrategyConfig(request: RequestProfitableAnalyzer): StrategyConfigModel? {
+        log.info { "Try to find analyzer for account id '${request.accountId}' by profit for last 10 minutes" }
+        val moreSuitableAnalyzer = analyzerRepository.findMoreProfitableByLast10Minutes(request.accountId, request.demoAccount, request.market.name)
+
+        return if (moreSuitableAnalyzer.id != request.currentAnalyzerId) {
+            analyzers.firstOrNull { it.id == moreSuitableAnalyzer.id }?.getStrategyConfig()
         } else null
     }
 

@@ -36,6 +36,7 @@ sealed class AnalyzerDocument(
     open val pNl1: Int? = null,
     open val pNl12: Int? = null,
     open val pNl24: Int? = null,
+    open val pNl10M: Int? = null,
     open val createTime: Long = System.currentTimeMillis(),
     open var updateTime: Long = createTime
 )

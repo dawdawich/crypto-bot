@@ -125,6 +125,7 @@ class GridTableStrategyRunner(
             step,
             orderPriceGrid.keys.toList()
         )
+    // TODO: This mistake generates profit
 //        GridStrategyConfigModel(
 //            id,
 //            symbol,
