@@ -24,7 +24,7 @@ class ActionListener(
     private val log = KotlinLogging.logger {}
 
     companion object {
-        private val defaultKLineIntervals = arrayOf(1, 3, 5)
+        private val defaultKLineIntervals = arrayOf(/*1, 3,*/ 5)
     }
 
     @PostConstruct

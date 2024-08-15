@@ -25,13 +25,13 @@ class TradeManagerService(
     private val logger = KotlinLogging.logger {}
 
     private val tradeManagers: MutableList<Manager> = Collections.synchronizedList(mutableListOf())
-//    private final val customManager: CustomRSIOutOfBoundManager
+    private final val customManager: CustomRSIOutOfBoundManager
 
     init {
         managerRepository.findAllByStatus(ManagerStatus.ACTIVE).forEach { config ->
             activateManager(config)
         }
-//        customManager = tradeManagerFactory.createCustomManager(symbolRepository.findAll())
+        customManager = tradeManagerFactory.createCustomManager(symbolRepository.findAll())
         Runtime.getRuntime().addShutdownHook(Thread {
             runBlocking {
                 tradeManagers.forEach {

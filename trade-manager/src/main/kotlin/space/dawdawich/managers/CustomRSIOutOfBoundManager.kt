@@ -45,11 +45,11 @@ class CustomRSIOutOfBoundManager(
             false,
             5,
             symbols,
-            80.0,
+            87.0,
             60.0,
-            20.0,
+            15.0,
             40.0,
-            5,
+            1,
             UUID.randomUUID().toString()
         ) {
                 inPrice: Double,
