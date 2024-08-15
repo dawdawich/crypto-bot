@@ -52,7 +52,7 @@ class TradeManagerFactory(
     }
 
     fun createCustomManager(symbols: List<SymbolInfoDocument>): CustomRSIOutOfBoundManager {
-        val apiToken = apiAccessTokenRepository.findById("3186c93f-7975-467e-82a1-4f283fd5314d").orElseThrow {
+        val apiToken = apiAccessTokenRepository.findById("74c85341-c6bc-4d4b-bf8e-c7166b0d37b7").orElseThrow {
             Exception("Failed to create trade manager, api tokens not found.")
         }
 
