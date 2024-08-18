@@ -168,7 +168,7 @@ class CustomRSIOutOfBoundManager(
                 bybitService.createOrder(
                     symbol,
                     splitedData[0].toDouble(),
-                    activateActionMode[symbol]!!.qty / multiplier,
+                    (activateActionMode[symbol]!!.qty / multiplier) * 15,
                     if (activateActionMode[symbol]!!.trend == Trend.LONG) Trend.SHORT.directionBoolean else Trend.LONG.directionBoolean,
                     UUID.randomUUID().toString(),
                     repeatCount = 3,
