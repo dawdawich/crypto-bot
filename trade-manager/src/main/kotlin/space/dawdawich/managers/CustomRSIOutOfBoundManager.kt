@@ -164,6 +164,7 @@ class CustomRSIOutOfBoundManager(
         setLeverage(symbol, 15.0)
         runBlocking {
             try {
+                logger.info { "Creating Action order, take a look: symbol - $symbol" }
                 bybitService.createOrder(
                     symbol,
                     splitedData[0].toDouble(),
