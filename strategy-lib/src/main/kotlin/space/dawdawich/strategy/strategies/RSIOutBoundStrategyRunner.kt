@@ -17,7 +17,7 @@ class RSIOutBoundStrategyRunner(
     private val upperSellBound: Double,
     private val lowerBound: Double,
     private val lowerSellBound: Double,
-    private val stopLoss: Int,
+    val stopLoss: Int,
     val id: String,
 //    private val moneyChangeFunction: MoneyChangePostProcessFunction = { _, _ -> },
     private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
