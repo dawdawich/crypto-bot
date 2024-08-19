@@ -96,9 +96,6 @@ class CustomRSIOutOfBoundManager(
             with(webSocket) {
                 customUpdatePositionCallback = { list ->
                     list.forEach { (symbol, position) ->
-                        if (activateActionMode[symbol] == null) {
-                            this@apply.updatePosition(symbol, position)
-                        }
                         if (position == null) {
                             getPosition(symbol)?.let { positionToClose ->
                                 positionRepository.insert(
@@ -114,7 +111,10 @@ class CustomRSIOutOfBoundManager(
                                     )
                                 )
                             }
+                            this@apply.updatePosition(symbol, position)
                             additionalStrategyAction(symbol)
+                        } else if (activateActionMode[symbol] == null) {
+                            this@apply.updatePosition(symbol, position)
                         }
                     }
                     updateMoney(runBlocking { bybitService.getAccountBalance() })
