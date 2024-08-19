@@ -15,4 +15,5 @@ data class PositionDocument(
     val trend: String,
     @Id
     val id: String = UUID.randomUUID().toString(),
+    var isActionPosition: Boolean = false
 )

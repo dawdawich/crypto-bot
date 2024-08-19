@@ -96,6 +96,9 @@ class CustomRSIOutOfBoundManager(
             with(webSocket) {
                 customUpdatePositionCallback = { list ->
                     list.forEach { (symbol, position) ->
+                        if (activateActionMode[symbol] == null) {
+                            this@apply.updatePosition(symbol, position)
+                        }
                         if (position == null) {
                             getPosition(symbol)?.let { positionToClose ->
                                 positionRepository.insert(
@@ -106,13 +109,13 @@ class CustomRSIOutOfBoundManager(
                                         symbol,
                                         positionToClose.createTime,
                                         System.currentTimeMillis(),
-                                        positionToClose.trend.name
+                                        positionToClose.trend.name,
+                                        isActionPosition = activateActionMode[symbol] != null
                                     )
                                 )
                             }
                             additionalStrategyAction(symbol)
                         }
-                        this@apply.updatePosition(symbol, position)
                     }
                     updateMoney(runBlocking { bybitService.getAccountBalance() })
                 }
@@ -177,6 +180,7 @@ class CustomRSIOutOfBoundManager(
             } catch (e: InsufficientBalanceException) {
                 logger.info { e.message }
                 false
+                activateActionMode.remove(symbol)
             }
         }
     }
@@ -201,8 +205,9 @@ class CustomRSIOutOfBoundManager(
         val positionDocuments = positionRepository.findBySymbolOrderByCloseTimeDesc(symbol)
         val positions = positionDocuments.take(2)
             .map { Position(it.entryPrice, it.qty, Trend.valueOf(it.trend)).calculateProfit(it.closePrice) }
-        if (positionDocuments.size > 1 && positions
-                .all { it < 0 } && positionDocuments[0].trend == positionDocuments[1].trend
+        if (positionDocuments.size > 1 && positions.all { it < 0 }
+            && positionDocuments[0].trend == positionDocuments[1].trend
+            && !positionDocuments[0].isActionPosition && !positionDocuments[1].isActionPosition
         ) {
             activateActionMode[symbol] = ActionModel(Trend.valueOf(positionDocuments[0].trend), positionDocuments[0].qty)
         }
