@@ -127,7 +127,6 @@ class CustomRSIOutOfBoundManager(
                     "#",
                     object : TypeReference<String>() {}) { symbol, data ->
                     val splitedData = data.split("&")
-                    acceptPriceChange(symbol, splitedData[0].toDouble(), splitedData[1].toDouble())
                     if (activateActionMode[symbol] != null) {
                         if (getPosition(symbol) == null) {
                             acceptAction(symbol, splitedData)
@@ -141,6 +140,8 @@ class CustomRSIOutOfBoundManager(
                                 deactivateAction(symbol)
                             }
                         }
+                    } else {
+                        acceptPriceChange(symbol, splitedData[0].toDouble(), splitedData[1].toDouble())
                     }
                 }.apply { start() }
             kLineListener = eventListenerFactory.getPriceListenerWithRoutingKey(
