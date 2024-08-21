@@ -209,8 +209,8 @@ class CustomRSIOutOfBoundManager(
                 UUID.randomUUID().toString(),
                 repeatCount = 3,
                 isLimitOrder = false,
-                slPrice = stopLossClosePrice,
-                tpPrice = takeProfitClosePrice
+                slPrice = stopLossClosePrice.trimToStep(minQtySteps[symbol]!!),
+                tpPrice = takeProfitClosePrice.trimToStep(minQtySteps[symbol]!!)
                 )
         }
     }
