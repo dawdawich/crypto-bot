@@ -193,13 +193,14 @@ class CustomRSIOutOfBoundManager(
         val currentPrice = strategyRunner.getCurrentPrice(symbol)!!
         val orderQty = (strategyRunner.money * 0.4 * leverage) / currentPrice
 
-        val takeProfitMoneyValue = strategyRunner.money.plusPercent(10) - strategyRunner.money
-        val stopLossMoneyValue = strategyRunner.money.plusPercent(-2) - strategyRunner.money
+        val takeProfitMoneyValue = strategyRunner.money.plusPercent(12) - strategyRunner.money
+        val stopLossMoneyValue = strategyRunner.money.plusPercent(-7) - strategyRunner.money
 
         val takeProfitClosePrice = (takeProfitMoneyValue + orderQty * currentPrice) / orderQty
         val stopLossClosePrice = (stopLossMoneyValue + orderQty * currentPrice) / orderQty
 
         setLeverage(symbol, leverage)
+        logger.info { "Try to create action order with: symbol - $symbol, qty - $orderQty, takeProfitClosePrice - $takeProfitClosePrice, stopLossClosePrice - $stopLossClosePrice" }
         activateActionMode[symbol] = runBlocking {
             bybitService.createOrder(
                 symbol,
