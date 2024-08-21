@@ -46,6 +46,8 @@ class ByBitPrivateHttpClient(
         positionIdx: Int,
         repeatCount: Int,
         isLimitOrder: Boolean,
+        slPrice: Double?,
+        tpPrice: Double?,
     ): Boolean {
         val request = buildJsonObject {
             put("symbol", symbol)
@@ -57,6 +59,10 @@ class ByBitPrivateHttpClient(
             put("category", "linear")
             put("positionIdx", positionIdx)
             put("orderLinkId", orderId)
+            if (slPrice != null && tpPrice != null) {
+                put("takeProfit", tpPrice.toString())
+                put("stopLoss", slPrice.toString())
+            }
         }.toString()
 
         try {

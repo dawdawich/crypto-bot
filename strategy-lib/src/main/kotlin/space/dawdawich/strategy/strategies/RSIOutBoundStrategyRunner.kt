@@ -23,6 +23,7 @@ class RSIOutBoundStrategyRunner(
     private val createOrderFunction: CreateOrderFunction = { inPrice: Double, orderSymbol: String, qty: Double, refreshTokenUpperBorder: Double, refreshTokenLowerBorder: Double, trend: Trend ->
         Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend)
     },
+    private val slAction: (symbol: String, position: Position) -> Unit = {_,_ -> }
 //    private val cancelOrderFunction: CancelOrderFunction = { _, _ -> true },
 ) {
     private val logger: KLogger = KotlinLogging.logger {}
@@ -92,9 +93,13 @@ class RSIOutBoundStrategyRunner(
         positions[symbol]?.let { position ->
             val profit = position.calculateProfit(currentPrice)
             val moneyWithProfit = money + profit
-            if (moneyWithProfit <= money.plusPercent(-stopLoss) ||
-                ((position.trend == Trend.LONG && rsi >= lowerSellBound) || (position.trend == Trend.SHORT && rsi <= upperSellBound))
-            ) {
+            if (moneyWithProfit <= money.plusPercent(-stopLoss)) {
+                closePositionFunction(symbol)
+                if (simulateTradeOperations) {
+                    money += profit
+                }
+                slAction(symbol, position)
+            } else if ((position.trend == Trend.LONG && rsi >= lowerSellBound) || (position.trend == Trend.SHORT && rsi <= upperSellBound)) {
                 closePositionFunction(symbol)
                 if (simulateTradeOperations) {
                     money += profit

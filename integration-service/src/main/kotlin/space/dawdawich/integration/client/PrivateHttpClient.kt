@@ -14,7 +14,9 @@ interface PrivateHttpClient : PublicHttpClient {
         orderId: String,
         positionIdx: Int = 0,
         repeatCount: Int = 0,
-        isLimitOrder: Boolean
+        isLimitOrder: Boolean,
+        slPrice: Double? = null,
+        tpPrice: Double? = null
     ): Boolean
 
     suspend fun cancelAllOrder(symbol: String, repeatCount: Int = 2)

@@ -39,7 +39,7 @@ class CustomRSIOutOfBoundManager(
     private val strategyRunner: RSIOutBoundStrategyRunner
     private val setedLeverages: MutableMap<String, Double> =
         mutableMapOf(*maxLeverages.keys.map { it to 1.0 }.toTypedArray())
-    private val activateActionMode: MutableMap<String, ActionModel> = mutableMapOf()
+    private val activateActionMode: MutableMap<String, Boolean> = mutableMapOf()
 
     init {
         strategyRunner = RSIOutBoundStrategyRunner(
@@ -53,42 +53,53 @@ class CustomRSIOutOfBoundManager(
             20.0,
             60.0,
             1,
-            UUID.randomUUID().toString()
-        ) {
-                inPrice: Double,
-                orderSymbol: String,
-                qty: Double,
-                refreshTokenUpperBorder: Double,
-                refreshTokenLowerBorder: Double,
-                trend: Trend,
-            ->
-            val orderId = UUID.randomUUID().toString()
-            val orderQty = qty.trimToStep(minQtySteps[orderSymbol]!!)
-            setLeverage(orderSymbol, multiplier)
+            UUID.randomUUID().toString(),
+            {
+                    inPrice: Double,
+                    orderSymbol: String,
+                    qty: Double,
+                    refreshTokenUpperBorder: Double,
+                    refreshTokenLowerBorder: Double,
+                    trend: Trend,
+                ->
+                val orderId = UUID.randomUUID().toString()
+                val orderQty = qty.trimToStep(minQtySteps[orderSymbol]!!)
+                setLeverage(orderSymbol, multiplier)
 
-            val isSuccess =
-                runBlocking {
-                    try {
-                        bybitService.createOrder(
-                            orderSymbol,
-                            inPrice,
-                            orderQty,
-                            trend.directionBoolean,
-                            orderId,
-                            repeatCount = 3,
-                            isLimitOrder = false
-                        )
-                    } catch (e: InsufficientBalanceException) {
-                        logger.info { e.message }
-                        false
+                val isSuccess =
+                    runBlocking {
+                        try {
+                            bybitService.createOrder(
+                                orderSymbol,
+                                inPrice,
+                                orderQty,
+                                trend.directionBoolean,
+                                orderId,
+                                repeatCount = 3,
+                                isLimitOrder = false
+                            )
+                        } catch (e: InsufficientBalanceException) {
+                            logger.info { e.message }
+                            false
+                        }
                     }
+                if (isSuccess) {
+                    Order(
+                        inPrice,
+                        orderSymbol,
+                        qty,
+                        refreshTokenUpperBorder,
+                        refreshTokenLowerBorder,
+                        trend,
+                        id = orderId
+                    )
+                } else {
+                    null
                 }
-            if (isSuccess) {
-                Order(inPrice, orderSymbol, qty, refreshTokenUpperBorder, refreshTokenLowerBorder, trend, id = orderId)
-            } else {
-                null
-            }
-        }.apply {
+            },
+            slAction = { symbol, position ->
+                processStopLoss(symbol, position)
+            }).apply {
             setClosePositionFunction { symbol ->
                 closeOrdersAndPosition(symbol)
             }
@@ -107,15 +118,15 @@ class CustomRSIOutOfBoundManager(
                                         positionToClose.createTime,
                                         System.currentTimeMillis(),
                                         positionToClose.trend.name,
-                                        isActionPosition = activateActionMode[symbol] != null
+                                        isActionPosition = activateActionMode[symbol] == true
                                     )
                                 )
                             }
-                            this@apply.updatePosition(symbol, position)
-                            additionalStrategyAction(symbol)
-                        } else if (activateActionMode[symbol] == null) {
-                            this@apply.updatePosition(symbol, position)
+                            if (activateActionMode[symbol] == true) {
+                                activateActionMode[symbol] = false
+                            }
                         }
+                        this@apply.updatePosition(symbol, position)
                     }
                     updateMoney(runBlocking { bybitService.getAccountBalance() })
                 }
@@ -127,20 +138,7 @@ class CustomRSIOutOfBoundManager(
                     "#",
                     object : TypeReference<String>() {}) { symbol, data ->
                     val splitedData = data.split("&")
-                    if (activateActionMode[symbol] != null) {
-                        if (getPosition(symbol) == null) {
-                            acceptAction(symbol, splitedData)
-                        } else {
-                            val moneyWithProfit = money + getPosition(symbol)!!.calculateProfit(splitedData[0].toDouble())
-                            if (moneyWithProfit > money.plusPercent(12)) {
-                                logger.info { "Closed by TP in action mode" }
-                                deactivateAction(symbol)
-                            } else if (moneyWithProfit <= money.plusPercent(-6)) {
-                                logger.info { "Closed by SL in action mode" }
-                                deactivateAction(symbol)
-                            }
-                        }
-                    } else {
+                    if (activateActionMode[symbol] != true) {
                         acceptPriceChange(symbol, splitedData[0].toDouble(), splitedData[1].toDouble())
                     }
                 }.apply { start() }
@@ -148,41 +146,13 @@ class CustomRSIOutOfBoundManager(
                 BYBIT_KLINE_TOPIC,
                 "5.*",
                 object : TypeReference<KLineRecord>() {}) { symbol, candle ->
-                if (activateActionMode[symbol] == null) {
+                if (activateActionMode[symbol] != true) {
                     acceptKLine(
                         symbol.split(".")[1],
                         KLine(candle.open, candle.close, candle.high, candle.low, candle.rsi)
                     )
                 }
             }.apply { start() }
-        }
-    }
-
-    private fun deactivateAction(symbol: String) {
-        closeOrdersAndPosition(symbol)
-        activateActionMode.remove(symbol)
-        setLeverage(symbol, multiplier)
-    }
-
-    private fun acceptAction(symbol: String, splitedData: List<String>) {
-        setLeverage(symbol, 15.0)
-        runBlocking {
-            try {
-                logger.info { "Creating Action order, take a look: symbol - $symbol" }
-                bybitService.createOrder(
-                    symbol,
-                    splitedData[0].toDouble(),
-                    (activateActionMode[symbol]!!.qty / multiplier) * 15,
-                    if (activateActionMode[symbol]!!.trend == Trend.LONG) Trend.SHORT.directionBoolean else Trend.LONG.directionBoolean,
-                    UUID.randomUUID().toString(),
-                    repeatCount = 3,
-                    isLimitOrder = false
-                )
-            } catch (e: InsufficientBalanceException) {
-                logger.info { e.message }
-                false
-                activateActionMode.remove(symbol)
-            }
         }
     }
 
@@ -202,18 +172,6 @@ class CustomRSIOutOfBoundManager(
         }
     }
 
-    private fun additionalStrategyAction(symbol: String) {
-        val positionDocuments = positionRepository.findBySymbolOrderByCloseTimeDesc(symbol)
-        val positions = positionDocuments.take(2)
-            .map { Position(it.entryPrice, it.qty, Trend.valueOf(it.trend)).calculateProfit(it.closePrice) }
-        if (positionDocuments.size > 1 && positions.all { it < 0 }
-            && positionDocuments[0].trend == positionDocuments[1].trend
-            && !positionDocuments[0].isActionPosition && !positionDocuments[1].isActionPosition
-        ) {
-            activateActionMode[symbol] = ActionModel(Trend.valueOf(positionDocuments[0].trend), positionDocuments[0].qty)
-        }
-    }
-
     private fun closeOrdersAndPosition(symbol: String) {
         strategyRunner.getPosition(symbol)?.let { position ->
             do {
@@ -230,5 +188,29 @@ class CustomRSIOutOfBoundManager(
         }
     }
 
-    data class ActionModel(val trend: Trend, val qty: Double)
+    private fun processStopLoss(symbol: String, position: Position) {
+        val leverage = if (maxLeverages[symbol]!! >= 15) 15.0 else maxLeverages[symbol]!!
+        val currentPrice = strategyRunner.getCurrentPrice(symbol)!!
+        val orderQty = (strategyRunner.money * 0.4 * leverage) / currentPrice
+
+        val takeProfitMoneyValue = strategyRunner.money.plusPercent(10) - strategyRunner.money
+        val stopLossMoneyValue = strategyRunner.money.plusPercent(-2) - strategyRunner.money
+
+        val takeProfitClosePrice = (takeProfitMoneyValue + orderQty * currentPrice) / orderQty
+        val stopLossClosePrice = (stopLossMoneyValue + orderQty * currentPrice) / orderQty
+
+        activateActionMode[symbol] = runBlocking {
+            bybitService.createOrder(
+                symbol,
+                0.0,
+                orderQty,
+                !position.trend.directionBoolean,
+                UUID.randomUUID().toString(),
+                repeatCount = 3,
+                isLimitOrder = false,
+                slPrice = stopLossClosePrice,
+                tpPrice = takeProfitClosePrice
+                )
+        }
+    }
 }
