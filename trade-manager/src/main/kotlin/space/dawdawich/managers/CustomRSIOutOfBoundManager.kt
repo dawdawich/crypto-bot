@@ -49,9 +49,9 @@ class CustomRSIOutOfBoundManager(
             5,
             symbols,
             80.0,
-            40.0,
+            50.0,
             20.0,
-            60.0,
+            50.0,
             1,
             UUID.randomUUID().toString(),
             {
