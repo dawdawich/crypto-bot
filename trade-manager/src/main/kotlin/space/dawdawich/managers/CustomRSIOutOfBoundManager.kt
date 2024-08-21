@@ -204,7 +204,7 @@ class CustomRSIOutOfBoundManager(
             bybitService.createOrder(
                 symbol,
                 0.0,
-                orderQty,
+                orderQty.trimToStep(minQtySteps[symbol]!!),
                 !position.trend.directionBoolean,
                 UUID.randomUUID().toString(),
                 repeatCount = 3,
