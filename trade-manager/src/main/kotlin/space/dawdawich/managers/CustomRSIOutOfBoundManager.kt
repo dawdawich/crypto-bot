@@ -200,18 +200,22 @@ class CustomRSIOutOfBoundManager(
         val stopLossClosePrice = (stopLossMoneyValue + orderQty * currentPrice) / orderQty
 
         setLeverage(symbol, leverage)
-        logger.info { "Try to create action order with: symbol - $symbol, qty - $orderQty, takeProfitClosePrice - $takeProfitClosePrice, stopLossClosePrice - $stopLossClosePrice" }
         activateActionMode[symbol] = runBlocking {
+            val minQty = minQtySteps[symbol]!!
+            val qty = orderQty.trimToStep(minQty)
+            val slPrice = stopLossClosePrice.trimToStep(minQty)
+            val tpPrice = takeProfitClosePrice.trimToStep(minQty)
+            logger.info { "Try to create action order with: symbol - $symbol, qty - $qty, takeProfitClosePrice - $tpPrice, stopLossClosePrice - $slPrice" }
             bybitService.createOrder(
                 symbol,
                 0.0,
-                orderQty.trimToStep(minQtySteps[symbol]!!),
+                qty,
                 !position.trend.directionBoolean,
                 UUID.randomUUID().toString(),
                 repeatCount = 3,
                 isLimitOrder = false,
-                slPrice = stopLossClosePrice.trimToStep(minQtySteps[symbol]!!),
-                tpPrice = takeProfitClosePrice.trimToStep(minQtySteps[symbol]!!)
+                slPrice = slPrice,
+                tpPrice = tpPrice
                 )
         }
     }

@@ -75,7 +75,7 @@ class TradeManagerFactory(
             symbols.map { it.symbol },
             mapOf(*symbols.map { it.symbol to it.minOrderQty }.toTypedArray()),
             mapOf(*symbols.map { it.symbol to it.maxLeverage }.toTypedArray()),
-            3.0
+            5.0
         )
     }
 }
