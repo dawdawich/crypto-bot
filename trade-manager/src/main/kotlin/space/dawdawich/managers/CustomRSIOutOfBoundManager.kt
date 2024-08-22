@@ -203,7 +203,7 @@ class CustomRSIOutOfBoundManager(
         setLeverage(symbol, leverage)
         activateActionMode[symbol] = runBlocking {
             val minQty = minQtySteps[symbol]!!
-            val minPrice = minQtySteps[symbol]!!
+            val minPrice = minPriceSteps[symbol]!!
             val qty = orderQty.trimToStep(minQty)
             val slPrice = stopLossClosePrice.trimToStep(minPrice)
             val tpPrice = takeProfitClosePrice.trimToStep(minPrice)
