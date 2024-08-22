@@ -74,6 +74,7 @@ class TradeManagerFactory(
             positionRepository,
             symbols.map { it.symbol },
             mapOf(*symbols.map { it.symbol to it.minOrderQty }.toTypedArray()),
+            mapOf(*symbols.map { it.symbol to it.minPrice }.toTypedArray()),
             mapOf(*symbols.map { it.symbol to it.maxLeverage }.toTypedArray()),
             5.0
         )

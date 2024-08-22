@@ -30,6 +30,7 @@ class CustomRSIOutOfBoundManager(
     private val positionRepository: PositionRepository,
     symbols: List<String>,
     private val minQtySteps: Map<String, Double>,
+    private val minPriceSteps: Map<String, Double>,
     private val maxLeverages: Map<String, Double>,
     private val multiplier: Double,
 ) {
@@ -202,9 +203,10 @@ class CustomRSIOutOfBoundManager(
         setLeverage(symbol, leverage)
         activateActionMode[symbol] = runBlocking {
             val minQty = minQtySteps[symbol]!!
+            val minPrice = minQtySteps[symbol]!!
             val qty = orderQty.trimToStep(minQty)
-            val slPrice = stopLossClosePrice.trimToStep(minQty)
-            val tpPrice = takeProfitClosePrice.trimToStep(minQty)
+            val slPrice = stopLossClosePrice.trimToStep(minPrice)
+            val tpPrice = takeProfitClosePrice.trimToStep(minPrice)
             logger.info { "Try to create action order with: symbol - $symbol, qty - $qty, takeProfitClosePrice - $tpPrice, stopLossClosePrice - $slPrice" }
             bybitService.createOrder(
                 symbol,
