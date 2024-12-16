@@ -18,6 +18,10 @@ abstract class Analyzer(
     val id: String = UUID.randomUUID().toString()
 ) {
     var previousSnapshotMoney : Double = -1.0
+        set(value) {
+            readyToUpdateStability = true
+            field = value
+        }
     var readyToUpdateStability = false
     var stabilityCoef : Double = 0.0
         private set
