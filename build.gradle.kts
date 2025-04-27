@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -12,7 +13,7 @@ group = "space.dawdawich"
 version = "0.0.1-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_22
 }
 
 subprojects {
@@ -25,11 +26,13 @@ subprojects {
     }
 
     repositories {
+        google()
         mavenCentral()
+        uri("https://jitpack.io")
     }
 
     dependencies {
-        implementation(rootProject.libs.kotlin.jdk)
+//        implementation(rootProject.libs.kotlin.jdk)
         implementation(rootProject.libs.logstash)
         implementation(rootProject.libs.kotlin.logging)
         implementation(rootProject.libs.kotlin.reflect)
@@ -37,9 +40,9 @@ subprojects {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs += "-Xjsr305=strict"
-        jvmTarget = "17"
+    compilerOptions {
+        freeCompilerArgs.add("-Xjsr305=strict")
+        jvmTarget.set(JvmTarget.JVM_22)
     }
 }
 
