@@ -32,10 +32,7 @@ subprojects {
     }
 
     dependencies {
-//        implementation(rootProject.libs.kotlin.jdk)
-        implementation(rootProject.libs.logstash)
         implementation(rootProject.libs.kotlin.logging)
-        implementation(rootProject.libs.kotlin.reflect)
     }
 }
 
