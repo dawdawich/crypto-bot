@@ -24,20 +24,7 @@ services:
       test: mongosh --eval 'try { rs.initiate(); } catch(e) {} rs.status().ok;' || exit 1
       retries: 1
 
-  redis:
-    image: redis:latest
-    hostname: redis
-    restart: always
-    ports:
-      - "6379:6379"
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-
 volumes:
-  zookeeper_data:
-    driver: local
-  kafka_data:
-    driver: local
   mongodb_data:
     driver: local
 

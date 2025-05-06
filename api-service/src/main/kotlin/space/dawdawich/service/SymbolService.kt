@@ -1,42 +1,26 @@
 package space.dawdawich.service
 
-import kotlinx.coroutines.launch
-import space.dawdawich.integration.factory.PrivateHttpClientFactory
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.springframework.amqp.rabbit.core.RabbitTemplate
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import space.dawdawich.constants.SYMBOL_REINITIALIZE_TOPIC
 import space.dawdawich.controller.model.SymbolResponse
-import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
-import space.dawdawich.repositories.mongo.ApiAccessTokenRepository
+import space.dawdawich.integration.client.PublicHttpClient
 import space.dawdawich.repositories.mongo.SymbolRepository
-import space.dawdawich.repositories.mongo.entity.SymbolInfoDocument
-import java.util.concurrent.TimeUnit
-import kotlin.math.pow
-import kotlin.math.sqrt
+import space.dawdawich.repositories.mongo.entity.SymbolDocument
 
 /**
  * Service class responsible for managing symbols and their information.
  *
  * @property symbolRepository The repository for SymbolInfoDocument.
- * @property apiAccessTokenRepository The repository for ApiAccessTokenDocument.
  * @property rabbitTemplate The RabbitTemplate for sending messages.
- * @property clientFactory The factory for creating PrivateHttpClient instances.
+ * @property publicBybitClient http client to make request to market
  */
 @Service
 class SymbolService(
     private val symbolRepository: SymbolRepository,
-    private val apiAccessTokenRepository: ApiAccessTokenRepository,
     private val rabbitTemplate: RabbitTemplate,
-    private val clientFactory: PrivateHttpClientFactory,
-    private val publicBybitClient: ByBitPublicHttpClient,
+    private val publicBybitClient: PublicHttpClient,
 ) {
-
-    private val log = KotlinLogging.logger { }
-
-    val volatileCoefficients: Map<String, Double> = mutableMapOf()
 
     /**
      * Retrieves all symbols from the symbol repository.
@@ -59,15 +43,12 @@ class SymbolService(
      * @param symbol The symbol to add.
      */
     fun addNewSymbol(accountId: String, symbol: String) {
-        val apiToken = apiAccessTokenRepository.findAllByAccountId(accountId)[0]
-        val httpClient =
-            clientFactory.createHttpClient(apiToken.demoAccount, apiToken.apiKey, apiToken.secretKey, apiToken.market)
         val symbolInfo = runBlocking {
-            httpClient.getPairInstructions(symbol)
+            publicBybitClient.getPairInstructions(symbol)
         }
 
         symbolRepository.insert(
-            SymbolInfoDocument(
+            SymbolDocument(
                 symbol,
                 symbolRepository.count().toInt(),
                 symbolInfo.tickSize,
@@ -79,33 +60,13 @@ class SymbolService(
                 symbolInfo.qtyStep
             )
         )
-
-        rabbitTemplate.convertAndSend(SYMBOL_REINITIALIZE_TOPIC, Any())
-    }
-
-    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.MINUTES)
-    fun calculateVolatility() {
-        runBlocking {
-            symbolRepository.findAll().forEach { symbol ->
-                val kLineClosePrices = publicBybitClient.getKLineClosePrices(symbol.symbol, 5)
-
-                launch {
-                    val mean = kLineClosePrices.average()
-                    val standardDeviation = sqrt(kLineClosePrices.map { value -> (value - mean).pow(2.0) }.average())
-                    val result = standardDeviation / mean
-                    (volatileCoefficients as MutableMap)[symbol.symbol] = result
-                    symbolRepository.updateVolatilityCoef(symbol.symbol, result)
-                }
-            }
-        }
-        log.info { "Volatility coefficients successfully calculated" }
     }
 
     /**
-     * Converts a [SymbolInfoDocument] object to a SymbolResponse object.
+     * Converts a [SymbolDocument] object to a SymbolResponse object.
      *
      * @return A [SymbolResponse] object representing the converted data.
      */
-    private fun SymbolInfoDocument.toModel() =
+    private fun SymbolDocument.toModel() =
         SymbolResponse(symbol, partition, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
 }

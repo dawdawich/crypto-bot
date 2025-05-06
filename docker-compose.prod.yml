@@ -28,17 +28,6 @@ services:
       test: mongosh --eval 'try { rs.initiate(); } catch(e) {} rs.status().ok;' || exit 1
       retries: 1
 
-  redis:
-    image: redis:latest
-    hostname: redis
-    restart: always
-    networks:
-      - "crypto-bot-network"
-    ports:
-      - "6379:6379"
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-
   event-listener:
     build:
       context: .
@@ -51,27 +40,6 @@ services:
       rabbitmq:
         condition: service_started
       logstash:
-        condition: service_started
-    networks:
-      - "crypto-bot-network"
-
-  analyzer-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/AnalyzerServiceDockerfile
-    environment:
-      spring.profiles.active: prod
-      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
-      event-listener:
-        condition: service_started
-      logstash:
-        condition: service_started
-      redis:
         condition: service_started
     networks:
       - "crypto-bot-network"
@@ -95,23 +63,6 @@ services:
     networks:
       - "crypto-bot-network"
 
-  trade-manager-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/TradeManagerDockerfile
-    environment:
-      spring.profiles.active: prod
-      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
-      logstash:
-        condition: service_started
-    networks:
-      - "crypto-bot-network"
-
   ui:
     build:
       context: crypto-bot-ui
@@ -128,40 +79,7 @@ services:
       - "./init-files/ssl-certs/joat_trade.crt:/etc/nginx/ssl/joat_trade.crt"
       - "./init-files/ssl-certs/joat_trade.key:/etc/nginx/ssl/joat_trade.key"
 
-#  elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
-#    environment:
-#      - discovery.type=single-node
-#    volumes:
-#      - ./init-files/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-#    ports:
-#      - "9200:9200"
-#    networks:
-#      - "crypto-bot-network"
-
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:8.11.3
-#    ports:
-#      - "5601:5601"
-#    depends_on:
-#      - elasticsearch
-#    networks:
-#      - "crypto-bot-network"
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.11.3
-    ports:
-      - "5000"
-    volumes:
-      - ./init-files/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-#    depends_on:
-#      - elasticsearch
-    networks:
-      - "crypto-bot-network"
-
 volumes:
-  zookeeper_data:
-    driver: local
   mongodb_data:
     driver: local
 

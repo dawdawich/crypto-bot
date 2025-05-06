@@ -8,15 +8,12 @@ kotlinx-plugin = "2.1.20"
 websocket = "1.6.0"
 jackson-kotlin-module = "2.19.0"
 json-path = "2.9.0"
-json = "20250107"
 ktor = "3.1.2"
-logstash = "8.1"
 kotlin-logging = "3.0.5"
 web3 = "4.14.0"
 
 [libraries]
 spring-boot-mongo = { group = "org.springframework.boot", name = "spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
-spring-boot-redis = { group = "org.springframework.boot", name = "spring-boot-starter-data-redis", version.ref = "spring-boot" }
 spring-boot-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "spring-boot" }
 spring-boot-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "spring-boot" }
@@ -28,12 +25,9 @@ kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 spring-websocket = { group = "org.springframework", name = "spring-websocket", version.ref = "spring" }
 jackson-kotlin-module = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson-kotlin-module" }
 json-path = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "json-path" }
-json = { group = "org.json", name = "json", version.ref = "json" }
 ktor-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
-logstash = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
 kotlin-logging = { group = "io.github.microutils", name = "kotlin-logging-jvm", version.ref = "kotlin-logging" }
-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
 web3 = { group = "org.web3j", name = "core", version.ref = "web3" }
 
 [bundles]

@@ -22,6 +22,8 @@ dependencies {
     implementation(libs.web3)
     implementation(libs.websocket)
     implementation(libs.jackson.kotlin.module)
+    implementation(libs.json.path)
+
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines)
 

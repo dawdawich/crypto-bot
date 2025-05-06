@@ -28,17 +28,6 @@ services:
     networks:
       - "crypto-bot-network"
 
-  redis:
-    image: redis:latest
-    hostname: redis
-    restart: always
-    networks:
-      - "crypto-bot-network"
-    ports:
-      - "6379:6379"
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-
   event-listener:
     build:
       context: .
@@ -50,25 +39,6 @@ services:
       mongodb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
-    networks:
-      - "crypto-bot-network"
-
-  analyzer-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/AnalyzerServiceDockerfile
-    environment:
-      spring.profiles.active: docker-local
-      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-      event-listener:
         condition: service_started
     networks:
       - "crypto-bot-network"
@@ -89,21 +59,6 @@ services:
     networks:
       - "crypto-bot-network"
 
-  trade-manager-service:
-    build:
-      context: .
-      dockerfile: dockerfiles/TradeManagerDockerfile
-    environment:
-      spring.profiles.active: docker-local
-      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
-    networks:
-      - "crypto-bot-network"
-
   ui:
     build:
       context: crypto-bot-ui
@@ -118,8 +73,6 @@ services:
       - "./init-files/nginx.conf:/etc/nginx/conf.d/default.conf"
 
 volumes:
-  zookeeper_data:
-    driver: local
   mongodb_data:
     driver: local
 

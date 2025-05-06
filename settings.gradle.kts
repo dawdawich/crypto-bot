@@ -3,10 +3,9 @@ plugins {
 }
 rootProject.name = "crypto-bot"
 include("event-listener")
-include("analyzer-service")
 include("domain-service")
 include("commons")
 include("api-service")
-include("trade-manager")
 include("integration-service")
 include("strategy-lib")
+include("backtest-service")

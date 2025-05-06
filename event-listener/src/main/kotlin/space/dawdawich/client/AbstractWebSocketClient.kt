@@ -5,7 +5,6 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import java.lang.Exception
 import java.net.URI
 
 abstract class AbstractWebSocketClient(connectionUrl: String) :
