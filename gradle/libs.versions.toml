@@ -28,6 +28,7 @@ json-path = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "
 ktor-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
 kotlin-logging = { group = "io.github.microutils", name = "kotlin-logging-jvm", version.ref = "kotlin-logging" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect" }
 web3 = { group = "org.web3j", name = "core", version.ref = "web3" }
 
 [bundles]

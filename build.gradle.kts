@@ -33,6 +33,7 @@ subprojects {
 
     dependencies {
         implementation(rootProject.libs.kotlin.logging)
+        implementation(rootProject.libs.kotlin.reflect)
     }
 }
 
