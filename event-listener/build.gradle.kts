@@ -15,7 +15,6 @@ dependencies {
 
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.spring.boot.mongo)
-    implementation(libs.spring.rabbitmq)
 }
 
 tasks.withType<KotlinCompile> {

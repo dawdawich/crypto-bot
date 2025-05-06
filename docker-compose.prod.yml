@@ -37,10 +37,6 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      rabbitmq:
-        condition: service_started
-      logstash:
-        condition: service_started
     networks:
       - "crypto-bot-network"
 
@@ -55,8 +51,6 @@ services:
       mongodb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
-      logstash:
         condition: service_started
     ports:
       - "8080:8080"

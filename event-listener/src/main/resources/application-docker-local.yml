@@ -4,11 +4,6 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
-  rabbitmq:
-    host: rabbitmq
-    port: 5672
-    username: user
-    password: password
 
 logging:
   level:
