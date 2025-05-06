@@ -24,11 +24,11 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
                 val pairData = arrayOf(
                     "priceFilter.minPrice",
                     "priceFilter.maxPrice",
-                    "priceFilter.tickSize",
                     "lotSizeFilter.minOrderQty",
                     "lotSizeFilter.maxOrderQty",
+                    "leverageFilter.leverageStep",
+                    "leverageFilter.maxLeverage",
                     "lotSizeFilter.qtyStep",
-                    "leverageFilter.maxLeverage"
                 ).map { parsedJson.read<String>("\$.result.list[0].$it").toDouble() }.toTypedArray()
                 return PairInfo(pairData)
             }

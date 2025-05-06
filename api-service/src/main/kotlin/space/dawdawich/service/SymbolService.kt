@@ -50,13 +50,12 @@ class SymbolService(
         symbolRepository.insert(
             SymbolDocument(
                 symbol,
-                symbolRepository.count().toInt(),
-                symbolInfo.tickSize,
                 symbolInfo.minPrice,
                 symbolInfo.maxPrice,
                 symbolInfo.minOrderQty,
                 symbolInfo.maxOrderQty,
                 symbolInfo.maxLeverage,
+                symbolInfo.leverageStep,
                 symbolInfo.qtyStep
             )
         )
@@ -68,5 +67,5 @@ class SymbolService(
      * @return A [SymbolResponse] object representing the converted data.
      */
     private fun SymbolDocument.toModel() =
-        SymbolResponse(symbol, partition, minPrice, maxPrice, tickSize, minOrderQty, maxOrderQty, qtyStep)
+        SymbolResponse(symbol, minPrice, maxPrice, minOrderQty, maxOrderQty, qtyStep)
 }
