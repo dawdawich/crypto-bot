@@ -10,6 +10,14 @@ spring:
     username: user
     password: password
 
+server:
+  port: 8443
+  ssl:
+    key-store: classpath:keystore.jks
+    key-store-password: "l;jfn_nhtqlGfccDjhl9128"
+    key-store-type: PKCS12
+    key-alias: joat_trade
+
 logging:
   level:
     org.springframework: INFO
