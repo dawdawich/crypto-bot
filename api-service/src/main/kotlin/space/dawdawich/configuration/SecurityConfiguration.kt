@@ -61,12 +61,12 @@ class SecurityConfiguration(private val environment: Environment) {
         }
 
         authenticationFilter.successHandler = AuthenticationSuccessHandler { _, _, _ -> } // After success auth, AuthenticationSuccessHandler tries to redirect user to main page, with this approach we disabled redirect
-        if (environment.activeProfiles[0] == "prod") {
-            http
-                .requiresChannel {
-                    it.anyRequest().requiresSecure()
-                }
-        }
+//        if (environment.activeProfiles[0] == "prod") {
+//            http
+//                .requiresChannel {
+//                    it.anyRequest().requiresSecure()
+//                }
+//        }
         return http
             .x509 { customizer -> customizer.disable() }
             .cors { customizer ->
