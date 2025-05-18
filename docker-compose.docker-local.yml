@@ -57,6 +57,20 @@ services:
     networks:
       - "crypto-bot-network"
 
+  back-test-service:
+    build:
+      context: .
+      dockerfile: dockerfiles/BacktestServiceDockerfile
+    environment:
+      spring.profiles.active: docker-local
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - "crypto-bot-network"
+
   ui:
     build:
       context: crypto-bot-ui

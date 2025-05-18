@@ -57,6 +57,21 @@ services:
     networks:
       - "crypto-bot-network"
 
+  back-test-service:
+    build:
+      context: .
+      dockerfile: dockerfiles/BacktestServiceDockerfile
+    environment:
+      spring.profiles.active: prod
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - "crypto-bot-network"
+
   ui:
     build:
       context: crypto-bot-ui
