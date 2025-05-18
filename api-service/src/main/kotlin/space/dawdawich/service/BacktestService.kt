@@ -3,15 +3,16 @@ package space.dawdawich.service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.BACK_TEST_SERVICE
-import space.dawdawich.constants.BACK_TEST_SERVICE_BULK
-import space.dawdawich.controller.model.backtest.BacktestBulkRequest
 import space.dawdawich.controller.model.backtest.BacktestRequest
-import space.dawdawich.model.BacktestBulkMessage
+import space.dawdawich.controller.model.backtest.BacktestRequestResultsResponse
+import space.dawdawich.controller.model.backtest.BacktestResultDetail
 import space.dawdawich.model.BacktestMessage
+import space.dawdawich.repositories.mongo.BackTestResultRepository
 
 @Service
 class BacktestService(
     private val requestStatusService: RequestStatusService,
+    private val backTestResultRepository: BackTestResultRepository,
     private val rabbitTemplate: RabbitTemplate,
 ) {
 
@@ -23,9 +24,9 @@ class BacktestService(
                 BACK_TEST_SERVICE,
                 BacktestMessage(
                     requestId,
-                    symbol,
+                    symbols,
                     startCapital,
-                    multiplier,
+                    leverage,
                     diapason,
                     gridSize,
                     takeProfit,
@@ -36,23 +37,29 @@ class BacktestService(
         }
     }
 
-    fun createBacktestBulk(backtestRequest: BacktestBulkRequest, accountId: String, requestId: String) {
-        requestStatusService.createRequestStatus(requestId, accountId)
+    fun getBackTestResults(requestId: String): BacktestRequestResultsResponse? {
+        val results = backTestResultRepository.getByRequestId(requestId)
 
-        with(backtestRequest) {
-            rabbitTemplate.convertAndSend(
-                BACK_TEST_SERVICE_BULK,
-                BacktestBulkMessage(
-                    requestId,
-                    symbol,
-                    startCapital,
-                    multiplier,
-                    diapason,
-                    gridSize,
-                    takeProfit,
-                    stopLoss,
-                    startTime
-                )
+        if (results.isEmpty()) {
+            return null
+        }
+
+        return results[0].let { config ->
+            BacktestRequestResultsResponse(
+                config.startCapital,
+                config.diapason,
+                config.gridSize,
+                config.takeProfit,
+                config.stopLoss,
+                results.map { res ->
+                    BacktestResultDetail(
+                        res.symbol,
+                        res.multiplier,
+                        res.finalCapital,
+                        res.startTime,
+                        res.endTime,
+                    )
+                }
             )
         }
     }

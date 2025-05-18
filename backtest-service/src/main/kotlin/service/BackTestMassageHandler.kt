@@ -1,11 +1,10 @@
 package space.dawdawich.service
 
+import mu.KotlinLogging
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.BACK_TEST_SERVICE
-import space.dawdawich.constants.BACK_TEST_SERVICE_BULK
 import space.dawdawich.exception.UnsupportedSymbolException
-import space.dawdawich.model.BacktestBulkMessage
 import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BacktestMessage
 import space.dawdawich.model.BackTestResult
@@ -24,69 +23,37 @@ class BackTestMassageHandler(
     private val requestStatusRepository: RequestStatusRepository
 ) {
 
+    val log = KotlinLogging.logger {}
+
     val detailedSymbol: MutableMap<String, SymbolDocument> = mutableMapOf()
 
     @RabbitListener(queues = [BACK_TEST_SERVICE])
     fun startBackTest(request: BacktestMessage) {
         try {
-            val symbolData = getSymbolData(request.symbol)
-
-            val backTestResult: BackTestResult = with(request) {
-                backTestService.processConfig(
+            val configs = with(request) {
+                return@with symbols.map { symbol ->
+                    getSymbolData(symbol)
+                }.map { symbolData ->
                     BackTestConfiguration(
                         symbolData,
                         startCapital,
-                        multiplier,
+                        if (multiplier <= symbolData.maxLeverage) multiplier else symbolData.maxLeverage,
                         diapason,
                         gridSize,
                         takeProfit,
-                        stopLoss,
-                    ),
-                    startTime
-                )
-            }
-
-            backTestResultRepository.insert(resultToDocument(backTestResult, request.requestId))
-            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
-        } catch (e: Exception) {
-            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.FAILED)
-        }
-    }
-
-    @RabbitListener(queues = [BACK_TEST_SERVICE_BULK])
-    fun startBackTestBulk(bulkRequest: BacktestBulkMessage) {
-        try {
-            val configurationList: MutableList<BackTestConfiguration> = mutableListOf()
-
-            for (symbolData in bulkRequest.symbol.map { symbol -> getSymbolData(symbol) }) {
-                for (multiplier in bulkRequest.multiplier.toRange()) {
-                    for (diapason in bulkRequest.diapason.toRange()) {
-                        for (gridSize in bulkRequest.gridSize.toRange()) {
-                            for (takeProfit in bulkRequest.takeProfit.toRange()) {
-                                for (stopLoss in bulkRequest.stopLoss.toRange()) {
-                                    configurationList += BackTestConfiguration(
-                                        symbolData,
-                                        bulkRequest.startCapital,
-                                        multiplier,
-                                        diapason,
-                                        gridSize,
-                                        takeProfit,
-                                        stopLoss
-                                    )
-                                }
-                            }
-                        }
-                    }
+                        stopLoss
+                    )
                 }
             }
 
-            val backTestBulkResultDocs = backTestService.processConfigs(configurationList, bulkRequest.startTime)
-                .map { res -> resultToDocument(res, bulkRequest.requestId) }
+            val backTestBulkResultDocs = backTestService.processConfigs(configs, request.startTime)
+                .map { res -> resultToDocument(res, request.requestId) }
 
             backTestResultRepository.insert(backTestBulkResultDocs)
-            requestStatusRepository.updateRequestStatus(bulkRequest.requestId, RequestStatus.SUCCESS)
+            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
         } catch (e: Exception) {
-            requestStatusRepository.updateRequestStatus(bulkRequest.requestId, RequestStatus.FAILED)
+            log.error(e) { "Error processing backtest" }
+            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.FAILED)
         }
     }
 
@@ -105,8 +72,6 @@ class BackTestMassageHandler(
         backTestResult.endTime,
         backTestResult.result
     )
-
-    private fun Pair<Int, Int>.toRange() = IntRange(this.first, this.second)
 
     private fun getSymbolData(requestedSymbol: String) = detailedSymbol.computeIfAbsent(requestedSymbol) { symbol ->
         symbolRepository.findById(symbol).orElseThrow { UnsupportedSymbolException(symbol) }

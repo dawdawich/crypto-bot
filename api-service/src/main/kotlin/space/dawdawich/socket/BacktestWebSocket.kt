@@ -8,8 +8,8 @@ import space.dawdawich.configuration.WebSocketConfigurator
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import space.dawdawich.controller.model.backtest.RequestStatusResponse
 import space.dawdawich.service.RequestStatusService
-import space.dawdawich.socket.model.RequestStatusResponse
 
 
 @Service
@@ -39,7 +39,7 @@ class BacktestWebSocket(
             val requestId = processedMessage.read<String>("\$.requestId")
 
             requestStatusService.getRequestStatus(requestId)?.let {
-                session.asyncRemote.sendObject(RequestStatusResponse(it))
+                session.asyncRemote.sendObject(RequestStatusResponse(it.id, it.accountId, it.status))
             }
         }
     }

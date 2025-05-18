@@ -10,7 +10,7 @@ class BackTestResultDocument(
     val requestId: String,
     val symbol: String,
     val startCapital: Double,
-    val multiplier: Int,
+    val multiplier: Double,
     val diapason: Int,
     val gridSize: Int,
     val takeProfit: Int,

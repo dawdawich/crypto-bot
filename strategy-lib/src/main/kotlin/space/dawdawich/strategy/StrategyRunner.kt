@@ -2,7 +2,7 @@ package space.dawdawich.strategy
 
 abstract class StrategyRunner(
     var money: Double,
-    protected val multiplier: Int,
+    protected val multiplier: Double,
     protected val minQtyOrder: Double,
     val symbol: String,
     val id: String,

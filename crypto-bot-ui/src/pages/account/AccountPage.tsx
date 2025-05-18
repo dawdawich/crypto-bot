@@ -6,8 +6,6 @@ import {Button, Divider, styled, Typography} from "@mui/material";
 import {useAuth} from "../../context/AuthContext";
 import {sanitizeMiddle} from "../../utils/string-utils";
 import {Route, Switch, useLocation} from "wouter";
-import ApiTokenContent from "./ApiTokenContent";
-import SubscriptionContent from "./SubscriptionContent";
 import {successToast} from "../../shared/toast/Toasts";
 
 const hoverStyle = {
@@ -82,8 +80,6 @@ const AccountPage: React.FC = () => {
             </div>
             <div className="account-content">
                 <Switch>
-                    <Route path="/account/api-token" component={ApiTokenContent}/>
-                    <Route path="/account/subscription" component={SubscriptionContent}/>
                     <Route path="/account">
                         <CurrentPath>Account</CurrentPath>
                     </Route>

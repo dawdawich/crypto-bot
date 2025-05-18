@@ -23,27 +23,18 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                 }
 
         return runBlocking {
-            runConfigurations.map { config ->
-                async(Dispatchers.Default) {
-                    // do the actual backTest in parallel on Default dispatcher
-                    val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
-                    val result = backTest(config, prices.map { it.price })
-                    BackTestResult(config, prices.first().time, prices.last().time, result)
-                }
-            }.awaitAll()
+            runConfigurations
+                .filter { config -> symbolHashCodes[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
+                .map { config ->
+                    async(Dispatchers.Default) {
+                        // do the actual backTest in parallel on Default dispatcher
+                        val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
+                        val result = backTest(config, prices.map { it.price })
+                        BackTestResult(config, prices.first().time, prices.last().time, result)
+                    }
+                }.awaitAll()
         }
     }
-
-    fun processConfig(runConfiguration: BackTestConfiguration, startTime: Long): BackTestResult = priceTickRepository
-        .findAllByTimeIsGreaterThanAndPair(startTime, runConfiguration.symbol.symbol.hashCode())
-        .let { prices ->
-            BackTestResult(
-                runConfiguration,
-                prices.first().time,
-                prices.last().time,
-                backTest(runConfiguration, prices.map { it.price })
-            )
-        }
 
     private fun backTest(
         runConfiguration: BackTestConfiguration,

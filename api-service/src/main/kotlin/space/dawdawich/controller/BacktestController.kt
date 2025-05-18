@@ -1,34 +1,41 @@
 package space.dawdawich.controller
 
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.controller.model.backtest.BacktestBulkRequest
 import space.dawdawich.controller.model.backtest.BacktestRequest
+import space.dawdawich.controller.model.backtest.BacktestRequestResultsResponse
 import space.dawdawich.controller.model.backtest.RequestIdResponse
+import space.dawdawich.controller.model.backtest.RequestStatusResponse
 import space.dawdawich.service.BacktestService
+import space.dawdawich.service.RequestStatusService
 import java.util.*
 
 @RestController
 @RequestMapping("/backtest")
 class BacktestController(
-    private val backtestService: BacktestService
+    private val backtestService: BacktestService,
+    private val requestStatusService: RequestStatusService,
 ) {
+
+    @GetMapping("/request/all")
+    fun getBacktestsRequests(authentication: Authentication): List<RequestStatusResponse> = requestStatusService.getRequestStatusesForAccountId(authentication.name).reversed()
+
+    @GetMapping("/request/{requestId}")
+    fun getBacktestsDetails(authentication: Authentication, @PathVariable("requestId") requestId: String): ResponseEntity<BacktestRequestResultsResponse?> {
+        if (!requestStatusService.isRequestIdExistForAccount(requestId, authentication.name)) {
+            return ResponseEntity.notFound().build()
+        }
+
+        return ResponseEntity.ok(backtestService.getBackTestResults(requestId))
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createBacktest(@RequestBody request: BacktestRequest, authentication: Authentication): RequestIdResponse {
         val requestId = UUID.randomUUID().toString()
         backtestService.createBacktest(request, authentication.name, requestId)
-
-        return RequestIdResponse(requestId)
-    }
-
-    @PostMapping("/bulk")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createBacktestBulk(@RequestBody request: BacktestBulkRequest, authentication: Authentication): RequestIdResponse {
-        val requestId = UUID.randomUUID().toString()
-        backtestService.createBacktestBulk(request, authentication.name, requestId)
 
         return RequestIdResponse(requestId)
     }

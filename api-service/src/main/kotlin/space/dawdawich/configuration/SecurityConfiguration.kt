@@ -83,12 +83,7 @@ class SecurityConfiguration(private val environment: Environment) {
                 it.apply {
                     requestMatchers(HttpMethod.GET, "/account/salt").permitAll()
                     requestMatchers("/account/**").authenticated()
-                    requestMatchers("/analyzer").authenticated()
-                    requestMatchers("/analyzer/top20").permitAll()
-                    requestMatchers("/analyzer/**").authenticated()
-                    requestMatchers("/folder").authenticated()
-                    requestMatchers("/folder/**").authenticated()
-                    requestMatchers("/manager/**").authenticated()
+                    requestMatchers("/backtest/**").authenticated()
                     requestMatchers("/symbol/names").permitAll()
                     requestMatchers("/symbol").hasAuthority("ADMIN")
                     requestMatchers("/ws/*").permitAll()

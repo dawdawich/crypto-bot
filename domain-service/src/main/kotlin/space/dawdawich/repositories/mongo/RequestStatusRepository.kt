@@ -11,4 +11,8 @@ interface RequestStatusRepository : MongoRepository<RequestStatusDocument, Strin
     @Query("{ _id: ?0 }")
     @Update("{ \$set: { status: ?1 } }")
     fun updateRequestStatus(id: String, status: RequestStatus)
+
+    fun getRequestStatusDocumentsByAccountId(accountId: String): List<RequestStatusDocument>
+
+    fun existsByAccountIdAndId(accountId: String, id: String): Boolean
 }

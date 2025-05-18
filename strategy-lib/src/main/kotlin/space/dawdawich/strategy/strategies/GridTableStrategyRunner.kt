@@ -9,7 +9,7 @@ import java.util.*
 class GridTableStrategyRunner(
     currentPrice: Double,
     money: Double,
-    multiplier: Int,
+    multiplier: Double,
     symbol: String,
     diapason: Int,
     gridSize: Int,

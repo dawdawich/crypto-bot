@@ -1,0 +1,68 @@
+.back-test-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100vh;
+}
+
+.back-test-header {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    border-bottom: 1px solid #262B31;
+    height: 72px;
+}
+
+.back-test-header-label {
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    padding-top: 24px;
+    padding-left: 16px;
+}
+
+.back-test-create-button {
+    border-radius: 4px !important;
+    margin-right: 16px !important;
+    align-self: center !important;
+    height: 34px !important;
+    background-color: #D0FF12 !important;
+    color: #121417 !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+}
+
+.back-test-header-path {
+    display: flex;
+    flex-direction: row;
+}
+
+#back-test-table {
+    border: 0 solid #000;
+}
+
+.back-test-table-headers {
+    height: 32px;
+}
+
+.back-test-table-headers > .cell {
+    background-color: #1D2024;
+    color: #868F9C;
+    font-weight: 200;
+    border-bottom: 2px solid #262B31;
+}
+
+.back-test-table-body > .cell {
+    color: white;
+}
+
+#back-test-table-body-cell {
+    color: white;
+}
+
+.detail-container {
+    display: flex;
+    justify-content: space-evenly;
+    flex-direction: row;
+    color: white;
+}

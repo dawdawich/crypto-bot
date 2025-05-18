@@ -4,7 +4,7 @@ type MessageHandler = (message: string) => void;
 
 export class WebSocketService {
     private socket: WebSocket | null = null;
-    private url: string;
+    private readonly url: string;
     public onDisconnect = () => {};
 
     constructor(url: string) {
@@ -51,5 +51,4 @@ export class WebSocketService {
     }
 }
 
-export const getWebSocketAnalyzerService = () => new WebSocketService(`${WEB_SOCKET_HOST}/ws/analyzer`);
-export const webSocketManagerService = new WebSocketService(`${WEB_SOCKET_HOST}/ws/manager`);
+export const getWebSocketBackTestService = () => new WebSocketService(`${WEB_SOCKET_HOST}/ws/backtest`);

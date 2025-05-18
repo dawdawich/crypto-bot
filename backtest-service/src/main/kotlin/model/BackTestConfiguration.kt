@@ -6,7 +6,7 @@ import java.util.UUID
 data class BackTestConfiguration(
     val symbol: SymbolDocument,
     val startCapital: Double,
-    val multiplier: Int,
+    val multiplier: Double,
     val diapason: Int,
     val gridSize: Int,
     val takeProfit: Int,

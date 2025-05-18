@@ -1,4 +1,3 @@
-import {ApiToken} from "./ApiToken";
 
 export type Account = {
     id: string;
@@ -7,5 +6,4 @@ export type Account = {
     surname: string;
     email: string;
     createTime: number;
-    tokens: ApiToken[];
 }

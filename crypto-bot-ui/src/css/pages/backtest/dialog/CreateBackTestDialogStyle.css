@@ -1,0 +1,51 @@
+.cross-icon-button {
+    display: flex;
+    align-self: flex-end;
+    fill: white;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.switch-container {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    padding: 8px;
+    height: 20px;
+    cursor: pointer;
+    background-color: #262B31;
+    border-radius: 4px;
+    margin-top: 16px;
+}
+
+.switch-container-button {
+    padding: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 4px;
+    text-align: center;
+    width: 50%;
+    transition: 0.3s;
+}
+
+.field-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    color: white;
+    font-weight: 200;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}

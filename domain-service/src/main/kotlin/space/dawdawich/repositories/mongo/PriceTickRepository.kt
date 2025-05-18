@@ -5,4 +5,5 @@ import space.dawdawich.repositories.mongo.entity.PriceTickModel
 
 interface PriceTickRepository : MongoRepository<PriceTickModel, Int> {
     fun findAllByTimeIsGreaterThanAndPair(start: Long, pair: Int): List<PriceTickModel>
+    fun deleteByTimeIsLessThan(time: Long)
 }

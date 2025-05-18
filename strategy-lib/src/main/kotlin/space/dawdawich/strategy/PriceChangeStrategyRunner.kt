@@ -3,7 +3,7 @@ package space.dawdawich.strategy
 
 abstract class PriceChangeStrategyRunner(
     money: Double,
-    multiplier: Int,
+    multiplier: Double,
     symbol: String,
     minQtyStep: Double,
     id: String,

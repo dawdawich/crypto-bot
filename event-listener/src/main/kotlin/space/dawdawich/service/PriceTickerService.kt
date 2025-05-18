@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitPriceChangeCaptureClient
+import space.dawdawich.repositories.mongo.PriceTickRepository
 import space.dawdawich.repositories.mongo.SymbolRepository
 import java.util.concurrent.TimeUnit
 
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit
 class PriceTickerService(
     private val client: ByBitPriceChangeCaptureClient,
     private val symbolRepository: SymbolRepository,
+    private val priceTickRepository: PriceTickRepository
 ) {
 
     private val log = KotlinLogging.logger {}
@@ -30,4 +32,7 @@ class PriceTickerService(
             client.reconnect()
         }
     }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    fun clearOldData() = priceTickRepository.deleteByTimeIsLessThan(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(14))
 }
