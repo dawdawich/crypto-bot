@@ -56,7 +56,7 @@ class BacktestService(
     }
 
     fun getBackTestResults(requestId: String): BacktestRequestResultsResponse? {
-        val results = backTestResultRepository.getByRequestId(requestId).sortedByDescending { it.finalCapital }.subList(0, 50)
+        val results = backTestResultRepository.getByRequestId(requestId).sortedByDescending { it.finalCapital }.take(50)
 
         if (results.isEmpty()) {
             return null

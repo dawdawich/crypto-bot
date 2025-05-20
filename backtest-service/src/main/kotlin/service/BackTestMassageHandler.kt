@@ -92,7 +92,7 @@ class BackTestMassageHandler(
                 val backTestBulkResultDocs = backTestService.processConfigs(configs, startTime)
                     .map { res -> resultToDocument(res, request.requestId) }
 
-                backTestResultRepository.insert(backTestBulkResultDocs)
+                backTestResultRepository.insert(backTestBulkResultDocs.take(50))
             }
 
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
