@@ -48,6 +48,7 @@ class BacktestService(
                 PREDEFINED_BACK_TEST_SERVICE,
                 GeneralBacktestMessage(
                     requestId,
+                    backtestRequest.symbols,
                     startCapital,
                 )
             )

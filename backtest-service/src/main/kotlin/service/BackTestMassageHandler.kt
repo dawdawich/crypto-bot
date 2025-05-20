@@ -65,15 +65,14 @@ class BackTestMassageHandler(
         val processStart = System.currentTimeMillis()
         log.info { "Starting predefined backtest; request id: ${request.requestId}; Start time: $processStart" }
 
-        val symbolDocuments = symbolRepository.findAll()
         val startTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
 
         try {
-            for (symbolDocument in symbolDocuments) {
+            for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
                 val configs: MutableList<BackTestConfiguration> = mutableListOf()
                 for (leverage in 1..symbolDocument.maxLeverage.toInt()) {
                     for (diapason in 1..10) {
-                        for (gridSize in 2..180) {
+                        for (gridSize in 50..200 step 10) {
                             for (takeProfit in 1..30) {
                                 for (stopLoss in 1..30) {
                                     configs += BackTestConfiguration(
