@@ -18,6 +18,7 @@ interface CreateBackTestDialogProps {
 }
 
 export type BacktestRequestModel = {
+    symbols: string[];
     startCapital: number | undefined;
 }
 
@@ -34,8 +35,16 @@ const submitData = (requestModel: BacktestRequestModel, authInfo: AuthInfo, onCl
 
 const CreateBackTestDialog: React.FC<CreateBackTestDialogProps> = ({open, onClose, symbols, onCloseWithRequestId, authInfo}) => {
     const [backtestRequestModel, setBacktestRequestModel] = useState<BacktestRequestModel>({
+        symbols: [],
         startCapital: undefined
     });
+
+    const handleSelectChange = (name: string, value: any) => {
+        setBacktestRequestModel({
+            ...backtestRequestModel,
+            [name]: Array.isArray(value) ? value.map(el => el.value) : value
+        });
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value, type, checked} = e.target;
@@ -62,6 +71,19 @@ const CreateBackTestDialog: React.FC<CreateBackTestDialogProps> = ({open, onClos
             <CrossIcon className="cross-icon-button" onClick={onClose}/>
             <DialogTitle>New Backtest</DialogTitle>
             <DialogContent>
+                <div className="field-container">
+                    Symbols
+                    <Select
+                        styles={MultiSelectStyle}
+                        placeholder=""
+                        name="symbol"
+                        isMulti={true}
+                        isSearchable={true}
+                        value={backtestRequestModel.symbols.map(el => ({value: el, label: el}))}
+                        onChange={(newValue) => handleSelectChange("symbols", newValue)}
+                        options={symbols.map(el => ({value: el, label: el}))}
+                    />
+                </div>
                 <div className="field-container">
                     Start Capital, $
                     <InputField
