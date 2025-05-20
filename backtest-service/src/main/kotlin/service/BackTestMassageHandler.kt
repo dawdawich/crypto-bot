@@ -68,6 +68,8 @@ class BackTestMassageHandler(
         val startTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
 
         try {
+            val resToSave: MutableList<BackTestResultDocument> = mutableListOf()
+
             for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
                 val configs: MutableList<BackTestConfiguration> = mutableListOf()
                 for (leverage in 1..symbolDocument.maxLeverage.toInt()) {
@@ -89,12 +91,12 @@ class BackTestMassageHandler(
                         }
                     }
                 }
-                val backTestBulkResultDocs = backTestService.processConfigs(configs, startTime)
-                    .map { res -> resultToDocument(res, request.requestId) }
+                resToSave += backTestService.processConfigs(configs, startTime)
+                    .map { res -> resultToDocument(res, request.requestId) }.maxBy { it.finalCapital }
 
-                backTestResultRepository.insert(backTestBulkResultDocs.take(50))
             }
 
+            backTestResultRepository.insert(resToSave)
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
         } catch (e: Exception) {
             log.error(e) { "Error processing backtest" }
