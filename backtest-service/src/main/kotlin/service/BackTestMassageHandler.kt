@@ -60,7 +60,7 @@ class BackTestMassageHandler(
         }
     }
 
-    @RabbitListener(queues = [PREDEFINED_BACK_TEST_SERVICE])
+    @RabbitListener(queues = [PREDEFINED_BACK_TEST_SERVICE], ackMode = "NONE")
     fun startPredefinedBacktest(request: GeneralBacktestMessage) {
         val processStart = System.currentTimeMillis()
         log.info { "Starting predefined backtest; request id: ${request.requestId}; Start time: $processStart" }
