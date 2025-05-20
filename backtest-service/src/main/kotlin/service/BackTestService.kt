@@ -86,79 +86,79 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
         return newMoney + strategyRunner.getPnL()
     }
 }
-
-fun main() {
-    val pricesJson = Files.readString(Path.of("eth_prices.json"))
-
-    val prices = ObjectMapper().readValue(pricesJson, object : TypeReference<List<Map<String, Any>>>() {})
-        .map { map ->
-            map["time"] as Map<String, Any> to map["price"].toString().toDouble()
-        }
-        .map { pair ->
-            val time =
-                ((pair.first["high"] as Int).toLong() shl 32) or (((pair.first["low"] as Int).toLong() and 0xFFFFFFFFL))
-
-            time to pair.second
-        }.sortedBy { it.first }
-        .map { it.second }
-
-    val result =
-        backTest(
-            BackTestConfiguration(
-                SymbolDocument("ETHUSDT", 0.01, 199999.98, 0.01, 7240.0, 100.0, 0.01, 0.01),
-                1000.0,
-                10.0,
-                7,
-                50,
-                30,
-                20
-            ), prices
-        )
-
-    println(result)
-}
-
-fun backTest(
-    runConfiguration: BackTestConfiguration,
-    prices: List<Double>,
-): Double {
-    val initialPrice = prices[0]
-
-    fun createStrategyRunner(money: Double, initialPrice: Double) = GridTableStrategyRunner(
-        initialPrice,
-        money,
-        runConfiguration.multiplier,
-        runConfiguration.symbol.symbol,
-        runConfiguration.diapason,
-        runConfiguration.gridSize,
-        runConfiguration.symbol.minPrice,
-        runConfiguration.symbol.minOrderQty
-    )
-
-
-    var strategyRunner = createStrategyRunner(runConfiguration.startCapital, initialPrice)
-    var checker =
-        TpAndSlChecker(runConfiguration.startCapital, runConfiguration.takeProfit, runConfiguration.stopLoss)
-    var skip = false
-    var newMoney = runConfiguration.startCapital
-
-    for (price in prices) {
-        if (!skip) {
-            skip = true
-            continue
-        }
-
-        strategyRunner.acceptPriceChange(price)
-
-        val pnl = strategyRunner.getPnL()
-        val checkResult = checker.checkPnLExceedingBoundsWithSlUpdating(pnl)
-
-        if (checkResult == TP || checkResult == SL) {
-            newMoney += pnl
-            strategyRunner = createStrategyRunner(newMoney, price)
-            checker = TpAndSlChecker(newMoney, runConfiguration.takeProfit, runConfiguration.stopLoss)
-        }
-    }
-
-    return newMoney + strategyRunner.getPnL()
-}
+//
+//fun main() {
+//    val pricesJson = Files.readString(Path.of("eth_prices.json"))
+//
+//    val prices = ObjectMapper().readValue(pricesJson, object : TypeReference<List<Map<String, Any>>>() {})
+//        .map { map ->
+//            map["time"] as Map<String, Any> to map["price"].toString().toDouble()
+//        }
+//        .map { pair ->
+//            val time =
+//                ((pair.first["high"] as Int).toLong() shl 32) or (((pair.first["low"] as Int).toLong() and 0xFFFFFFFFL))
+//
+//            time to pair.second
+//        }.sortedBy { it.first }
+//        .map { it.second }
+//
+//    val result =
+//        backTest(
+//            BackTestConfiguration(
+//                SymbolDocument("ETHUSDT", 0.01, 199999.98, 0.01, 7240.0, 100.0, 0.01, 0.01),
+//                1000.0,
+//                10.0,
+//                7,
+//                50,
+//                30,
+//                20
+//            ), prices
+//        )
+//
+//    println(result)
+//}
+//
+//fun backTest(
+//    runConfiguration: BackTestConfiguration,
+//    prices: List<Double>,
+//): Double {
+//    val initialPrice = prices[0]
+//
+//    fun createStrategyRunner(money: Double, initialPrice: Double) = GridTableStrategyRunner(
+//        initialPrice,
+//        money,
+//        runConfiguration.multiplier,
+//        runConfiguration.symbol.symbol,
+//        runConfiguration.diapason,
+//        runConfiguration.gridSize,
+//        runConfiguration.symbol.minPrice,
+//        runConfiguration.symbol.minOrderQty
+//    )
+//
+//
+//    var strategyRunner = createStrategyRunner(runConfiguration.startCapital, initialPrice)
+//    var checker =
+//        TpAndSlChecker(runConfiguration.startCapital, runConfiguration.takeProfit, runConfiguration.stopLoss)
+//    var skip = false
+//    var newMoney = runConfiguration.startCapital
+//
+//    for (price in prices) {
+//        if (!skip) {
+//            skip = true
+//            continue
+//        }
+//
+//        strategyRunner.acceptPriceChange(price)
+//
+//        val pnl = strategyRunner.getPnL()
+//        val checkResult = checker.checkPnLExceedingBoundsWithSlUpdating(pnl)
+//
+//        if (checkResult == TP || checkResult == SL) {
+//            newMoney += pnl
+//            strategyRunner = createStrategyRunner(newMoney, price)
+//            checker = TpAndSlChecker(newMoney, runConfiguration.takeProfit, runConfiguration.stopLoss)
+//        }
+//    }
+//
+//    return newMoney + strategyRunner.getPnL()
+//}
