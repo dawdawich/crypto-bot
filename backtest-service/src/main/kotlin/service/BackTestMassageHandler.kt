@@ -62,6 +62,9 @@ class BackTestMassageHandler(
 
     @RabbitListener(queues = [PREDEFINED_BACK_TEST_SERVICE])
     fun startPredefinedBacktest(request: GeneralBacktestMessage) {
+        val processStart = System.currentTimeMillis()
+        log.info { "Starting predefined backtest; request id: ${request.requestId}; Start time: $processStart" }
+
         val symbolDocuments = symbolRepository.findAll()
         val configs: MutableList<BackTestConfiguration> = mutableListOf()
         val startTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
@@ -98,6 +101,8 @@ class BackTestMassageHandler(
             log.error(e) { "Error processing backtest" }
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.FAILED)
         }
+        log.info { "Finish predefined backtest; request id: ${request.requestId}; Time spent: ${System.currentTimeMillis() - processStart}ms" }
+
     }
 
     private fun resultToDocument(backTestResult: BackTestResult, requestId: String): BackTestResultDocument

@@ -1,8 +1,9 @@
 package space.dawdawich.service
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 import space.dawdawich.common.TpAndSlChecker
 import space.dawdawich.common.TpAndSlChecker.CheckResult.SL
@@ -10,10 +11,7 @@ import space.dawdawich.common.TpAndSlChecker.CheckResult.TP
 import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BackTestResult
 import space.dawdawich.repositories.mongo.PriceTickRepository
-import space.dawdawich.repositories.mongo.entity.SymbolDocument
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
-import java.nio.file.Files
-import java.nio.file.Path
 
 @Service
 class BackTestService(private val priceTickRepository: PriceTickRepository) {
