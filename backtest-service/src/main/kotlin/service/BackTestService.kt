@@ -1,9 +1,6 @@
 package space.dawdawich.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import space.dawdawich.common.TpAndSlChecker
@@ -13,6 +10,7 @@ import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BackTestResult
 import space.dawdawich.repositories.mongo.PriceTickRepository
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import java.util.concurrent.Executors
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
@@ -20,6 +18,9 @@ import kotlin.concurrent.atomics.incrementAndFetch
 @Service
 class BackTestService(private val priceTickRepository: PriceTickRepository) {
 
+    val dispatcher = Executors
+        .newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+        .asCoroutineDispatcher()
     val log = KotlinLogging.logger {}
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -32,13 +33,18 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                     priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it)
                 }
 
+
+
+        // 2) build a fixed/thread-pool dispatcher
+
+
         val size = runConfigurations.size
         val complete = AtomicInt(0)
         return runBlocking {
             runConfigurations
                 .filter { config -> symbolHashCodes[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
                 .map { config ->
-                    async(Dispatchers.Default) {
+                    async(dispatcher) {
                         // do the actual backTest in parallel on Default dispatcher
                         val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
                         val result = backTest(config, prices.sortedBy { it.time }.map { it.price })
