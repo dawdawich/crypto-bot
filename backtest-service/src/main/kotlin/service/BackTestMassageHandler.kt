@@ -75,8 +75,8 @@ class BackTestMassageHandler(
                 for (leverage in 10..symbolDocument.maxLeverage.toInt().let { if (it > 25) 25 else it }) {
                     for (diapason in 3..7) {
                         for (gridSize in 50..200 step 10) {
-                            for (takeProfit in 10..20) {
-                                for (stopLoss in 5..17) {
+                            for (takeProfit in listOf(10, 15, 20)) {
+                                for (stopLoss in listOf(7, 12, 17)) {
                                     configs += BackTestConfiguration(
                                         symbolDocument,
                                         request.startCapital,

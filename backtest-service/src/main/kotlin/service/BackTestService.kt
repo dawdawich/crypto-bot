@@ -21,9 +21,7 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
     val dispatcher = Executors
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors())
         .asCoroutineDispatcher()
-    val log = KotlinLogging.logger {}
 
-    @OptIn(ExperimentalAtomicApi::class)
     fun processConfigs(runConfigurations: List<BackTestConfiguration>, startTime: Long): List<BackTestResult> {
         val symbolHashCodes =
             runConfigurations
@@ -33,8 +31,6 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                     priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it)
                 }
 
-        val size = runConfigurations.size
-        val complete = AtomicInt(0)
         return runBlocking {
             runConfigurations
                 .filter { config -> symbolHashCodes[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
@@ -43,7 +39,6 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                         // do the actual backTest in parallel on Default dispatcher
                         val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
                         val result = backTest(config, prices.sortedBy { it.time }.map { it.price })
-                        log.info { "Processed ${complete.incrementAndFetch()} / $size" }
                         BackTestResult(config, prices.first().time, prices.last().time, result)
                     }
                 }.awaitAll()
