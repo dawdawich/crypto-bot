@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import space.dawdawich.common.TpAndSlChecker
 import space.dawdawich.common.TpAndSlChecker.CheckResult.SL
@@ -12,10 +13,16 @@ import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BackTestResult
 import space.dawdawich.repositories.mongo.PriceTickRepository
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 
 @Service
 class BackTestService(private val priceTickRepository: PriceTickRepository) {
 
+    val log = KotlinLogging.logger {}
+
+    @OptIn(ExperimentalAtomicApi::class)
     fun processConfigs(runConfigurations: List<BackTestConfiguration>, startTime: Long): List<BackTestResult> {
         val symbolHashCodes =
             runConfigurations
@@ -25,6 +32,8 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                     priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it)
                 }
 
+        val size = runConfigurations.size
+        val complete = AtomicInt(0)
         return runBlocking {
             runConfigurations
                 .filter { config -> symbolHashCodes[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
@@ -33,6 +42,7 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                         // do the actual backTest in parallel on Default dispatcher
                         val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
                         val result = backTest(config, prices.sortedBy { it.time }.map { it.price })
+                        log.info { "Processed ${complete.incrementAndFetch()} / $size" }
                         BackTestResult(config, prices.first().time, prices.last().time, result)
                     }
                 }.awaitAll()
