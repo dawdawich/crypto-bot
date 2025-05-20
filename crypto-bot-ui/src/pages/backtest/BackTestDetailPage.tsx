@@ -8,12 +8,12 @@ import {errorToast} from "../../shared/toast/Toasts";
 
 export interface BackTestResults {
     startCapital: number;
-    diapason: number;
-    gridSize: number;
-    takeProfit: number;
-    stopLoss: number;
     results: {
         symbol: string;
+        diapason: number;
+        gridSize: number;
+        takeProfit: number;
+        stopLoss: number;
         leverage: number;
         resultCapital: number;
         startPriceTime: number;
@@ -49,10 +49,6 @@ const BackTestDetailPage: React.FC = () => {
             </div>
             <div className="detail-container">
                 <div>Start Capital: {requestResult!.startCapital}</div>
-                <div>Diapason: {requestResult!.diapason}</div>
-                <div>Grid Size: {requestResult!.gridSize}</div>
-                <div>Take Profit: {requestResult!.takeProfit}</div>
-                <div>Stop Loss: {requestResult!.stopLoss}</div>
             </div>
             <Divider />
             <TableContainer>
@@ -60,6 +56,10 @@ const BackTestDetailPage: React.FC = () => {
                     <TableHead>
                         <TableRow className="back-test-table-headers">
                             <TableCell className="cell">Pair</TableCell>
+                            <TableCell className="cell">Diapason</TableCell>
+                            <TableCell className="cell">Grid Size</TableCell>
+                            <TableCell className="cell">TP</TableCell>
+                            <TableCell className="cell">SL</TableCell>
                             <TableCell className="cell">Leverage</TableCell>
                             <TableCell className="cell">Start Calc Time</TableCell>
                             <TableCell className="cell">End Calc Time</TableCell>
@@ -72,6 +72,10 @@ const BackTestDetailPage: React.FC = () => {
                                 return (
                                     <TableRow className="back-test-table-body">
                                         <TableCell className="cell">{pairInfo.symbol}</TableCell>
+                                        <TableCell className="cell">{pairInfo.diapason}</TableCell>
+                                        <TableCell className="cell">{pairInfo.gridSize}</TableCell>
+                                        <TableCell className="cell">{pairInfo.takeProfit}</TableCell>
+                                        <TableCell className="cell">{pairInfo.stopLoss}</TableCell>
                                         <TableCell className="cell">{pairInfo.leverage}</TableCell>
                                         <TableCell className="cell">{pairInfo.startPriceTime}</TableCell>
                                         <TableCell className="cell">{pairInfo.endPriceTime}</TableCell>

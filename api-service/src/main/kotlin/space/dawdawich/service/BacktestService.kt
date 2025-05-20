@@ -3,10 +3,13 @@ package space.dawdawich.service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.BACK_TEST_SERVICE
+import space.dawdawich.constants.PREDEFINED_BACK_TEST_SERVICE
 import space.dawdawich.controller.model.backtest.BacktestRequest
 import space.dawdawich.controller.model.backtest.BacktestRequestResultsResponse
 import space.dawdawich.controller.model.backtest.BacktestResultDetail
+import space.dawdawich.controller.model.backtest.PredefinedBacktestRequest
 import space.dawdawich.model.BacktestMessage
+import space.dawdawich.model.GeneralBacktestMessage
 import space.dawdawich.repositories.mongo.BackTestResultRepository
 
 @Service
@@ -37,8 +40,22 @@ class BacktestService(
         }
     }
 
+    fun createPredefinedBacktest(backtestRequest: PredefinedBacktestRequest, accountId: String, requestId: String) {
+        requestStatusService.createRequestStatus(requestId, accountId)
+
+        with(backtestRequest) {
+            rabbitTemplate.convertAndSend(
+                PREDEFINED_BACK_TEST_SERVICE,
+                GeneralBacktestMessage(
+                    requestId,
+                    startCapital,
+                )
+            )
+        }
+    }
+
     fun getBackTestResults(requestId: String): BacktestRequestResultsResponse? {
-        val results = backTestResultRepository.getByRequestId(requestId)
+        val results = backTestResultRepository.getByRequestId(requestId).sortedByDescending { it.finalCapital }.subList(0, 50)
 
         if (results.isEmpty()) {
             return null
@@ -47,12 +64,12 @@ class BacktestService(
         return results[0].let { config ->
             BacktestRequestResultsResponse(
                 config.startCapital,
-                config.diapason,
-                config.gridSize,
-                config.takeProfit,
-                config.stopLoss,
                 results.map { res ->
                     BacktestResultDetail(
+                        config.diapason,
+                        config.gridSize,
+                        config.takeProfit,
+                        config.stopLoss,
                         res.symbol,
                         res.multiplier,
                         res.finalCapital,

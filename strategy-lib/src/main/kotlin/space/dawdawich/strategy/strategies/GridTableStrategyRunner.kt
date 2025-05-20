@@ -24,8 +24,6 @@ class GridTableStrategyRunner(
     id
 ) {
     private val orderPriceGrid: MutableMap<Double, Order?> = mutableMapOf()
-    private val minPrice: Double
-    private val maxPrice: Double
     private val step: Double
     private val middlePrice: Double
     private val qtyPerOrder: Double
@@ -56,14 +54,11 @@ class GridTableStrategyRunner(
             gridPrices += maxPrice
         }
 
-        this.minPrice = minPrice
-        this.maxPrice = maxPrice
-
         orderPriceGrid += gridPrices.map { it to null }
         middlePrice = currentPrice
         this.step = step
 
-        this.qtyPerOrder = (money * multiplier / ((gridSize + 1) * currentPrice)).trimToStep(minQtyStep)
+        this.qtyPerOrder = (money * multiplier / ((gridSize + 1) * currentPrice)).trimToStep(minQtyStep).let { if (it < minQtyStep) minQtyStep else it }
     }
 
     override fun acceptPriceChange(currentPrice: Double) {

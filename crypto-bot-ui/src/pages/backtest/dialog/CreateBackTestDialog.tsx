@@ -20,12 +20,6 @@ interface CreateBackTestDialogProps {
 export type BacktestRequestModel = {
     symbols: string[];
     startCapital: number | undefined;
-    leverage: number | undefined;
-    diapason: number | undefined;
-    gridSize: number | undefined;
-    stopLoss: number | undefined;
-    takeProfit: number | undefined;
-    startTime: number | undefined;
 }
 
 const submitData = (requestModel: BacktestRequestModel, authInfo: AuthInfo, onClose: (requestId: string) => void) => {
@@ -42,13 +36,7 @@ const submitData = (requestModel: BacktestRequestModel, authInfo: AuthInfo, onCl
 const CreateBackTestDialog: React.FC<CreateBackTestDialogProps> = ({open, onClose, symbols, onCloseWithRequestId, authInfo}) => {
     const [backtestRequestModel, setBacktestRequestModel] = useState<BacktestRequestModel>({
         symbols: [],
-        startCapital: undefined,
-        leverage: undefined,
-        diapason: undefined,
-        gridSize: undefined,
-        stopLoss: undefined,
-        takeProfit: undefined,
-        startTime: undefined
+        startCapital: undefined
     });
 
     const handleSelectChange = (name: string, value: any) => {
@@ -103,60 +91,6 @@ const CreateBackTestDialog: React.FC<CreateBackTestDialogProps> = ({open, onClos
                         type="number"
                         name="startCapital"
                         value={backtestRequestModel.startCapital}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Leverage
-                    <InputField
-                        error={!backtestRequestModel.leverage}
-                        type="number"
-                        name="leverage"
-                        value={backtestRequestModel.leverage}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Diapason, %
-                    <InputField
-                        error={!backtestRequestModel.diapason}
-                        type="number"
-                        name="diapason"
-                        value={backtestRequestModel.diapason}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Grid Size
-                    <InputField
-                        error={!backtestRequestModel.gridSize}
-                        type="number"
-                        name="gridSize"
-                        value={backtestRequestModel.gridSize}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Stop Loss, %
-                    <InputField
-                        error={!backtestRequestModel.stopLoss}
-                        type="number"
-                        name="stopLoss"
-                        value={backtestRequestModel.stopLoss}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Take Profit, %
-                    <InputField
-                        error={!backtestRequestModel.takeProfit}
-                        type="number"
-                        name="takeProfit"
-                        value={backtestRequestModel.takeProfit}
-                        onChange={handleChange}/>
-                </div>
-                <div className="field-container">
-                    Start Time
-                    <InputField
-                        error={!backtestRequestModel.startTime}
-                        type="number"
-                        name="startTime"
-                        value={backtestRequestModel.startTime}
                         onChange={handleChange}/>
                 </div>
             </DialogContent>

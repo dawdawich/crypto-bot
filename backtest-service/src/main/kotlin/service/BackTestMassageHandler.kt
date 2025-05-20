@@ -4,16 +4,19 @@ import mu.KotlinLogging
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Service
 import space.dawdawich.constants.BACK_TEST_SERVICE
+import space.dawdawich.constants.PREDEFINED_BACK_TEST_SERVICE
 import space.dawdawich.exception.UnsupportedSymbolException
 import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BacktestMessage
 import space.dawdawich.model.BackTestResult
+import space.dawdawich.model.GeneralBacktestMessage
 import space.dawdawich.repositories.mongo.BackTestResultRepository
 import space.dawdawich.repositories.mongo.RequestStatusRepository
 import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.BackTestResultDocument
 import space.dawdawich.repositories.mongo.entity.RequestStatus
 import space.dawdawich.repositories.mongo.entity.SymbolDocument
+import java.util.concurrent.TimeUnit
 
 @Service
 class BackTestMassageHandler(
@@ -47,6 +50,46 @@ class BackTestMassageHandler(
             }
 
             val backTestBulkResultDocs = backTestService.processConfigs(configs, request.startTime)
+                .map { res -> resultToDocument(res, request.requestId) }
+
+            backTestResultRepository.insert(backTestBulkResultDocs)
+            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
+        } catch (e: Exception) {
+            log.error(e) { "Error processing backtest" }
+            requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.FAILED)
+        }
+    }
+
+    @RabbitListener(queues = [PREDEFINED_BACK_TEST_SERVICE])
+    fun startPredefinedBacktest(request: GeneralBacktestMessage) {
+        val symbolDocuments = symbolRepository.findAll()
+        val configs: MutableList<BackTestConfiguration> = mutableListOf()
+        val startTime = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
+
+        try {
+            for (symbolDocument in symbolDocuments) {
+                for (leverage in 1..symbolDocument.maxLeverage.toInt()) {
+                    for (diapason in 1..10) {
+                        for (gridSize in 2..180) {
+                            for (takeProfit in 1..30) {
+                                for (stopLoss in 1..30) {
+                                    configs += BackTestConfiguration(
+                                        symbolDocument,
+                                        request.startCapital,
+                                        leverage.toDouble(),
+                                        diapason,
+                                        gridSize,
+                                        takeProfit,
+                                        stopLoss
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val backTestBulkResultDocs = backTestService.processConfigs(configs, startTime)
                 .map { res -> resultToDocument(res, request.requestId) }
 
             backTestResultRepository.insert(backTestBulkResultDocs)

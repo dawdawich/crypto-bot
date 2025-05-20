@@ -3,7 +3,6 @@ package space.dawdawich.controller.model.backtest
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class BacktestRequestResultsResponse(
+data class PredefinedBacktestRequest(
     val startCapital: Double,
-    val results: List<BacktestResultDetail>
 )

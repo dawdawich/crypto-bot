@@ -6,10 +6,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import space.dawdawich.controller.model.backtest.BacktestRequest
-import space.dawdawich.controller.model.backtest.BacktestRequestResultsResponse
-import space.dawdawich.controller.model.backtest.RequestIdResponse
-import space.dawdawich.controller.model.backtest.RequestStatusResponse
+import space.dawdawich.controller.model.backtest.*
 import space.dawdawich.service.BacktestService
 import space.dawdawich.service.RequestStatusService
 import java.util.*
@@ -33,11 +30,20 @@ class BacktestController(
         return ResponseEntity.ok(backtestService.getBackTestResults(requestId))
     }
 
+//    @PostMapping(consumes = [APPLICATION_JSON_VALUE], produces = [APPLICATION_JSON_VALUE])
+//    @ResponseStatus(HttpStatus.CREATED)
+//    fun createBacktest(@RequestBody request: BacktestRequest, authentication: Authentication): RequestIdResponse {
+//        val requestId = UUID.randomUUID().toString()
+//        backtestService.createBacktest(request, authentication.name, requestId)
+//
+//        return RequestIdResponse(requestId)
+//    }
+
     @PostMapping(consumes = [APPLICATION_JSON_VALUE], produces = [APPLICATION_JSON_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
-    fun createBacktest(@RequestBody request: BacktestRequest, authentication: Authentication): RequestIdResponse {
+    fun createPredefinedBacktest(@RequestBody request: PredefinedBacktestRequest, authentication: Authentication): RequestIdResponse {
         val requestId = UUID.randomUUID().toString()
-        backtestService.createBacktest(request, authentication.name, requestId)
+        backtestService.createPredefinedBacktest(request, authentication.name, requestId)
 
         return RequestIdResponse(requestId)
     }
