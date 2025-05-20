@@ -33,11 +33,6 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                     priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it)
                 }
 
-
-
-        // 2) build a fixed/thread-pool dispatcher
-
-
         val size = runConfigurations.size
         val complete = AtomicInt(0)
         return runBlocking {

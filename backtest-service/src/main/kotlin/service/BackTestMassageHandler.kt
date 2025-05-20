@@ -72,8 +72,8 @@ class BackTestMassageHandler(
 
             for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
                 val configs: MutableList<BackTestConfiguration> = mutableListOf()
-                for (leverage in 1..symbolDocument.maxLeverage.toInt()) {
-                    for (diapason in 1..10) {
+                for (leverage in 10..symbolDocument.maxLeverage.toInt().let { if (it > 25) 25 else it }) {
+                    for (diapason in 3..7) {
                         for (gridSize in 50..200 step 10) {
                             for (takeProfit in 10..20) {
                                 for (stopLoss in 5..17) {
