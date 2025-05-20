@@ -77,6 +77,7 @@ class BackTestMassageHandler(
                         for (gridSize in 50..200 step 10) {
                             for (takeProfit in listOf(10, 15, 20)) {
                                 for (stopLoss in listOf(7, 12, 17)) {
+                                    if (stopLoss > takeProfit) continue
                                     configs += BackTestConfiguration(
                                         symbolDocument,
                                         request.startCapital,
