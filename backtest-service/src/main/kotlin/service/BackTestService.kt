@@ -22,14 +22,19 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
         .newFixedThreadPool(Runtime.getRuntime().availableProcessors())
         .asCoroutineDispatcher()
 
+    val priceFetcherDispatcher = Executors
+        .newFixedThreadPool(4)
+        .asCoroutineDispatcher()
+
     fun processConfigs(runConfigurations: List<BackTestConfiguration>, startTime: Long): List<BackTestResult> {
-        val symbolHashCodes =
+        val symbolHashCodes = runBlocking {
             runConfigurations
                 .map { config -> config.symbol.symbol.hashCode() }
                 .distinct()
                 .associateWith {
-                    priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it)
-                }
+                    async(priceFetcherDispatcher) { priceTickRepository.findAllByTimeIsGreaterThanAndPair(startTime, it) }
+                }.mapValues { it.value.await() }
+        }
 
         return runBlocking {
             runConfigurations

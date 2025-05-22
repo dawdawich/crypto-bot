@@ -23,7 +23,7 @@ class BackTestMassageHandler(
     private val backTestService: BackTestService,
     private val symbolRepository: SymbolRepository,
     private val backTestResultRepository: BackTestResultRepository,
-    private val requestStatusRepository: RequestStatusRepository
+    private val requestStatusRepository: RequestStatusRepository,
 ) {
 
     val log = KotlinLogging.logger {}
@@ -70,28 +70,41 @@ class BackTestMassageHandler(
         try {
             val resToSave: MutableList<BackTestResultDocument> = mutableListOf()
 
-            for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
+//            for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
+//                val configs: MutableList<BackTestConfiguration> = mutableListOf()
+//                for (leverage in 10..symbolDocument.maxLeverage.toInt().let { if (it > 25) 25 else it }) {
+//                    for (diapason in 3..7) {
+//                        for (gridSize in 50..200 step 10) {
+//                            for (takeProfit in listOf(10, 15, 20)) {
+//                                for (stopLoss in listOf(7, 12, 17)) {
+//                                    if (stopLoss > takeProfit) continue
+//                                    configs += BackTestConfiguration(
+//                                        symbolDocument,
+//                                        request.startCapital,
+//                                        leverage.toDouble(),
+//                                        diapason,
+//                                        gridSize,
+//                                        takeProfit,
+//                                        stopLoss
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+
+            for (symbolDocument in symbolRepository.findAll()) {
                 val configs: MutableList<BackTestConfiguration> = mutableListOf()
-                for (leverage in 10..symbolDocument.maxLeverage.toInt().let { if (it > 25) 25 else it }) {
-                    for (diapason in 3..7) {
-                        for (gridSize in 50..200 step 10) {
-                            for (takeProfit in listOf(10, 15, 20)) {
-                                for (stopLoss in listOf(7, 12, 17)) {
-                                    if (stopLoss > takeProfit) continue
-                                    configs += BackTestConfiguration(
-                                        symbolDocument,
-                                        request.startCapital,
-                                        leverage.toDouble(),
-                                        diapason,
-                                        gridSize,
-                                        takeProfit,
-                                        stopLoss
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+
+                configs += BackTestConfiguration(
+                    symbolDocument,
+                    request.startCapital,
+                    if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
+                    5,
+                    50,
+                    20,
+                    17
+                )
                 resToSave += backTestService.processConfigs(configs, startTime)
                     .map { res -> resultToDocument(res, request.requestId) }.maxBy { it.finalCapital }
 
@@ -107,21 +120,21 @@ class BackTestMassageHandler(
 
     }
 
-    private fun resultToDocument(backTestResult: BackTestResult, requestId: String): BackTestResultDocument
-    = BackTestResultDocument(
-        backTestResult.runConfiguration.id,
-        requestId,
-        backTestResult.runConfiguration.symbol.symbol,
-        backTestResult.runConfiguration.startCapital,
-        backTestResult.runConfiguration.multiplier,
-        backTestResult.runConfiguration.diapason,
-        backTestResult.runConfiguration.gridSize,
-        backTestResult.runConfiguration.takeProfit,
-        backTestResult.runConfiguration.stopLoss,
-        backTestResult.startTime,
-        backTestResult.endTime,
-        backTestResult.result
-    )
+    private fun resultToDocument(backTestResult: BackTestResult, requestId: String): BackTestResultDocument =
+        BackTestResultDocument(
+            backTestResult.runConfiguration.id,
+            requestId,
+            backTestResult.runConfiguration.symbol.symbol,
+            backTestResult.runConfiguration.startCapital,
+            backTestResult.runConfiguration.multiplier,
+            backTestResult.runConfiguration.diapason,
+            backTestResult.runConfiguration.gridSize,
+            backTestResult.runConfiguration.takeProfit,
+            backTestResult.runConfiguration.stopLoss,
+            backTestResult.startTime,
+            backTestResult.endTime,
+            backTestResult.result
+        )
 
     private fun getSymbolData(requestedSymbol: String) = detailedSymbol.computeIfAbsent(requestedSymbol) { symbol ->
         symbolRepository.findById(symbol).orElseThrow { UnsupportedSymbolException(symbol) }
