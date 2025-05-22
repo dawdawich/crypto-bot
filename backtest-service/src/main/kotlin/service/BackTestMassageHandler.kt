@@ -95,20 +95,20 @@ class BackTestMassageHandler(
 
             val configs: MutableList<BackTestConfiguration> = mutableListOf()
             for (symbolDocument in symbolRepository.findAll()) {
-
-                configs += BackTestConfiguration(
-                    symbolDocument,
-                    request.startCapital,
-                    if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
-                    5,
-                    50,
-                    20,
-                    17
-                )
-
+                for (diapason in 5..10) {
+                    configs += BackTestConfiguration(
+                        symbolDocument,
+                        request.startCapital,
+                        if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
+                        diapason,
+                        50,
+                        20,
+                        17
+                    )
+                }
             }
             resToSave += backTestService.processConfigsForAllPairs(configs, startTime)
-                .map { res -> resultToDocument(res, request.requestId) }.maxBy { it.finalCapital }
+                .map { res -> resultToDocument(res, request.requestId) }.take(50)
 
             backTestResultRepository.insert(resToSave)
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
