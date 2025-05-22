@@ -93,8 +93,8 @@ class BackTestMassageHandler(
 //                    }
 //                }
 
+            val configs: MutableList<BackTestConfiguration> = mutableListOf()
             for (symbolDocument in symbolRepository.findAll()) {
-                val configs: MutableList<BackTestConfiguration> = mutableListOf()
 
                 configs += BackTestConfiguration(
                     symbolDocument,
@@ -105,10 +105,10 @@ class BackTestMassageHandler(
                     20,
                     17
                 )
-                resToSave += backTestService.processConfigs(configs, startTime)
-                    .map { res -> resultToDocument(res, request.requestId) }.maxBy { it.finalCapital }
 
             }
+            resToSave += backTestService.processConfigsForAllPairs(configs, startTime)
+                .map { res -> resultToDocument(res, request.requestId) }.maxBy { it.finalCapital }
 
             backTestResultRepository.insert(resToSave)
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)

@@ -32,13 +32,15 @@ class GridTableStrategyRunner(
     private var realizedPnL = 0.0
 
     init {
-        val step = (currentPrice.plusPercent(diapason) - currentPrice.plusPercent(-diapason)) / gridSize
+        val step = ((currentPrice.plusPercent(diapason) - currentPrice.plusPercent(-diapason)) / gridSize).let {
+            if (it < minPriceStep) minPriceStep else it
+        }
 
-        if (step < minPriceStep) throw IllegalArgumentException(
-            "Cannot create grid runner for symbol '$symbol'. " +
-                    "Diapason '$diapason' and grid size '$gridSize'. " +
-                    "Calculated step '$step' less than min price step '$minPriceStep'."
-        )
+//        if (step < minPriceStep) throw IllegalArgumentException(
+//            "Cannot create grid runner for symbol '$symbol'. " +
+//                    "Diapason '$diapason' and grid size '$gridSize'. " +
+//                    "Calculated step '$step' less than min price step '$minPriceStep'."
+//        )
 
         val gridPrices = mutableListOf<Double>()
         var minPrice = currentPrice

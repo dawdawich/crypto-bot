@@ -9,6 +9,7 @@ import space.dawdawich.common.TpAndSlChecker.CheckResult.TP
 import space.dawdawich.model.BackTestConfiguration
 import space.dawdawich.model.BackTestResult
 import space.dawdawich.repositories.mongo.PriceTickRepository
+import space.dawdawich.repositories.mongo.entity.PriceTickModel
 import space.dawdawich.strategy.strategies.GridTableStrategyRunner
 import java.util.concurrent.Executors
 import kotlin.concurrent.atomics.AtomicInt
@@ -43,6 +44,24 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
                     async(dispatcher) {
                         // do the actual backTest in parallel on Default dispatcher
                         val prices = symbolHashCodes[config.symbol.symbol.hashCode()]!!
+                        val result = backTest(config, prices.sortedBy { it.time }.map { it.price })
+                        BackTestResult(config, prices.first().time, prices.last().time, result)
+                    }
+                }.awaitAll()
+        }
+    }
+
+    fun processConfigsForAllPairs(runConfigurations: List<BackTestConfiguration>, startTime: Long): List<BackTestResult> {
+
+        val pricesMap = priceTickRepository.findAllByTimeIsGreaterThan(startTime).groupBy { it.pair }
+
+        return runBlocking {
+            runConfigurations
+                .filter { config -> pricesMap[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
+                .map { config ->
+                    async(dispatcher) {
+                        // do the actual backTest in parallel on Default dispatcher
+                        val prices = pricesMap[config.symbol.symbol.hashCode()]!!
                         val result = backTest(config, prices.sortedBy { it.time }.map { it.price })
                         BackTestResult(config, prices.first().time, prices.last().time, result)
                     }
