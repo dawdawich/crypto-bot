@@ -57,7 +57,7 @@ class BackTestService(private val priceTickRepository: PriceTickRepository) {
 
         return runBlocking {
             runConfigurations
-                .filter { config -> pricesMap[config.symbol.symbol.hashCode()]!!.isNotEmpty() }
+                .filter { config -> pricesMap[config.symbol.symbol.hashCode()]?.isNotEmpty() ?: false }
                 .map { config ->
                     async(dispatcher) {
                         // do the actual backTest in parallel on Default dispatcher
