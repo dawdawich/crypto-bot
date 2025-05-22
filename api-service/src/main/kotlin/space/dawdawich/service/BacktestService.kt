@@ -62,23 +62,21 @@ class BacktestService(
             return null
         }
 
-        return results[0].let { config ->
-            BacktestRequestResultsResponse(
-                config.startCapital,
-                results.map { res ->
-                    BacktestResultDetail(
-                        config.diapason,
-                        config.gridSize,
-                        config.takeProfit,
-                        config.stopLoss,
-                        res.symbol,
-                        res.multiplier,
-                        res.finalCapital,
-                        res.startTime,
-                        res.endTime,
-                    )
-                }
-            )
-        }
+        return BacktestRequestResultsResponse(
+            results[0].startCapital,
+            results.map { res ->
+                BacktestResultDetail(
+                    res.diapason,
+                    res.gridSize,
+                    res.takeProfit,
+                    res.stopLoss,
+                    res.symbol,
+                    res.multiplier,
+                    res.finalCapital,
+                    res.startTime,
+                    res.endTime,
+                )
+            }
+        )
     }
 }
