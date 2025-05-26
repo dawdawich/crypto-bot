@@ -96,26 +96,25 @@ class BackTestMassageHandler(
             val configs: MutableList<BackTestConfiguration> = mutableListOf()
             for (symbolDocument in symbolRepository.findAll()) {
                 for (diapason in 5..10) {
-                    for (gridSize in 50..150 step 25) {
+                    for (gridSize in 40..160 step 20) {
                         for (takeProfit in listOf(10, 15, 20)) {
-                            for (stopLoss in listOf(7, 12, 17)) {
-                                if (stopLoss > takeProfit) continue
-                                configs += BackTestConfiguration(
-                                    symbolDocument,
-                                    request.startCapital,
-                                    if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
-                                    diapason,
-                                    gridSize,
-                                    takeProfit,
-                                    stopLoss
-                                )
-                            }
+                            configs += BackTestConfiguration(
+                                symbolDocument,
+                                request.startCapital,
+                                if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
+                                diapason,
+                                gridSize,
+                                takeProfit,
+                                takeProfit - 3
+                            )
                         }
                     }
                 }
             }
             resToSave += backTestService.processConfigsForAllPairs(configs, startTime)
-                .map { res -> resultToDocument(res, request.requestId) }.take(50)
+                .sortedByDescending { it.result }
+                .take(50)
+                .map { res -> resultToDocument(res, request.requestId) }
 
             backTestResultRepository.insert(resToSave)
             requestStatusRepository.updateRequestStatus(request.requestId, RequestStatus.SUCCESS)
