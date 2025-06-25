@@ -41,7 +41,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
     }
 
     override suspend fun getPairInstructionsWithCursor(cursor: String?): List<PairInfo> {
-        val response = 5 repeatTry { get(GET_INSTRUMENTS_INFO, "category=linear${cursor?.let { "&cursor=$it" } ?: ""}") }
+        val response = 5 repeatTry { get(GET_INSTRUMENTS_INFO, "category=linear${cursor?.let { if (it.isNotBlank()) "&cursor=$it" else "" } ?: ""}") }
 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
