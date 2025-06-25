@@ -35,6 +35,10 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
             }
 
             else -> {
+                println("------------ URL --------------")
+                println(response.request.url)
+                println("------------ BODY --------------")
+                println(response.bodyAsText())
                 throw UnknownRetCodeException(returnCode)
             }
         }
