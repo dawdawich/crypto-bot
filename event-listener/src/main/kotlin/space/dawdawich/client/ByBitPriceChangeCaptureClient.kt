@@ -6,7 +6,7 @@ import space.dawdawich.repositories.mongo.entity.PriceTickModel
 import space.dawdawich.service.RabbitManager
 import space.dawdawich.util.jsonPath
 
-class ByBitPriceChangeCaptureClient(private val priceTickRepository: PriceTickRepository, connectionUrl: String, private val rabbitManager: RabbitManager) : AbstractWebSocketClient(connectionUrl) {
+class ByBitPriceChangeCaptureClient(private val priceTickRepository: PriceTickRepository, connectionUrl: String/*, private val rabbitManager: RabbitManager*/) : AbstractWebSocketClient(connectionUrl) {
     override val socketTopicName: String = "tickers"
 
     public override fun addSubscription(symbol: String) = super.addSubscription(symbol)
