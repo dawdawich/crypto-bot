@@ -67,7 +67,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
 
                 val newCursor = parsedJson.read<String?>("\$.result.nextPageCursor")
 
-                if (newCursor != null && newCursor.isNotEmpty() && newCursor != cursor) {
+                if (newCursor != null && newCursor.isNotBlank() && newCursor != cursor) {
                     pairInfoResult += getPairInstructions(newCursor)
                 }
 
