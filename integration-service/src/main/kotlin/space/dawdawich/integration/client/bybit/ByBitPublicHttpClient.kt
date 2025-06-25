@@ -46,7 +46,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
         val parsedJson = jsonPath.parse(response.bodyAsText())
         when (val returnCode = parsedJson.read<Int>("\$.retCode")) {
             0 -> {
-                val resultDataSize = parsedJson.read<Int>("\$.result.list[*].length()")
+                val resultDataSize = parsedJson.read<Int>("\$.result.list.length()")
                 val pairInfoResult = mutableListOf<PairInfo>()
                 for (i in 0 until resultDataSize) {
                     if (parsedJson.read("\$.result.list[$i].isPreListing")) continue
