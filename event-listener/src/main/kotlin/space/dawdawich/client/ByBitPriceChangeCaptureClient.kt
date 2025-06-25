@@ -1,5 +1,6 @@
 package space.dawdawich.client
 
+import com.mongodb.MongoWriteException
 import space.dawdawich.constants.BYBIT_TICKER_TOPIC
 import space.dawdawich.repositories.mongo.PriceTickRepository
 import space.dawdawich.repositories.mongo.entity.PriceTickModel
@@ -17,7 +18,14 @@ class ByBitPriceChangeCaptureClient(private val priceTickRepository: PriceTickRe
                 read<String?>("\$.data.lastPrice")?.let { checkedPrice ->
                     read<String?>("\$.data.symbol")?.let { symbol ->
 //                        rabbitManager.sendTickerEvent(BYBIT_TICKER_TOPIC, symbol, checkedPrice.toDouble())
-                        priceTickRepository.insert(PriceTickModel(symbol.hashCode(), checkedPrice.toDouble(), System.currentTimeMillis()))
+                        try {
+                            priceTickRepository.insert(PriceTickModel(symbol.hashCode(), checkedPrice.toDouble(), System.currentTimeMillis()))
+                        } catch (e: MongoWriteException) {
+                            if (e.error.code == 11000) {
+                                return@with
+                            }
+                            throw e
+                        }
                     }
                 }
             }
