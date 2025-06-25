@@ -23,7 +23,7 @@ class ServiceConfiguration {
     @Bean
     fun httpClient() = HttpClient(CIO) {
         install(HttpTimeout) {
-            requestTimeoutMillis = 3000
+            requestTimeoutMillis = 8000
         }
     }
 
