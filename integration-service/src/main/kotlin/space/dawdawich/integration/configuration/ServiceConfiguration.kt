@@ -10,6 +10,7 @@ import io.ktor.client.plugins.*
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import space.dawdawich.constants.BYBIT_SERVER_URL
+import space.dawdawich.integration.client.telegram.TelegramApiClient
 
 @Configuration
 class ServiceConfiguration {
@@ -28,4 +29,7 @@ class ServiceConfiguration {
 
     @Bean
     fun publicBybitClient() = ByBitPublicHttpClient(BYBIT_SERVER_URL, httpClient(), jsonPath())
+
+    @Bean
+    fun telegramBot() = TelegramApiClient(httpClient())
 }

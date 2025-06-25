@@ -4,6 +4,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 group = "space.dawdawich"
 version = "0.0.1-SNAPSHOT"
 
+configurations {
+    all {
+        exclude(module = "kotlin-telegram-bot:webhook")
+        exclude(module = "kotlin-telegram-bot:polls")
+        exclude(module = "kotlin-telegram-bot:polls")
+    }
+}
+
 dependencies {
     implementation(project(":domain-service"))
     implementation(project(":commons"))
@@ -17,7 +25,6 @@ dependencies {
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.spring.boot.mongo)
     implementation(libs.spring.rabbitmq)
-    implementation("com.github.kotlin-telegram-bot:kotlin-telegram-bot:6.3.0")
 }
 
 tasks.withType<KotlinCompile> {

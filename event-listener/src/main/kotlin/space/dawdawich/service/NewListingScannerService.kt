@@ -1,13 +1,14 @@
 package space.dawdawich.service
 
-import com.github.kotlintelegrambot.Bot
-import com.github.kotlintelegrambot.entities.ChatId
+import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitPriceChangeCaptureClient
 import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
+import space.dawdawich.integration.client.telegram.TelegramApiClient
 import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.SymbolDocument
 import java.util.concurrent.TimeUnit
@@ -20,10 +21,16 @@ class NewListingScannerService(
     private val publicHttpClient: ByBitPublicHttpClient,
     private val symbolRepository: SymbolRepository,
     private val client: ByBitPriceChangeCaptureClient,
-    private val telegramBot: Bot
+    private val telegramBot: TelegramApiClient,
+    @Value("\${app.api-token}") private val apiToken: String
     ) {
 
     val log = KotlinLogging.logger {}
+
+    @PostConstruct
+    fun postInit() {
+        runBlocking { telegramBot.sendMessage(apiToken, -1002713239108, "Startup complete") }
+    }
 
     @OptIn(ExperimentalTime::class)
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
@@ -57,7 +64,7 @@ class NewListingScannerService(
                 .filter { fetched ->
                     fetched.launchTime > Clock.System.now().minus(10.minutes).toEpochMilliseconds()
                 }.forEach { saved ->
-                    telegramBot.sendMessage(ChatId.fromId(-1002713239108), saved.name)
+                    runBlocking { telegramBot.sendMessage(apiToken, -1002713239108, saved.name) }
                 }
 
             log.info { "Successfully processed  ${symbolsToAdd.size} new symbols" }
