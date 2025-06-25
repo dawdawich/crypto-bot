@@ -28,7 +28,7 @@ subprojects {
     repositories {
         google()
         mavenCentral()
-        uri("https://jitpack.io")
+        maven { url = uri("https://jitpack.io") }
     }
 
     dependencies {

@@ -7,6 +7,8 @@ interface PublicHttpClient {
 
     suspend fun getPairInstructions(symbol: String): PairInfo
 
+    suspend fun getPairInstructionsWithCursor(cursor: String? = null): List<PairInfo>
+
     suspend infix fun <T> Int.repeatTry(block: suspend () -> T): T {
         return try {
             block()

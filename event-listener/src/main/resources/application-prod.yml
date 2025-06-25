@@ -4,3 +4,6 @@ spring:
       host: mongodb
       port: 27017
       database: crypto-bot
+
+app:
+  api-token: 8085663229:AAEF-Fr8bSYBVUqHeqN-lpCdFesnaLeHVFU # remove from repo

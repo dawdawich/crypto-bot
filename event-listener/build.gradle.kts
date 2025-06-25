@@ -11,10 +11,13 @@ dependencies {
 
     implementation(libs.websocket)
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.kotlinx.serialization)
     implementation(libs.json.path)
 
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.spring.boot.mongo)
+    implementation(libs.spring.rabbitmq)
+    implementation("com.github.kotlin-telegram-bot:kotlin-telegram-bot:6.3.0")
 }
 
 tasks.withType<KotlinCompile> {

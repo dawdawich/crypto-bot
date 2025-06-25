@@ -15,4 +15,5 @@ data class SymbolDocument(
     val maxLeverage: Double,
     val leverageStep: Double,
     val qtyStep: Double,
+    val launchTime: Long = 0
 ) : Serializable
