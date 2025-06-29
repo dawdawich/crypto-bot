@@ -38,7 +38,7 @@ class NewListingScannerService(
     fun processNewListing() {
         publicHttpClient.parallelStream().forEach { marketClient ->
             try {
-                val savedSymbols: MutableList<SymbolDocument> = symbolRepository.findAll()
+                val savedSymbols: MutableList<SymbolDocument> = symbolRepository.findByMarket(marketClient.getMarket()).toMutableList()
 
                 val fetchedSymbols = runBlocking { marketClient.getPairInstructionsWithCursor() }.toMutableList()
 
