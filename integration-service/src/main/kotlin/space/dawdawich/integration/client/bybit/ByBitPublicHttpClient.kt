@@ -7,6 +7,7 @@ import io.ktor.client.*
 import io.ktor.client.statement.*
 import space.dawdawich.exception.UnknownRetCodeException
 import space.dawdawich.integration.client.PublicHttpClient
+import space.dawdawich.model.Market
 
 open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private val jsonPath: ParseContext) :
     DefaultHttpClient(serverUrl, client), PublicHttpClient {
@@ -31,7 +32,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
                     "lotSizeFilter.qtyStep",
                     "launchTime"
                 ).map { parsedJson.read<String>("\$.result.list[0].$it").toDouble() }.toTypedArray()
-                return PairInfo(pairData, parsedJson.read("\$.result.list[0].symbol"))
+                return PairInfo(pairData, parsedJson.read("\$.result.list[0].symbol"), Market.BYBIT)
             }
 
             else -> {
@@ -66,7 +67,7 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
                         "launchTime"
                     ).map { parsedJson.read<String>("\$.result.list[$i].$it").toDouble() }.toTypedArray()
 
-                    pairInfoResult += PairInfo(pairData, parsedJson.read("\$.result.list[$i].symbol"))
+                    pairInfoResult += PairInfo(pairData, parsedJson.read("\$.result.list[$i].symbol"), Market.BYBIT)
                 }
 
                 val newCursor = parsedJson.read<String?>("\$.result.nextPageCursor")
@@ -88,4 +89,5 @@ open class ByBitPublicHttpClient(serverUrl: String, client: HttpClient, private 
         }
     }
 
+    override fun getMarket() = Market.BYBIT
 }

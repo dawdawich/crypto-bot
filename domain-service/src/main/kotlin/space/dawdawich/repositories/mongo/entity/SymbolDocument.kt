@@ -2,6 +2,7 @@ package space.dawdawich.repositories.mongo.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import space.dawdawich.model.Market
 import java.io.Serializable
 
 @Document(collection = "symbol")
@@ -15,5 +16,6 @@ data class SymbolDocument(
     val maxLeverage: Double,
     val leverageStep: Double,
     val qtyStep: Double,
+    val market: Market,
     val launchTime: Long = 0
 ) : Serializable

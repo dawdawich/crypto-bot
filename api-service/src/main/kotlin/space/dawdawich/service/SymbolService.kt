@@ -5,6 +5,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import space.dawdawich.controller.model.SymbolResponse
 import space.dawdawich.integration.client.PublicHttpClient
+import space.dawdawich.model.Market
 import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.SymbolDocument
 
@@ -56,7 +57,8 @@ class SymbolService(
                 symbolInfo.maxOrderQty,
                 symbolInfo.maxLeverage,
                 symbolInfo.leverageStep,
-                symbolInfo.qtyStep
+                symbolInfo.qtyStep,
+                Market.BYBIT
             )
         )
     }

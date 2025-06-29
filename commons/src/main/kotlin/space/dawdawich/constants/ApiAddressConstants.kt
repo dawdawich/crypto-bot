@@ -12,3 +12,6 @@ const val BYBIT_WEB_SOCKET_URL = "wss://stream.bybit.com/v5/public/linear"
  * This constant stores the server URL for the ByBit API. It is used for making API requests to the ByBit server.
  */
 const val BYBIT_SERVER_URL = "https://api.bybit.com/v5"
+
+
+const val BINANCE_SERVER_URL = "https://fapi.binance.com"
