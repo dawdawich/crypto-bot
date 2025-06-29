@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import space.dawdawich.client.ByBitPriceChangeCaptureClient
 import space.dawdawich.integration.client.PublicHttpClient
-import space.dawdawich.integration.client.bybit.ByBitPublicHttpClient
 import space.dawdawich.integration.client.telegram.TelegramApiClient
 import space.dawdawich.model.Market
 import space.dawdawich.repositories.mongo.SymbolRepository
