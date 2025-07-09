@@ -12,6 +12,7 @@ import space.dawdawich.integration.client.telegram.TelegramApiClient
 import space.dawdawich.model.Market
 import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.SymbolDocument
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -70,7 +71,7 @@ class NewListingScannerService(
                     .filter { fetched ->
                         fetched.launchTime > Clock.System.now().minus(10.minutes).toEpochMilliseconds()
                     }.forEach { saved ->
-                        val telegramMessage = "${saved.market.name}:\n${saved.name}"
+                        val telegramMessage = URLEncoder.encode("${saved.market.name}: ${saved.name}", Charsets.UTF_8.name())
                         runBlocking { telegramBot.sendMessage(apiToken, -1002713239108, telegramMessage) }
                     }
 
