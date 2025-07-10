@@ -13,6 +13,7 @@ import space.dawdawich.repositories.mongo.SymbolRepository
 import space.dawdawich.repositories.mongo.entity.BackTestResultDocument
 import space.dawdawich.repositories.mongo.entity.RequestStatus
 import space.dawdawich.repositories.mongo.entity.SymbolDocument
+import space.dawdawich.utils.iterator
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -92,18 +93,20 @@ class BackTestMassageHandler(
 
             val configs: MutableList<BackTestConfiguration> = mutableListOf()
             for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
-                for (diapason in 5..20 step 5) {
-                    for (gridSize in 40..160 step 20) {
-                        for (takeProfit in listOf(10, 15, 20)) {
-                            configs += BackTestConfiguration(
-                                symbolDocument,
-                                request.startCapital,
-                                if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0,
-                                diapason,
-                                gridSize,
-                                takeProfit,
-                                takeProfit - 5
-                            )
+                for (diapason in 10..40 step 5) {
+                    for (leverage in 3.0..if (symbolDocument.maxLeverage < 20) symbolDocument.maxLeverage else 20.0 ) {
+                        for (gridSize in 40..160 step 20) {
+                            for (takeProfit in listOf(10, 15, 20, 30, 40)) {
+                                configs += BackTestConfiguration(
+                                    symbolDocument,
+                                    request.startCapital,
+                                    leverage,
+                                    diapason,
+                                    gridSize,
+                                    takeProfit,
+                                    takeProfit - 5
+                                )
+                            }
                         }
                     }
                 }
