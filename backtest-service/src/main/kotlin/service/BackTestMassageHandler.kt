@@ -143,6 +143,6 @@ class BackTestMassageHandler(
         )
 
     private fun getSymbolData(requestedSymbol: String) = detailedSymbol.computeIfAbsent(requestedSymbol) { symbol ->
-        symbolRepository.findById(symbol).orElseThrow { UnsupportedSymbolException(symbol) }
+        symbolRepository.findBySymbol(symbol).orElseThrow { UnsupportedSymbolException(symbol) }
     }
 }
