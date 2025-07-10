@@ -7,5 +7,5 @@ import java.util.Optional
 
 interface SymbolRepository : MongoRepository<SymbolDocument, String> {
     fun findByMarket(market: Market): List<SymbolDocument>
-    fun findBySymbol(symbol: String): Optional<SymbolDocument>
+    fun findBySymbolAndMarket(symbol: String, market: Market): Optional<SymbolDocument>
 }

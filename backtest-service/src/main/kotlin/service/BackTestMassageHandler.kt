@@ -6,10 +6,7 @@ import org.springframework.stereotype.Service
 import space.dawdawich.constants.BACK_TEST_SERVICE
 import space.dawdawich.constants.PREDEFINED_BACK_TEST_SERVICE
 import space.dawdawich.exception.UnsupportedSymbolException
-import space.dawdawich.model.BackTestConfiguration
-import space.dawdawich.model.BacktestMessage
-import space.dawdawich.model.BackTestResult
-import space.dawdawich.model.GeneralBacktestMessage
+import space.dawdawich.model.*
 import space.dawdawich.repositories.mongo.BackTestResultRepository
 import space.dawdawich.repositories.mongo.RequestStatusRepository
 import space.dawdawich.repositories.mongo.SymbolRepository
@@ -143,6 +140,6 @@ class BackTestMassageHandler(
         )
 
     private fun getSymbolData(requestedSymbol: String) = detailedSymbol.computeIfAbsent(requestedSymbol) { symbol ->
-        symbolRepository.findBySymbol(symbol).orElseThrow { UnsupportedSymbolException(symbol) }
+        symbolRepository.findBySymbolAndMarket(symbol, Market.BYBIT).orElseThrow { UnsupportedSymbolException(symbol) }
     }
 }
