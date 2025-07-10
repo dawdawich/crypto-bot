@@ -8,7 +8,7 @@ import space.dawdawich.repositories.mongo.SymbolRepository
 @Service
 class NewListingMessageHandler(private val symbolRepository: SymbolRepository) {
 
-    @RabbitListener(queues = [NEW_LISTING_SERVICE])
+//    @RabbitListener(queues = [NEW_LISTING_SERVICE])
     fun getNewSymbolListingMessage(symbol: String) {
 
     }
