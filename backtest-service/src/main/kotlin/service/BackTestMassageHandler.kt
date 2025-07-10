@@ -94,8 +94,8 @@ class BackTestMassageHandler(
 //                }
 
             val configs: MutableList<BackTestConfiguration> = mutableListOf()
-            for (symbolDocument in symbolRepository.findAll()) {
-                for (diapason in 5..10) {
+            for (symbolDocument in request.symbols.map { getSymbolData(it) }) {
+                for (diapason in 5..20 step 5) {
                     for (gridSize in 40..160 step 20) {
                         for (takeProfit in listOf(10, 15, 20)) {
                             configs += BackTestConfiguration(
@@ -105,7 +105,7 @@ class BackTestMassageHandler(
                                 diapason,
                                 gridSize,
                                 takeProfit,
-                                takeProfit - 3
+                                takeProfit - 5
                             )
                         }
                     }
